@@ -51,7 +51,7 @@ export function ContactScreen() {
     <main className="contact-main">
       <section className="contact-hero">
         <div className="contact-hero-inner"><span className="eyebrow">FLIP7 COMPANION · CONTACT</span><h1>Need a hand?<br /><em>Get in touch.</em></h1><p>Questions, feedback, or something at the table that needs a closer look? Send an email.</p></div>
-        <div className="contact-hero-cards" aria-hidden="true"><img src="/cards/SECOND CHANCE.png" alt="" /><img src="/cards/3.png" alt="" /><img src="/cards/+4.png" alt="" /></div>
+        <div className="contact-hero-cards" aria-hidden="true"><img src="/cards/SECOND CHANCE.webp" alt="" /><img src="/cards/3.webp" alt="" /><img src="/cards/+4.webp" alt="" /></div>
       </section>
       <section className="contact-status"><span className="eyebrow">CONTACT PAGE</span><h2>Coming soon.</h2><p>Our built-in contact form is on its way. For now, email us directly at:</p><div className="contact-email"><a href={`mailto:${email}`}>{email}</a><button type="button" onClick={() => void copyEmail()} aria-label="Copy email address">{copied ? <Check size={17} /> : <Copy size={17} />}{copied ? 'Copied!' : 'Copy email'}</button></div><span className="contact-copy-status" role="status" aria-live="polite">{copied ? 'Email address copied to your clipboard.' : ''}</span><div className="contact-actions"><a href="/faq">Browse FAQs</a><a href="/rules">Read the rules</a></div></section>
     </main>

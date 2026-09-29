@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Flip7 Companion</string>
+    <string name="title_activity_main">Flip7 Companion</string>
+    <string name="package_name">com.gjcodess.flip7companion</string>
+    <string name="custom_url_scheme">com.gjcodess.flip7companion</string>
+</resources>

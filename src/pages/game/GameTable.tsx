@@ -1,6 +1,8 @@
+import { useEffect } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { Crown, ListOrdered, LoaderCircle, Plus } from 'lucide-react'
 import type { Card } from '../../game/cards'
+import { preloadCardArtwork } from '../../game/cardArtworkPreloader'
 import { CardArtwork } from '../../components/CardArtwork'
 
 type GameTableProps = {
@@ -26,6 +28,10 @@ type GameTableProps = {
 }
 
 export function GameTable({ table, tableCardIds, isVoidedCard, score, flipSevenBonus, busted, frozen, submitting, interactionLocked, canEditCards, canAddCards = true, confirmedAt, isStaying, isOrganized, playerName, isHost, onOrganize, onOpenPicker, onSelectCard }: GameTableProps) {
+  useEffect(() => {
+    void preloadCardArtwork()
+  }, [])
+
   const cardRows = Array.from({ length: Math.ceil(table.length / 5) }, (_, rowIndex) => table.slice(rowIndex * 5, rowIndex * 5 + 5))
   return <section className="table-area">
     <div className="section-kicker">{isHost && <Crown size={16} aria-label="Lobby host" />} {playerName.toUpperCase()}'S TABLE <button className="organize-button" onClick={onOrganize} disabled={table.length < 2 || submitting || interactionLocked} title={isOrganized ? 'Restore original card order' : 'Organize cards'}><ListOrdered size={14} /> {isOrganized ? 'Original' : 'Organize'}</button></div>

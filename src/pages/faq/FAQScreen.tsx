@@ -44,7 +44,7 @@ export function FAQScreen() {
           <p>Find the quick answer, then get back to the table. These answers cover rooms, rounds, cards, scoring, and the companion app.</p>
           <div className="faq-hero-badges"><span>Rooms</span><span>Cards</span><span>Scoring</span><span>Players</span></div>
         </div>
-        <div className="faq-hero-cards" aria-hidden="true"><img src="/cards/SECOND CHANCE.png" alt="" /><img src="/cards/5.png" alt="" /><img src="/cards/FREEZE.png" alt="" /></div>
+        <div className="faq-hero-cards" aria-hidden="true"><img src="/cards/SECOND CHANCE.webp" alt="" /><img src="/cards/5.webp" alt="" /><img src="/cards/FREEZE.webp" alt="" /></div>
       </section>
 
       <div className="faq-content">

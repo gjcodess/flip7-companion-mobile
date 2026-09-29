@@ -1,10 +1,10 @@
-const CACHE_NAME = 'flip7-static-v4'
+const CACHE_NAME = 'flip7-static-v5'
 const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/assets/flip7-companion-icon-512-rounded.png', '/assets/flip7-title-logo.png', '/assets/promo-1.png', '/assets/promo-2.png']
 const CARD_ARTWORK = [
   '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12',
-].map((number) => `/cards/${number}.png`).concat([
-  '/cards/+2.png', '/cards/+4.png', '/cards/+6.png', '/cards/+8.png', '/cards/+10.png',
-  '/cards/x2.png', '/cards/Back.png', '/cards/FLIP%20THREE.png', '/cards/FREEZE.png', '/cards/SECOND%20CHANCE.png',
+].map((number) => `/cards/${number}.webp`).concat([
+  '/cards/+2.webp', '/cards/+4.webp', '/cards/+6.webp', '/cards/+8.webp', '/cards/+10.webp',
+  '/cards/x2.webp', '/cards/Back.webp', '/cards/FLIP%20THREE.webp', '/cards/FREEZE.webp', '/cards/SECOND%20CHANCE.webp',
 ])
 const PRECACHE = APP_SHELL.concat(CARD_ARTWORK)
 

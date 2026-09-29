@@ -3,15 +3,15 @@ import { Menu, X } from 'lucide-react'
 import { LandingFooter } from '../landing/LandingFooter'
 
 function RulesCardStrip({ cards, className = '' }: { cards: string[]; className?: string }) {
-  return <div className={`rules-card-strip ${className}`}>{cards.map((card) => <img key={card} src={`/cards/${card}.png`} alt={`${card} card`} />)}</div>
+  return <div className={`rules-card-strip ${className}`}>{cards.map((card) => <img key={card} src={`/cards/${card}.webp`} alt={`${card} card`} />)}</div>
 }
 
 function RulesScoreExample({ label, cards, modifier, result, bonus }: { label: string; cards: string[]; modifier?: string; result: string; bonus?: boolean }) {
   return <div className="rules-score-example">
     <span className="rules-score-example-label">{label}</span>
     <div className="rules-score-card-row">
-      {cards.map((card, index) => <Fragment key={card}>{index > 0 && <b className="rules-score-plus">+</b>}<img src={`/cards/${card}.png`} alt={`${card} card`} /></Fragment>)}
-      {modifier && <><b className="rules-score-plus">+</b><img className="rules-score-modifier" src={`/cards/${modifier}.png`} alt={`${modifier} card`} /></>}
+      {cards.map((card, index) => <Fragment key={card}>{index > 0 && <b className="rules-score-plus">+</b>}<img src={`/cards/${card}.webp`} alt={`${card} card`} /></Fragment>)}
+      {modifier && <><b className="rules-score-plus">+</b><img className="rules-score-modifier" src={`/cards/${modifier}.webp`} alt={`${modifier} card`} /></>}
       {bonus && <><b className="rules-score-plus">+</b><span className="rules-score-inline-bonus"><strong>15</strong><small>POINT<br />BONUS!</small></span></>}
       <span className="rules-score-equals">=</span><b className="rules-score-value">{result}</b>
     </div>
@@ -52,7 +52,7 @@ export function RulesScreen() {
           <p>Track the cards in front of you, score every round, and be the first player to reach the target.</p>
           <div className="rules-hero-badges"><span>200 point target</span><span>7-card bonus</span><span>Duplicate = bust</span></div>
         </div>
-        <div className="rules-hero-cards" aria-hidden="true"><img src="/cards/12.png" alt="" /><img src="/cards/+10.png" alt="" /><img src="/cards/x2.png" alt="" /></div>
+        <div className="rules-hero-cards" aria-hidden="true"><img src="/cards/12.webp" alt="" /><img src="/cards/+10.webp" alt="" /><img src="/cards/x2.webp" alt="" /></div>
       </section>
 
       <div className="rules-content">
@@ -104,9 +104,9 @@ export function RulesScreen() {
           <div className="rules-card-heading"><span className="eyebrow">ACTION CARDS</span><b className="rules-number">06</b></div>
           <h2>Change the table.</h2>
           <div className="rules-action-list">
-            <div><img src="/cards/SECOND CHANCE.png" alt="Second Chance card" /><p><b>Second Chance</b> cancels one duplicate. Discard it with the duplicate card and keep the rest of your round.</p></div>
-            <div><img src="/cards/FREEZE.png" alt="Freeze card" /><p><b>Freeze</b> banks a player and locks in all points collected that round.</p></div>
-            <div><img src="/cards/FLIP THREE.png" alt="Flip Three card" /><p><b>Flip Three</b> makes the chosen active player accept three cards one at a time.</p></div>
+            <div><img src="/cards/SECOND CHANCE.webp" alt="Second Chance card" /><p><b>Second Chance</b> cancels one duplicate. Discard it with the duplicate card and keep the rest of your round.</p></div>
+            <div><img src="/cards/FREEZE.webp" alt="Freeze card" /><p><b>Freeze</b> banks a player and locks in all points collected that round.</p></div>
+            <div><img src="/cards/FLIP THREE.webp" alt="Flip Three card" /><p><b>Flip Three</b> makes the chosen active player accept three cards one at a time.</p></div>
           </div>
           <div className="rules-callout rules-callout-pale"><b>Active player rule</b><span>Action cards can target any active player, including the person who played the card. If only one player is active, that player must be chosen.</span></div>
         </section>

@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react'
 import { motion } from 'motion/react'
 import { X } from 'lucide-react'
 import type { Card } from '../../game/cards'
 import { pickerCards } from '../../game/cards'
+import { isCardArtworkPreloaded, preloadCardArtwork } from '../../game/cardArtworkPreloader'
 import { CardArtwork } from '../../components/CardArtwork'
 
 type CardActionsPanelProps = {
@@ -24,9 +26,19 @@ type CardPickerPanelProps = {
 }
 
 export function CardPickerPanel({ submitting, onClose, onSelect }: CardPickerPanelProps) {
+  const [artworkReady, setArtworkReady] = useState(isCardArtworkPreloaded)
+
+  useEffect(() => {
+    let mounted = true
+    void preloadCardArtwork().then(() => {
+      if (mounted) setArtworkReady(true)
+    })
+    return () => { mounted = false }
+  }, [])
+
   return <motion.section className="card-picker" initial={{ y: 80 }} animate={{ y: 0 }} exit={{ y: 80 }} transition={{ type: 'spring', damping: 26 }} onClick={(event) => event.stopPropagation()}>
     <div className="picker-heading"><div><span>PHYSICAL CARD</span><h2>What did you flip?</h2></div><button className="close-button" aria-label="Close card picker" title="Close" onClick={onClose}><X size={19} /></button></div>
     <p>Select the card in front of you. The app never draws a card for you.</p>
-    <div className="picker-grid">{pickerCards.map((card) => <button key={card.id} disabled={submitting} onClick={() => onSelect(card)} aria-label={`Record ${card.label}`}><CardArtwork card={card} lazy /></button>)}</div>
+    {artworkReady ? <div className="picker-grid">{pickerCards.map((card) => <button key={card.id} disabled={submitting} onClick={() => onSelect(card)} aria-label={`Record ${card.label}`}><CardArtwork card={card} /></button>)}</div> : <div className="picker-loading" role="status" aria-live="polite">Loading card artwork…</div>}
   </motion.section>
 }

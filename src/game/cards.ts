@@ -13,20 +13,20 @@ const numberCards: Card[] = Array.from({ length: 13 }, (_, value) => ({
   label: String(value),
   kind: 'number' as const,
   points: value,
-  image: `/cards/${value}.png`,
+  image: `/cards/${value}.webp`,
 }))
 
 export const pickerCards: Card[] = [
   ...numberCards,
-  { id: 'action-second-chance', label: 'Second Chance', kind: 'action', image: '/cards/SECOND CHANCE.png' },
-  { id: 'action-freeze', label: 'Freeze', kind: 'action', image: '/cards/FREEZE.png' },
-  { id: 'action-flip-three', label: 'Flip Three', kind: 'action', image: '/cards/FLIP THREE.png' },
-  { id: 'modifier-x2', label: '×2', kind: 'modifier', image: '/cards/x2.png' },
-  { id: 'modifier-plus-2', label: '+2', kind: 'modifier', points: 2, image: '/cards/+2.png' },
-  { id: 'modifier-plus-4', label: '+4', kind: 'modifier', points: 4, image: '/cards/+4.png' },
-  { id: 'modifier-plus-6', label: '+6', kind: 'modifier', points: 6, image: '/cards/+6.png' },
-  { id: 'modifier-plus-8', label: '+8', kind: 'modifier', points: 8, image: '/cards/+8.png' },
-  { id: 'modifier-plus-10', label: '+10', kind: 'modifier', points: 10, image: '/cards/+10.png' },
+  { id: 'action-second-chance', label: 'Second Chance', kind: 'action', image: '/cards/SECOND CHANCE.webp' },
+  { id: 'action-freeze', label: 'Freeze', kind: 'action', image: '/cards/FREEZE.webp' },
+  { id: 'action-flip-three', label: 'Flip Three', kind: 'action', image: '/cards/FLIP THREE.webp' },
+  { id: 'modifier-x2', label: '×2', kind: 'modifier', image: '/cards/x2.webp' },
+  { id: 'modifier-plus-2', label: '+2', kind: 'modifier', points: 2, image: '/cards/+2.webp' },
+  { id: 'modifier-plus-4', label: '+4', kind: 'modifier', points: 4, image: '/cards/+4.webp' },
+  { id: 'modifier-plus-6', label: '+6', kind: 'modifier', points: 6, image: '/cards/+6.webp' },
+  { id: 'modifier-plus-8', label: '+8', kind: 'modifier', points: 8, image: '/cards/+8.webp' },
+  { id: 'modifier-plus-10', label: '+10', kind: 'modifier', points: 10, image: '/cards/+10.webp' },
 ]
 
 export const demoTable: Card[] = [
