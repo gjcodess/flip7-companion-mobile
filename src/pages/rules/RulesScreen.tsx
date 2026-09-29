@@ -38,10 +38,10 @@ export function RulesScreen() {
         <nav className="landing-top-links" aria-label="Primary navigation">
           <a href="/">Home</a><a href="/#landing-how">How it Works</a><a href="/rules">Rules</a><a href="/faq">FAQ</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/contact">Contact</a>
         </nav>
-        <a href="/lobby" className="landing-signin">PLAY!</a>
+        <a href="/play" className="landing-signin">PLAY!</a>
         <button className="landing-mobile-toggle" type="button" aria-expanded={mobileMenuOpen} aria-controls="rules-mobile-menu" aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'} onClick={() => setMobileMenuOpen((open) => !open)}>{mobileMenuOpen ? <X size={21} /> : <Menu size={21} />}</button>
       </div>
-      {mobileMenuOpen && <><button className="landing-mobile-backdrop" type="button" aria-label="Close navigation menu" onClick={closeMobileMenu} /><div id="rules-mobile-menu" className="landing-mobile-menu"><nav aria-label="Mobile navigation"><a href="/" onClick={closeMobileMenu}>Home</a><a href="/#landing-how" onClick={closeMobileMenu}>How it Works</a><a href="/rules" onClick={closeMobileMenu}>Game Rules</a><a href="/faq" onClick={closeMobileMenu}>Frequently Asked Questions</a><a href="/privacy" onClick={closeMobileMenu}>Data Privacy Policy</a><a href="/terms" onClick={closeMobileMenu}>Terms &amp; Conditions</a><a href="/contact" onClick={closeMobileMenu}>Contact Us</a></nav><a href="/lobby" className="landing-mobile-signin" onClick={closeMobileMenu}>PLAY!</a></div></>}
+      {mobileMenuOpen && <><button className="landing-mobile-backdrop" type="button" aria-label="Close navigation menu" onClick={closeMobileMenu} /><div id="rules-mobile-menu" className="landing-mobile-menu"><nav aria-label="Mobile navigation"><a href="/" onClick={closeMobileMenu}>Home</a><a href="/#landing-how" onClick={closeMobileMenu}>How it Works</a><a href="/rules" onClick={closeMobileMenu}>Game Rules</a><a href="/faq" onClick={closeMobileMenu}>Frequently Asked Questions</a><a href="/privacy" onClick={closeMobileMenu}>Data Privacy Policy</a><a href="/terms" onClick={closeMobileMenu}>Terms &amp; Conditions</a><a href="/contact" onClick={closeMobileMenu}>Contact Us</a></nav><a href="/play" className="landing-mobile-signin" onClick={closeMobileMenu}>PLAY!</a></div></>}
     </header>
 
     <main className="rules-main">
@@ -67,7 +67,7 @@ export function RulesScreen() {
           <div className="rules-card-heading"><span className="eyebrow">HOW TO PLAY</span><b className="rules-number">02</b></div>
           <h2>Flip, choose, repeat.</h2>
           <ol className="rules-step-list">
-            <li><div className="rules-step-copy"><b>Join the table.</b><span>Create a room or enter a room code. The host approves players before the match begins.</span></div></li>
+            <li><div className="rules-step-copy"><b>Set up the table.</b><span>Choose Banker Mode to run the whole table from one device, or Demo Mode to practice by yourself.</span></div></li>
             <li><div className="rules-step-copy"><b>Deal the round.</b><span>The dealer deals cards one at a time, moving around the table so every player gets a turn.</span></div></li>
             <li><div className="rules-step-copy"><b>Flip and record.</b><span>On your turn, record the physical card you reveal in your table.</span></div></li>
             <li><div className="rules-step-copy"><b>Choose your risk.</b><span>Hit to keep going, or choose <strong>STAY / BANK</strong> to lock in your score.</span></div></li>
@@ -89,7 +89,7 @@ export function RulesScreen() {
           <h2>Same game, different table setup.</h2>
           <p>Every mode uses the physical Flip 7 deck and the same scoring rules. Choose the setup that fits your group.</p>
           <div className="rules-deck-details"><div><b>Demo mode</b><span>Practice on one device by yourself. Nothing is saved online, and the session ends when you leave or refresh.</span></div><div><b>Banker mode</b><span>Use one device for the whole group. The banker switches between player tables and records cards and actions locally.</span></div></div>
-          <div className="rules-callout"><b>For a shared game</b><span>Use multiplayer mode when each player needs their own device and the table should stay synchronized in real time.</span></div>
+          <div className="rules-callout"><b>For a shared game</b><span>Use Banker Mode when the group is playing together on one device. The app keeps the player tables and scores local to that device.</span></div>
         </section>
 
         <section className="rules-card rules-card-wide rules-card-modifiers">

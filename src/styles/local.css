@@ -1,0 +1,29 @@
+.local-main { padding-bottom: 0; }
+.topbar-caption { margin-left: auto; font-size: 9px; font-weight: 900; letter-spacing: .1em; text-align: right; }
+.auth-hero { padding: 33px 28px 23px; background: linear-gradient(145deg, #fff7da 0 62%, #ffe05c 62%); border-bottom: 3px solid #132d67; }
+.eyebrow { display: block; color: #ed4f7e; font-size: 10px; font-weight: 1000; letter-spacing: .14em; }
+.auth-hero h1 { margin: 7px 0; color: #132d67; font-size: clamp(30px, 8vw, 43px); line-height: .95; letter-spacing: -2px; }
+.auth-hero p { margin: 11px 0 0; max-width: 390px; font-size: 13px; line-height: 1.45; }
+.primary-wide, .secondary-wide { min-height: 49px; border: 3px solid #132d67; border-radius: 6px; box-shadow: 3px 3px 0 #132d67; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 1000; cursor: pointer; }
+.primary-wide { background: #ed4f7e; color: #fffdf5; }
+.secondary-wide { background: #57b8d7; color: #132d67; }
+.primary-wide:disabled, .secondary-wide:disabled { opacity: .5; cursor: not-allowed; }
+.account-pill, .back-button { border: 0; background: transparent; color: #fff7da; display: flex; align-items: center; gap: 6px; margin-left: auto; font-size: 12px; font-weight: 800; cursor: pointer; }
+.back-button { margin-left: 0; }
+.auth-local-card { margin: 18px; padding: 16px; display: grid; gap: 13px; border: 3px solid #132d67; box-shadow: 5px 5px 0 #132d67; }
+.auth-demo-card { background: #f8edc7; }
+.auth-banker-card { background: #dff3f8; }
+.auth-local-copy { display: grid; gap: 4px; }
+.auth-local-copy .eyebrow { color: #ed4f7e; font-size: 9px; }
+.auth-local-copy h2 { margin: 0; color: #132d67; font-size: 20px; line-height: 1.05; letter-spacing: -.7px; }
+.auth-local-copy p { max-width: 330px; margin: 2px 0 0; color: #193765; font-size: 11px; line-height: 1.4; }
+.auth-local-button { min-height: 43px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 0 13px; border: 3px solid #132d67; border-radius: 6px; color: #132d67; box-shadow: 3px 3px 0 #132d67; font-size: 11px; font-weight: 1000; cursor: pointer; }
+.auth-demo-button { background: #ffe05c; }
+.auth-demo-button:hover { background: #ed4f7e; color: #fffdf5; }
+.auth-banker-button { background: #57b8d7; }
+.auth-banker-button:hover { background: #ed4f7e; color: #fffdf5; }
+.topbar .exit-button { min-height: 36px; margin-left: auto; padding: 0 12px; border: 2px solid #132d67; border-radius: 999px; background: #ffe05c; color: #132d67; box-shadow: 2px 2px 0 #ed4f7e; font-size: 11px; font-weight: 1000; letter-spacing: .01em; text-transform: none; transition: background .16s ease, color .16s ease, transform .16s ease, box-shadow .16s ease; }
+.topbar .exit-button:hover:not(:disabled) { background: #ed4f7e; color: #fff7da; box-shadow: 2px 2px 0 #132d67; }
+.topbar .exit-button:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: none; }
+.topbar .exit-button:disabled { opacity: .55; cursor: not-allowed; }
+@media (max-width: 520px) { .auth-local-copy p { max-width: none; } }

@@ -1,6 +1,6 @@
 .app-shell { background-image: radial-gradient(rgba(255,224,92,.12) 1.5px, transparent 1.5px); background-size: 18px 18px; }
 .game-shell { background-image: radial-gradient(rgba(19,45,103,.035) 1.25px, transparent 1.25px); background-size: 18px 18px; }
-.lobby-main { background-image: radial-gradient(rgba(19,45,103,.045) 1.25px, transparent 1.25px); background-size: 18px 18px; }
+.local-main { background-image: radial-gradient(rgba(19,45,103,.045) 1.25px, transparent 1.25px); background-size: 18px 18px; }
 .table-area { background-image: linear-gradient(105deg, transparent 0 47%, rgba(255,224,92,.22) 47% 48%, transparent 48%), radial-gradient(rgba(19,45,103,.04) 1.25px, transparent 1.25px); background-size: auto, 18px 18px; }
 .app-shell, body { overflow-x: clip; }
 .desktop-marquee { display: block; position: relative; isolation: isolate; overflow: hidden; background: #132d67; }

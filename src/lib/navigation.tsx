@@ -29,7 +29,7 @@ type AppNavigationContextValue = {
 
 const navigationContext = createContext<AppNavigationContextValue | null>(null)
 
-const publicPaths = new Set(['/','/landing','/demo','/banker','/lobby','/rules','/faq','/privacy','/terms','/contact'])
+const publicPaths = new Set(['/','/landing','/play','/demo','/banker','/rules','/faq','/privacy','/terms','/contact'])
 
 export function readAppLocation(): AppLocation {
   return { pathname: window.location.pathname, search: window.location.search, hash: window.location.hash }
@@ -40,7 +40,7 @@ function normalizePath(pathname: string) {
 }
 
 function isInternalPath(pathname: string) {
-  return publicPaths.has(pathname) || pathname.startsWith('/game/')
+  return publicPaths.has(pathname)
 }
 
 function locationUrl(location: AppLocation) {

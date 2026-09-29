@@ -85,7 +85,7 @@ export function DemoScreen() {
     <main className="game-shell">
       <header className="topbar demo-topbar">
         <button className="brand-button" aria-label="Exit demo" onClick={exit}><img className="brand-logo" src="/assets/flip7-title-logo.png" alt="Flip 7" /></button>
-        <button className="account-pill room-leave-button" onClick={exit}><LogOut size={15} /> Exit</button>
+        <button className="account-pill exit-button" onClick={exit}><LogOut size={15} /> Exit</button>
       </header>
       <section className="demo-intro"><div><span className="eyebrow">DEMO PRACTICE TABLE</span><h1>Try the game.</h1><p>Choose cards to explore scoring, busts, and action cards.</p></div><button className="demo-rules-button" onClick={() => setRulesOpen(true)}><CircleHelp size={16} /> Rules</button></section>
       <section className="match-strip"><div><span>ROUND</span><b>01</b></div><div className="target"><span>FIRST TO</span><b>200</b></div><div><span>MY TOTAL</span><b>—</b></div></section>
