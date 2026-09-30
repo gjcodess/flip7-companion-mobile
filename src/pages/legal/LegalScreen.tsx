@@ -19,12 +19,12 @@ function PrivacyPolicy() {
       <p>By using the app, you acknowledge the practices described here. This policy applies to the app and its informational pages.</p>
     </LegalSection>
     <LegalSection id="information" title="Information we collect">
-      <p>The app only handles the game information you choose to enter into the active local session, such as player names, recorded cards, actions, and scores.</p>
+      <p>The app handles the information you choose to enter, such as saved player names, match names, recorded cards, actions, and scores. Saved matches and player names are stored locally in the app on your device.</p>
       <p>There are no accounts, access codes, networked player profiles, or online game records in this mobile build. Please avoid putting sensitive personal information into player names.</p>
     </LegalSection>
     <LegalSection id="local-modes" title="Demo and Banker Mode">
-      <p>Demo Mode and Banker Mode are local-only experiences. Their player names, cards, actions, and scores stay in the active app session and are not sent to any online service.</p>
-      <p>Demo Mode is for private practice. Banker Mode lets one person operate a shared table from one device. Closing or refreshing the app ends the local session, so these modes do not provide an online game record or recovery.</p>
+      <p>Demo Mode and Banker Mode are local-only experiences. Their player names, cards, actions, and scores are not sent to an online game service.</p>
+      <p>Demo Mode is for private practice. Banker Mode lets one person operate a shared table from one device. Drafts, unfinished matches, and completed match history are saved locally so you can return to them later.</p>
     </LegalSection>
     <LegalSection id="use" title="How we use information">
       <p>The app uses the information you enter only to display the local table, calculate scores, and run the game on your device.</p>
@@ -33,11 +33,11 @@ function PrivacyPolicy() {
       <p>Because this mobile build is offline, game information is not transmitted to or shared with online service providers.</p>
     </LegalSection>
     <LegalSection id="retention" title="Storage and retention">
-      <p>Game information remains only in the active local session. Closing or refreshing the app ends that session unless the device operating system retains temporary app data.</p>
+      <p>Saved player names and match data remain on this device until you delete a match or player, clear the app's data, or uninstall the app. Unfinished matches can be resumed and completed matches remain in local History. This data is not synchronized to other devices.</p>
       <p>Keeping the app offline reduces network exposure, but no device or software can guarantee absolute security.</p>
     </LegalSection>
     <LegalSection id="choices" title="Your choices">
-      <p>You can choose what player names and game information to enter, and you may stop using the app at any time. Since game data is not sent online, there is no online account or room record to request.</p>
+      <p>You can choose what player names and game information to enter, and you can delete saved matches and player names in the app. Since game data is not sent online, there is no online account or remote room record to request.</p>
     </LegalSection>
     <LegalSection id="children" title="Children's privacy">
       <p>Flip7 Companion is intended for general audiences and is not directed to children under the age where parental consent is required by local law. If you believe a child provided personal information, please contact the project owner so it can be reviewed.</p>
@@ -60,14 +60,14 @@ function TermsConditions() {
     </LegalSection>
     <LegalSection id="local-modes" title="Demo and Banker Mode">
       <p>Demo Mode is a private practice experience. Banker Mode is a one-device setup where a banker switches between player tables and records the group's physical cards and actions locally.</p>
-      <p>These modes are temporary and do not create an online record. You are responsible for keeping the device available during play, using the physical deck, and recording any information you want to keep before closing or refreshing the session.</p>
+      <p>These modes do not create an online record. Banker Mode saves match progress locally so it can be resumed on this device. You are responsible for keeping the device and its app data available, using the physical deck, and checking recorded results with the group.</p>
     </LegalSection>
     <LegalSection id="independent" title="Independent companion notice">
       <p>Flip7 Companion is an independent, unofficial companion app created for people who want to play the physical card game with friends. It is not affiliated with, endorsed by, sponsored by, or associated with the creator, publisher, or other rights holders of Flip 7.</p>
       <p>Flip 7 and related game materials belong to their respective owners. This app records the cards that players physically reveal; it does not provide or replace the physical game.</p>
     </LegalSection>
     <LegalSection id="accounts" title="Local session access">
-      <p>Anyone with access to the device can see and change the active local game session. Keep the device available only to the players who are meant to use the table.</p>
+      <p>Anyone with access to the device can see and change saved player names and match records. Keep the device available only to people who should access this information.</p>
       <p>The app does not create accounts, room codes, or online player access.</p>
     </LegalSection>
     <LegalSection id="fair-play" title="Fair play and acceptable use">

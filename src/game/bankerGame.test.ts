@@ -147,5 +147,10 @@ describe('Banker turn progression', () => {
     expect(state.roundNumber).toBe(2)
     expect(state.turnPlayerId).toBe('banker-player-2')
     expect(state.selectedPlayerId).toBe('banker-player-2')
+    expect(state.history[0]?.players['banker-player-1']).toEqual({
+      status: 'stayed',
+      cards: [{ id: 'number-1', voided: false }, { id: 'number-3', voided: false }],
+    })
+    expect(state.history[0]?.scores['banker-player-1']).toBe(4)
   })
 })

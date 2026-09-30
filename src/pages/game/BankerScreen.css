@@ -1,4 +1,13 @@
 .banker-shell .game-shell { overflow: hidden; }
+.banker-room-title { display: grid; gap: 6px; margin: 0 0 16px; color: #526286; font-size: 9px; font-weight: 1000; letter-spacing: .1em; }
+.banker-room-title input { width: 100%; min-height: 43px; padding: 0 11px; border: 2px solid #132d67; border-radius: 5px; background: #fffdf5; color: #132d67; font-size: 14px; font-weight: 800; letter-spacing: normal; }
+.banker-saved-players { display: grid; gap: 7px; margin-top: 13px; }
+.banker-saved-players > span { color: #526286; font-size: 9px; font-weight: 1000; letter-spacing: .1em; }
+.banker-saved-players > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.banker-saved-players button { min-height: 30px; padding: 0 9px; border: 1px solid #132d67; border-radius: 99px; background: #e7f5d9; color: #132d67; font-size: 10px; font-weight: 900; cursor: pointer; }
+.banker-saved-players button:disabled { opacity: .45; cursor: not-allowed; }
+.banker-save-draft { width: 100%; margin-top: 12px; }
+.banker-loading-state { min-height: 50vh; display: grid; place-items: center; padding: 25px; color: #526286; text-align: center; font-weight: 800; }
 .banker-topbar { gap: 10px; }
 .banker-topbar .topbar-caption { margin-left: auto; }
 .banker-topbar .exit-button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; margin-left: 0; line-height: 1; }
@@ -91,3 +100,55 @@
 .banker-results .results-actions { display: grid; gap: 12px; }
 .banker-results .results-actions p { margin-bottom: 0; }
 @media (max-width: 520px) { .banker-topbar .topbar-caption { display: none; }.banker-player-tab { flex-basis: 125px; }.banker-hero > svg { width: 40px; height: 40px; } }
+
+/* The setup flow is app chrome; the live banker table below keeps its existing UI. */
+.banker-setup-app .banker-setup-shell { min-height: 100dvh; overflow: visible; background-color: #fff7da; background-image: radial-gradient(rgba(19,45,103,.035) 1.25px, transparent 1.25px); background-size: 18px 18px; }
+.banker-setup-header { position: relative; z-index: 3; min-height: calc(61px + env(safe-area-inset-top)); display: flex; align-items: center; gap: 11px; padding: max(10px, env(safe-area-inset-top)) 16px 9px; border-bottom: 1px solid #ddd3ad; background: #fff7da; }
+.banker-setup-brand { display: flex; flex: 0 0 auto; align-items: center; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.banker-setup-brand img { width: 100px; height: 38px; object-fit: contain; }
+.banker-setup-header > span { color: #ed4f7e; font-size: 9px; font-weight: 1000; letter-spacing: .12em; }
+.banker-setup-home { min-height: 34px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; margin-left: auto; padding: 0 10px; border: 2px solid #132d67; border-radius: 9px; background: #fffdf5; color: #132d67; font-size: 11px; font-weight: 900; cursor: pointer; }
+.banker-setup-app .banker-setup-wrap { padding-bottom: calc(112px + env(safe-area-inset-bottom)); background: none; }
+.banker-setup-app .banker-hero { min-height: 138px; align-items: center; padding: 15px 18px 13px; background: transparent; border-bottom: 2px solid #57b8d7; }
+.banker-setup-app .banker-hero h1 { max-width: 255px; font-size: 36px; line-height: .98; letter-spacing: -1.5px; }
+.banker-setup-app .banker-hero p { max-width: 245px; color: #526286; font-size: 11px; }
+.banker-setup-art { position: relative; width: 92px; height: 122px; flex: 0 0 auto; }
+.banker-setup-art img { position: absolute; width: 72px; height: 108px; object-fit: contain; filter: drop-shadow(2px 3px 0 rgba(19,45,103,.2)); }
+.banker-setup-art .setup-card-back { left: 0; top: 12px; transform: rotate(-13deg); }
+.banker-setup-art .setup-card-seven { right: 0; top: 1px; transform: rotate(11deg); }
+.banker-setup-app .banker-setup-card { margin: 14px 16px 17px; padding: 15px; border: 2px solid #132d67; border-radius: 12px; background: #fffdf5; box-shadow: 0 3px 0 rgba(19,45,103,.16); }
+.banker-setup-app .banker-room-title { color: #667390; }
+.banker-setup-app .banker-room-title input { min-height: 46px; border-radius: 9px; background: #fff7da; }
+.banker-setup-app .banker-section-heading h2 { font-size: 22px; letter-spacing: -.6px; }
+.banker-setup-app .banker-count { min-width: 38px; padding-block: 7px; }
+.banker-setup-app .banker-muted { color: #667390; }
+.banker-setup-app .banker-name-list { gap: 6px; }
+.banker-setup-app .banker-name-row { grid-template-columns: 30px minmax(0,1fr) 68px 31px; gap: 5px; }
+.banker-setup-app .banker-seat-number { background: #ffe05c; box-shadow: none; }
+.banker-setup-app .banker-name-row input { min-height: 40px; border-radius: 8px; background: #fff7da; }
+.banker-setup-app .banker-order-button, .banker-setup-app .banker-name-row .banker-remove-player { border-radius: 8px; box-shadow: none; }
+.banker-setup-app .banker-add-player { border-width: 2px; border-radius: 9px; box-shadow: 0 2px 0 #132d67; }
+.banker-setup-app .banker-target-control { border-width: 2px; border-radius: 9px; background: #fff7da; }
+.banker-setup-app .banker-start-button { min-height: 48px; border-radius: 10px; box-shadow: 0 3px 0 #132d67; }
+.banker-setup-app .banker-save-draft { min-height: 42px; border-radius: 10px; }
+.banker-setup-app .banker-bottom-nav { position: fixed; }
+.banker-setup-app .mobile-bottom-nav { position: fixed; z-index: 20; }
+@media (max-width: 380px) {
+  .banker-setup-app .banker-hero { min-height: 130px; gap: 8px; padding: 8px 15px 6px; }
+  .banker-setup-app .banker-hero h1 { font-size: 32px; }
+  .banker-setup-app .banker-hero p { max-width: 190px; font-size: 10px; line-height: 1.2; }
+  .banker-setup-art { width: 66px; transform: scale(.76); transform-origin: center right; }
+  .banker-setup-app .banker-setup-card { margin: 10px 12px 17px; padding: 12px; }
+}
+
+@media (max-width: 359px) {
+  .banker-setup-header { gap: 7px; padding-inline: 12px; }
+  .banker-setup-brand img { width: 88px; }
+  .banker-setup-header > span { font-size: 8px; }
+  .banker-setup-home { min-height: 32px; padding-inline: 7px; font-size: 10px; }
+  .banker-setup-app .banker-hero { min-height: 120px; padding-inline: 12px; }
+  .banker-setup-app .banker-hero h1 { font-size: 30px; }
+  .banker-setup-art { width: 58px; transform: scale(.68); }
+  .banker-setup-app .banker-name-row { grid-template-columns: 25px minmax(0,1fr) 56px 28px; gap: 4px; }
+  .banker-setup-app .banker-setup-card { margin-inline: 10px; padding: 10px; }
+}

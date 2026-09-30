@@ -14,6 +14,10 @@ export type BankerPlayer = {
 export type BankerRoundResult = {
   round: number
   scores: Record<string, number>
+  players: Record<string, {
+    status: DemoStatus
+    cards: { id: string; voided: boolean }[]
+  }>
 }
 
 export type BankerForcedTurn = {
@@ -49,6 +53,7 @@ export type BankerState = {
 
 export type BankerAction =
   | { type: 'start'; targetScore: number; names: string[] }
+  | { type: 'restore'; state: BankerState }
   | { type: 'select-player'; playerId: string }
   /** Applies an intentional table correction without changing turn order. */
   | { type: 'player'; playerId: string; action: DemoAction }
@@ -152,6 +157,7 @@ function validActiveTarget(state: BankerState, playerId: string) {
 
 export function bankerReducer(state: BankerState, action: BankerAction): BankerState {
   if (action.type === 'reset') return bankerInitialState()
+  if (action.type === 'restore') return action.state
   if (action.type === 'undo') return undoBankerState(state)
   if (action.type === 'redo') return redoBankerState(state)
 
@@ -239,8 +245,12 @@ export function bankerReducer(state: BankerState, action: BankerAction): BankerS
   if (action.type === 'advance-round') {
     if (!allBankerPlayersSettled(state)) return state
     const scores = Object.fromEntries(state.players.map((player) => [player.id, bankerPlayerDerived(player).score]))
+    const roundPlayers = Object.fromEntries(state.players.map((player) => [player.id, {
+      status: player.round.status,
+      cards: player.round.entries.map((entry) => ({ id: entry.card.id, voided: entry.voided })),
+    }]))
     const players = state.players.map((player) => ({ ...player, totalScore: player.totalScore + (scores[player.id] ?? 0) }))
-    const history = [...state.history, { round: state.roundNumber, scores }]
+    const history = [...state.history, { round: state.roundNumber, scores, players: roundPlayers }]
     const reachedTarget = players.some((player) => player.totalScore >= state.targetScore)
     if (reachedTarget) {
       const highestScore = Math.max(...players.map((player) => player.totalScore))

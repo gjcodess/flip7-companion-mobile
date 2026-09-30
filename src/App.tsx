@@ -1,6 +1,6 @@
 import { useCallback, useEffect, type ReactNode, useState } from 'react'
 import { AppNavigationProvider, PageTransition, currentNavigableUrl, readAppLocation, runAppViewTransition, toNavigablePath, type AppLocation } from './lib/navigation'
-import { LandingScreen } from './pages/landing/LandingScreen'
+import { HistoryScreen, HomeScreen, PlayersScreen, SettingsScreen } from './pages/app/AppScreens'
 import { RulesScreen } from './pages/rules/RulesScreen'
 import { FAQScreen } from './pages/faq/FAQScreen'
 import { LegalScreen } from './pages/legal/LegalScreen'
@@ -8,8 +8,9 @@ import { ContactScreen } from './pages/contact/ContactScreen'
 import { LocalModeScreen } from './pages/local/LocalModeScreen'
 import { DemoScreen } from './pages/game/DemoScreen'
 import { BankerScreen } from './pages/game/BankerScreen'
+import { AppBottomNav } from './components/AppBottomNav'
 
-const viewTransitionPaths = new Set(['/landing', '/play', '/rules', '/faq', '/privacy', '/terms', '/contact'])
+const viewTransitionPaths = new Set(['/landing', '/play', '/players', '/history', '/settings', '/rules', '/faq', '/privacy', '/terms', '/contact'])
 
 function shouldSkipViewTransition(fromPath: string, toPath: string) {
   return fromPath === '/demo' || toPath === '/demo' || !viewTransitionPaths.has(fromPath) || !viewTransitionPaths.has(toPath)
@@ -54,6 +55,10 @@ export default function App() {
   const isDemoPage = location.pathname === '/demo'
   const isBankerPage = location.pathname === '/banker'
   const isPlayPage = location.pathname === '/play'
+  const isPlayersPage = location.pathname === '/players'
+  const isHistoryPage = location.pathname === '/history'
+  const isSettingsPage = location.pathname === '/settings'
+  const isSettingsInfoPage = ['/rules', '/faq', '/privacy', '/terms', '/contact'].includes(location.pathname)
   const showLanding = location.pathname === '/landing'
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -66,8 +71,6 @@ export default function App() {
     return () => window.cancelAnimationFrame(frame)
   }, [location.pathname, location.search, location.hash])
 
-  const enterApp = () => navigate('/play', { replace: true })
-
   let content: ReactNode
   if (isRulesPage) content = <RulesScreen />
   else if (isFAQPage) content = <FAQScreen />
@@ -76,11 +79,14 @@ export default function App() {
   else if (isContactPage) content = <ContactScreen />
   else if (isDemoPage) content = <DemoScreen />
   else if (isBankerPage) content = <BankerScreen />
+  else if (isPlayersPage) content = <PlayersScreen />
+  else if (isHistoryPage) content = <HistoryScreen />
+  else if (isSettingsPage) content = <SettingsScreen />
   else if (isPlayPage) content = <LocalModeScreen />
-  else if (showLanding) content = <LandingScreen onStart={enterApp} />
-  else content = <LandingScreen onStart={enterApp} />
+  else if (showLanding) content = <HomeScreen />
+  else content = <HomeScreen />
 
   return <AppNavigationProvider navigate={navigate} onPopState={syncLocationFromHistory}>
-    <PageTransition routeKey={`${location.pathname}${location.search}`}>{content}</PageTransition>
+    <PageTransition routeKey={`${location.pathname}${location.search}`}><div className={isSettingsInfoPage ? 'app-settings-subpage' : undefined}>{content}{isSettingsInfoPage && <AppBottomNav active="/settings" />}</div></PageTransition>
   </AppNavigationProvider>
 }
