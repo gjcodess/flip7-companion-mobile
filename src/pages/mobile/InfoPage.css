@@ -18,12 +18,14 @@
 .room-create-banner { background-image: none; }
 .room-create-banner::after { display: none; }
 /* Corner-only print texture, behind content and never intercepting card controls. */
+.room-footer-disclaimer-card,
 .room-form-panel,
 .room-app-main:is(.page-home, .page-players, .page-history, .page-settings) :is(.library-room-card, .room-profile-card, .room-create-banner, .room-history-banner, .room-storage-panel, .room-settings-group, .room-crew-banner, .room-empty),
 .room-app-main.page-room :is(.room-detail-hero, .room-standings, .room-round-detail, .room-history-hand, .room-current-note) {
   position: relative;
   isolation: isolate;
 }
+.room-footer-disclaimer-card::before,
 .room-form-panel::before,
 .room-app-main:is(.page-home, .page-players, .page-history, .page-settings) :is(.library-room-card, .room-profile-card, .room-create-banner, .room-history-banner, .room-storage-panel, .room-settings-group, .room-crew-banner, .room-empty)::before,
 .room-app-main.page-room :is(.room-detail-hero, .room-standings, .room-round-detail, .room-history-hand, .room-current-note)::before {
@@ -175,17 +177,25 @@
 .info-legal-section ul { margin: 12px 0 0; padding-left: 18px; }
 .info-legal-section li + li { margin-top: 7px; }
 .info-contact-panel { background: #fffdf3; border: 1.5px solid #132d67; border-radius: 14px; padding: 20px 16px; box-shadow: 3px 4px 0 #132d67; }
-.info-contact-panel h2 { font-size: 21px; font-weight: 900; margin-bottom: 13px; }
-.info-contact-panel > a { display: block; overflow-wrap: anywhere; color: #132d67; font-size: 14px; font-weight: 750; line-height: 1.7; margin-bottom: 16px; }
-.info-contact-panel > p { font-size: 12px; line-height: 1.7; color: #53607a; margin-top: 16px; }
-.info-contact-panel button { display: flex; justify-content: center; align-items: center; gap: 8px; width: 100%; min-height: 46px; background: #ffe05c; border: 1.5px solid #132d67; border-radius: 9px; box-shadow: 2px 3px 0 #132d67; font-size: 12px; font-weight: 800; }
+.info-contact-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.info-contact-icon { display: grid; place-items: center; flex: 0 0 39px; width: 39px; height: 39px; color: #132d67; background: #ffe05c; border: 1.5px solid #132d67; border-radius: 10px; box-shadow: 2px 2px 0 #132d67; }
+.info-contact-kicker { display: block; margin-bottom: 4px; color: #c53264; font-size: 8px; font-weight: 900; letter-spacing: .1em; }
+.info-contact-panel h2 { font-size: 19px; font-weight: 900; line-height: 1.2; letter-spacing: -.5px; }
+.info-contact-address { display: block; min-width: 0; min-height: 67px; margin-bottom: 15px; padding: 11px 12px; background: #e6f3f2; border: 1.5px solid #132d67; border-radius: 10px; box-shadow: 2px 3px 0 #132d67; color: #132d67; text-decoration: none; }
+.info-contact-address > span { min-width: 0; }
+.info-contact-address small { display: block; margin-bottom: 4px; padding-right: 25px; color: #597084; font-size: 8px; font-weight: 850; letter-spacing: .08em; }
+.info-contact-address strong { display: block; overflow-wrap: anywhere; font-size: 12px; font-weight: 850; line-height: 1.4; }
+.info-contact-address > svg { position: absolute; top: 11px; right: 12px; }
+.info-contact-panel button { display: flex; justify-content: center; align-items: center; gap: 8px; width: 100%; min-height: 48px; background: #ffe05c; border: 1.5px solid #132d67; border-radius: 9px; box-shadow: 3px 4px 0 #132d67; font-size: 12px; font-weight: 850; }
+.info-contact-panel button:active { transform: translate(2px, 3px); box-shadow: 1px 1px 0 #132d67; }
+.info-contact-note { border-top: 1px dashed #d9d1b8; padding-top: 12px; font-size: 10px; line-height: 1.6; color: #53607a; margin-top: 18px; }
 
 /* Match the corner print used on the room library cards. Keep the legal section number intact. */
-.info-page :is(.info-art-banner, .guide-card, .info-faq-group, .info-contents, .info-legal-section, .info-play-callout, .info-related-links a) {
+.info-page :is(.info-art-banner, .guide-card, .info-faq-group, .info-contents, .info-legal-section, .info-play-callout, .info-contact-panel, .info-related-links a) {
   position: relative;
   isolation: isolate;
 }
-.info-page :is(.info-art-banner, .guide-card, .info-faq-group, .info-contents, .info-legal-section, .info-play-callout, .info-related-links a)::after {
+.info-page :is(.info-art-banner, .guide-card, .info-faq-group, .info-contents, .info-legal-section, .info-play-callout, .info-contact-panel, .info-related-links a)::after {
   content: '';
   position: absolute;
   inset: 0;
