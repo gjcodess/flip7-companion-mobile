@@ -58,7 +58,7 @@
 .info-page-tabs a { display: grid; place-items: center; flex: 1; padding: 10px 5px; min-height: 44px; border-radius: 7px; color: #53607a; font-size: 11px; font-weight: 850; text-decoration: none; white-space: nowrap; }
 .info-page-tabs a[aria-current=page] { color: #fff7da; background: #132d67; }
 .info-page a:focus-visible { outline: 3px solid #ed4f7e; outline-offset: 4px; }
-.info-art-banner { display: flex; align-items: center; justify-content: space-between; position: relative; gap: 8px; margin: 0 0 24px; padding: 21px 17px; border: 2px solid #132d67; border-radius: 16px; box-shadow: 4px 5px 0 #132d67; overflow: hidden; background-image: radial-gradient(circle, #132d671c 1px, transparent 1.1px); background-size: 9px 9px; }
+.info-art-banner { display: flex; align-items: center; justify-content: space-between; position: relative; gap: 8px; margin: 0 0 24px; padding: 21px 17px; border: 2px solid #132d67; border-radius: 16px; box-shadow: 4px 5px 0 #132d67; overflow: hidden; }
 .info-art-banner.yellow { background-color: #ffe05c; }
 .info-art-banner.cyan { background-color: #bce3e7; }
 .info-art-banner > div:first-child { position: relative; z-index: 1; flex: 1; min-width: 0; }
@@ -179,6 +179,27 @@
 .info-contact-panel > a { display: block; overflow-wrap: anywhere; color: #132d67; font-size: 14px; font-weight: 750; line-height: 1.7; margin-bottom: 16px; }
 .info-contact-panel > p { font-size: 12px; line-height: 1.7; color: #53607a; margin-top: 16px; }
 .info-contact-panel button { display: flex; justify-content: center; align-items: center; gap: 8px; width: 100%; min-height: 46px; background: #ffe05c; border: 1.5px solid #132d67; border-radius: 9px; box-shadow: 2px 3px 0 #132d67; font-size: 12px; font-weight: 800; }
+
+/* Match the corner print used on the room library cards. Keep the legal section number intact. */
+.info-page :is(.info-art-banner, .guide-card, .info-faq-group, .info-contents, .info-legal-section, .info-play-callout, .info-related-links a) {
+  position: relative;
+  isolation: isolate;
+}
+.info-page :is(.info-art-banner, .guide-card, .info-faq-group, .info-contents, .info-legal-section, .info-play-callout, .info-related-links a)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image: radial-gradient(circle, #132d6740 1.1px, transparent 1.3px);
+  background-size: 8px 8px;
+  -webkit-mask-image: radial-gradient(ellipse 140px 95px at top left, #000, transparent), radial-gradient(ellipse 140px 95px at bottom right, #000, transparent);
+  mask-image: radial-gradient(ellipse 140px 95px at top left, #000, transparent), radial-gradient(ellipse 140px 95px at bottom right, #000, transparent);
+}
+.info-page .guide-card-scoring::after {
+  background-image: radial-gradient(circle, #fff7da52 1.1px, transparent 1.3px);
+}
 @media (max-width: 350px) {
   .info-card-fan { flex-basis: 94px; width: 94px; transform: scale(.85); transform-origin: right center; margin-left: -9px; }
   .info-art-banner { padding-inline: 14px; }
