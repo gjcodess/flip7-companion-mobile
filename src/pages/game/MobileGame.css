@@ -16,6 +16,11 @@
   outline: 3px solid #ed4f7e;
   outline-offset: 4px;
 }
+:is(.banker-shell, .demo-shell) :is(input, textarea):focus {
+  outline: none;
+  border-color: #ed4f7e;
+  box-shadow: 3px 3px 0 #ed4f7e;
+}
 :is(.banker-shell, .demo-shell) .topbar {
   min-height: calc(70px + env(safe-area-inset-top, 0px));
   padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 12px;
@@ -24,6 +29,7 @@
   border-bottom: 1px solid #132d6726;
   box-shadow: none;
 }
+.demo-shell .demo-topbar { background: transparent; border-bottom: 0; }
 .banker-shell .topbar > .brand-button {
   width: 44px;
   height: 44px;
@@ -99,6 +105,7 @@
 .banker-shell .banker-player-tab.busted { background-color: #ffe4e7; box-shadow: 2px 3px 0 #c32950; }
 .banker-shell .banker-player-tab.frozen { background-color: #dff3f8; box-shadow: 2px 3px 0 #2b7897; }
 .banker-shell .banker-player-tab.stayed { background-color: #eef6d9; box-shadow: 2px 3px 0 #4d8a45; }
+.banker-shell .banker-player-tab.selected:is(.busted, .frozen, .stayed) { background-color: #ffe05c; }
 .banker-shell .banker-player-tab .mini-avatar { grid-row: 1 / span 2; border-radius: 9px; border-width: 1.5px; box-shadow: 1px 2px 0 #132d6726; }
 /* Optical centering for uppercase initials: compensate for the font's descent space. */
 .banker-shell .banker-player-tab .banker-avatar-initial { line-height: 1; transform: translateY(1px); }
@@ -256,6 +263,18 @@ body:has(:is(.banker-shell, .demo-shell)) .confirmation-modal .picker-heading {
   background: #fff9df;
 }
 :is(.banker-shell, .demo-shell) .picker-heading > div:first-child { min-width: 0; }
+.action-target-picker .picker-heading { isolation: isolate; }
+.action-target-picker .picker-heading::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: radial-gradient(circle, #132d6738 1px, transparent 1.2px);
+  background-size: 8px 8px;
+  -webkit-mask-image: radial-gradient(ellipse 130px 90px at top left, #000, transparent);
+  mask-image: radial-gradient(ellipse 130px 90px at top left, #000, transparent);
+}
 :is(.banker-shell, .demo-shell) .picker-heading span,
 body:has(:is(.banker-shell, .demo-shell)) .confirmation-modal .picker-heading span { color: #c53264; font-size: 8px; line-height: 1.6; }
 :is(.banker-shell, .demo-shell) .picker-heading h2,
@@ -274,7 +293,39 @@ body:has(:is(.banker-shell, .demo-shell)) .confirmation-modal .close-button {
 :is(.banker-shell, .demo-shell) .card-picker > p,
 body:has(:is(.banker-shell, .demo-shell)) .confirmation-modal > p { color: #53607a; font-size: 12px; line-height: 1.7; }
 :is(.banker-shell, .demo-shell) .picker-grid button { border-radius: 9px; box-shadow: 2px 3px 0 #132d6733; }
+/* Keep the title/close control outside the only scrollable area. */
+html:has(.physical-card-picker), body:has(.physical-card-picker) { overflow: hidden; }
+:is(.banker-shell, .demo-shell) .physical-card-picker { display: flex; flex-direction: column; padding: 0; overflow: hidden; min-height: 0; }
+.physical-picker-header { position: relative; isolation: isolate; flex: 0 0 auto; padding: 20px 18px 14px; border-bottom: 1px dashed #b9ad88; background: #fff9df; }
+.physical-picker-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: radial-gradient(circle, #132d6738 1px, transparent 1.2px);
+  background-size: 8px 8px;
+  -webkit-mask-image: radial-gradient(ellipse 130px 90px at top left, #000, transparent);
+  mask-image: radial-gradient(ellipse 130px 90px at top left, #000, transparent);
+}
+:is(.banker-shell, .demo-shell) .physical-picker-header .picker-heading { position: static; padding-bottom: 0; margin-bottom: 0; border-bottom: 0; background: transparent; }
+.physical-picker-header > p { margin: 10px 0 0; color: #53607a; font-size: 11px; line-height: 1.6; }
+.physical-picker-scroll { min-height: 0; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; -webkit-overflow-scrolling: touch; padding: 16px 18px 20px; scrollbar-width: thin; scrollbar-color: #b8b9ae transparent; }
+.physical-picker-scroll .picker-grid { padding-bottom: 4px; }
+.physical-card-picker .picker-card-art { position: relative; display: block; padding: 0; aspect-ratio: .714; overflow: hidden; }
+.physical-card-picker .picker-card-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; padding: 6px; background: #f8edc7; color: #132d67; }
+.physical-card-picker .picker-card-placeholder.modifier { background: #ffd58b; }
+.physical-card-picker .picker-card-placeholder.action { background: #cce7ee; }
+.picker-card-placeholder small { font-size: 6px; letter-spacing: .04em; }
+.picker-card-placeholder b { font-size: 18px; line-height: 1.15; overflow-wrap: anywhere; }
+.physical-card-picker .picker-card-art img { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; object-fit: cover; }
+.physical-card-picker .picker-card-art.is-ready img { opacity: 1; }
+.physical-card-picker .picker-card-art.is-ready .picker-card-placeholder { visibility: hidden; }
 :is(.banker-shell, .demo-shell) :is(.target-list button, .info-player, .banker-summary-player, .rules-copy section) { border-radius: 12px; border-width: 1.5px; box-shadow: 2px 3px 0 #132d67; }
+.banker-shell .info-player-scores { display: grid; gap: 4px; flex: 0 0 auto; }
+.banker-shell .info-player-scores > span { display: grid; grid-template-columns: 39px 3ch; align-items: baseline; gap: 6px; }
+.banker-shell .info-player-scores small { color: #53607a; font-size: 8px; font-weight: 850; letter-spacing: .04em; text-align: left; }
+.banker-shell .info-player-scores strong { font-size: 15px; line-height: 1.1; font-variant-numeric: tabular-nums; text-align: right; }
 :is(.banker-shell, .demo-shell) .target-list button { min-height: 48px; background: #dceef0; }
 :is(.banker-shell, .demo-shell) .rules-copy section { border-color: #132d67; border-left-width: 4px; }
 :is(.banker-shell, .demo-shell) .rules-copy section p { font-size: 12px; line-height: 1.6; }
@@ -309,6 +360,8 @@ body:has(:is(.banker-shell, .demo-shell)) .confirmation-modal .home-prompt-actio
   :is(.banker-shell, .demo-shell) .actions button { font-size: 10px; }
   :is(.banker-shell, .demo-shell) .actions .stay-action { font-size: 11px; }
   :is(.banker-shell, .demo-shell) .card-picker { padding-inline: 14px; }
+  :is(.banker-shell, .demo-shell) .physical-card-picker { padding-inline: 0; }
+  .physical-picker-header, .physical-picker-scroll { padding-inline: 14px; }
   :is(.banker-shell, .demo-shell) .picker-heading h2 { font-size: 22px; }
   :is(.banker-shell, .demo-shell) .panel-heading-actions { gap: 6px; }
   :is(.banker-shell, .demo-shell) .panel-count { font-size: 9px; padding-inline: 5px; }

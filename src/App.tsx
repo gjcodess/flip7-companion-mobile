@@ -1,5 +1,8 @@
 import { useCallback, useEffect, type ReactNode, useState } from 'react'
+import { App as CapacitorApp } from '@capacitor/app'
+import { Capacitor } from '@capacitor/core'
 import { MotionConfig } from 'motion/react'
+import { ConfirmationModal } from './components/ConfirmationModal'
 import { AppNavigationProvider, PageTransition, currentNavigableUrl, readAppLocation, runAppViewTransition, toNavigablePath, type AppLocation } from './lib/navigation'
 import { RulesScreen } from './pages/rules/RulesScreen'
 import { FAQScreen } from './pages/faq/FAQScreen'
@@ -9,6 +12,7 @@ import { DemoScreen } from './pages/game/DemoScreen'
 import { BankerScreen } from './pages/game/BankerScreen'
 import { MobileApp } from './pages/mobile/MobileApp'
 import { useLibrary } from './lib/room-store'
+import { preloadCardArtwork } from './game/cardArtworkPreloader'
 
 const viewTransitionPaths = new Set(['/landing', '/play', '/rules', '/faq', '/privacy', '/terms', '/contact'])
 
@@ -17,6 +21,28 @@ function shouldSkipViewTransition(fromPath: string, toPath: string) {
 }
 
 export default function App() {
+  const [showExitPrompt, setShowExitPrompt] = useState(false)
+  useEffect(() => {
+    if (Capacitor.getPlatform() !== 'android') return
+    let active = true
+    let listener: { remove: () => Promise<void> } | undefined
+    void CapacitorApp.addListener('backButton', () => {
+      setShowExitPrompt(current => !current)
+    }).then(handle => {
+      if (active) listener = handle
+      else void handle.remove()
+    })
+    return () => { active = false; void listener?.remove() }
+  }, [])
+  useEffect(() => {
+    // Warm the lightweight picker previews after the first screen has painted.
+    if ('requestIdleCallback' in window) {
+      const idle = window.requestIdleCallback(() => { void preloadCardArtwork() }, { timeout: 1500 })
+      return () => window.cancelIdleCallback(idle)
+    }
+    const timer = setTimeout(() => { void preloadCardArtwork() }, 200)
+    return () => clearTimeout(timer)
+  }, [])
   const library = useLibrary()
   useEffect(() => { document.documentElement.classList.toggle('room-reduced-motion', library.settings.reducedMotion) }, [library.settings.reducedMotion])
   const [location, setLocation] = useState<AppLocation>(() => {
@@ -85,5 +111,6 @@ export default function App() {
 
   return <MotionConfig reducedMotion={library.settings.reducedMotion ? 'always' : 'user'}><AppNavigationProvider navigate={navigate} onPopState={syncLocationFromHistory}>
     <PageTransition routeKey={`${location.pathname}${location.search}`}>{content}</PageTransition>
+    {showExitPrompt && <ConfirmationModal variant="exit-app" eyebrow="EXIT APP" title="Leave Flip7 Companion?" message="Your saved rooms and player records will be here when you come back." cancelLabel="Stay" confirmLabel="Exit app" onCancel={() => setShowExitPrompt(false)} onConfirm={() => { void CapacitorApp.exitApp() }} />}
   </AppNavigationProvider></MotionConfig>
 }

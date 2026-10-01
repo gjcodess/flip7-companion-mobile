@@ -64,7 +64,7 @@ The debug APK is created at:
 android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-The current named copy is `android/app/build/outputs/apk/debug/flip7-companion-mob-ver-1.1.apk`.
+Named APK versions are kept in `APK Versions/`, including `flip7-companion-v1.1.apk` and `flip7-companion-v1.2.apk`.
 
 ## Product pages
 

@@ -8,3 +8,8 @@
 @import './pages/mobile/MobileApp.css';
 @import './pages/mobile/InfoPage.css';
 @import './pages/game/MobileGame.css';
+@import './styles/exit-confirmation.css';
+
+/* Keep every page and scrollable panel usable without a visible scroll indicator. */
+:root, :root * { scrollbar-width: none; }
+:root::-webkit-scrollbar, :root *::-webkit-scrollbar { display: none; width: 0; height: 0; }

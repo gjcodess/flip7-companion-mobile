@@ -101,6 +101,35 @@ export function updateLibrary(change: (current: RoomLibrary) => RoomLibrary) {
 export function newProfile(name: string, index = getLibrary().players.length): PlayerProfile {
   return { id: crypto.randomUUID(), name: name.trim(), color: bankerPlayerColors[index % bankerPlayerColors.length] }
 }
+export function savePlayerProfile(profile: PlayerProfile) {
+  updateLibrary(current => {
+    const exists = current.players.some(player => player.id === profile.id)
+    if (!exists) return { ...current, players: [...current.players, profile] }
+
+    const withProfile = <T extends PlayerProfile>(player: T): T => player.id === profile.id
+      ? { ...player, name: profile.name, color: profile.color }
+      : player
+
+    return {
+      ...current,
+      players: current.players.map(withProfile),
+      rooms: current.rooms.map(room => {
+        if (!room.roster.some(player => player.id === profile.id)) return room
+        const state = room.state && {
+          ...room.state,
+          players: room.state.players.map(withProfile),
+          history: room.state.history.map(round => {
+            const hand = round.hands?.[profile.id]
+            return hand ? { ...round, hands: { ...round.hands, [profile.id]: { ...hand, name: profile.name, color: profile.color } } } : round
+          }),
+          past: room.state.past.map(snapshot => ({ ...snapshot, players: snapshot.players.map(withProfile) })),
+          future: room.state.future.map(snapshot => ({ ...snapshot, players: snapshot.players.map(withProfile) })),
+        }
+        return { ...room, roster: room.roster.map(withProfile), state }
+      }),
+    }
+  })
+}
 export function createRoom(name: string, targetScore: number, roster: PlayerProfile[]) {
   const room: Room = { id: crypto.randomUUID(), name: name.trim(), targetScore, roster, createdAt: Date.now(), updatedAt: Date.now(), pinned: false, state: null }
   updateLibrary(current => ({ ...current, rooms: [room, ...current.rooms], players: [...current.players, ...roster.filter(p => !current.players.some(existing => existing.id === p.id))] }))

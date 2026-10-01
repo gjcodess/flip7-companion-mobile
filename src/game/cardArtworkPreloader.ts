@@ -1,41 +1,46 @@
 import { pickerCards } from './cards'
+import { cardThumbnailUrl } from './cardThumbnailUrl'
 
 let preloadPromise: Promise<void> | null = null
 let preloadComplete = false
+// Retain small decoded previews between openings, not full-size card faces.
+const decodedPreviews = new Map<string, HTMLImageElement>()
 
 /**
- * Fetch the card artwork once so reopening a picker can reuse the browser's
- * cached resources instead of starting the image requests from scratch.
- * Errors are intentionally ignored here; the individual card images still
- * render normally and can retry through their own <img> elements.
+ * Warm only the lightweight picker previews. Failed previews can retry later;
+ * the picker renders readable labels immediately and never waits for this batch.
  */
 export function preloadCardArtwork(): Promise<void> {
   if (preloadPromise) return preloadPromise
 
-  const imageUrls = pickerCards.flatMap((card) => card.image ? [card.image] : [])
+  const imageUrls = [...new Set(pickerCards.flatMap((card) => card.image ? [cardThumbnailUrl(card.image)] : []))]
   preloadPromise = Promise.all(imageUrls.map((url) => new Promise<void>((resolve) => {
+    if (decodedPreviews.has(url)) { resolve(); return }
     const image = new Image()
     let settled = false
     image.decoding = 'async'
-    const finish = () => {
+    const finish = async () => {
       if (settled) return
       settled = true
-      if (typeof image.decode === 'function') {
-        void image.decode().catch(() => undefined).finally(resolve)
-      } else {
-        resolve()
+      if (image.naturalWidth > 0) {
+        if (typeof image.decode === 'function') {
+          try { await image.decode() } catch { /* Older WebViews may reject decode(). */ }
+        }
+        decodedPreviews.set(url, image)
       }
+      resolve()
     }
-    image.onload = finish
+    image.onload = () => { void finish() }
     image.onerror = () => {
       if (settled) return
       settled = true
       resolve()
     }
     image.src = url
-    if (image.complete) finish()
+    if (image.complete) void finish()
   }))).then(() => {
-    preloadComplete = true
+    preloadComplete = decodedPreviews.size === imageUrls.length
+    if (!preloadComplete) preloadPromise = null
   })
 
   return preloadPromise
