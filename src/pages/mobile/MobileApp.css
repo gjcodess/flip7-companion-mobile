@@ -707,12 +707,13 @@
   transition: transform 220ms cubic-bezier(.22, .61, .36, 1);
 }
 
-.room-bottom-nav.is-scroll-hidden {
+.room-bottom-nav.is-scroll-hidden,
+.room-bottom-nav.is-keyboard-hidden {
   transform: translate(-50%, calc(100% + 40px + env(safe-area-inset-bottom, 0px)));
   pointer-events: none;
 }
 
-.room-bottom-nav:has(:focus-visible) {
+.room-bottom-nav:not(.is-keyboard-hidden):has(:focus-visible) {
   transform: translateX(-50%);
   pointer-events: auto;
 }
@@ -1340,14 +1341,29 @@
 }
 
 .room-add-player button {
-  width: 43px;
-  min-height: 43px;
+  width: 48px;
+  min-height: 48px;
   flex-shrink: 0;
   background: var(--yellow);
-  border: 1.5px solid var(--ink);
-  border-radius: 9px;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  box-shadow: 3px 4px 0 var(--ink);
   display: grid;
   place-items: center;
+  padding: 0;
+  color: var(--ink);
+}
+
+.room-add-player button svg {
+  width: 23px;
+  height: 23px;
+  stroke-width: 2.6;
+}
+
+.room-add-player button:hover:not(:disabled) { background: #ffea86; }
+.room-add-player button:active:not(:disabled) {
+  transform: translate(2px, 3px);
+  box-shadow: 1px 1px 0 var(--ink);
 }
 
 .room-pick-crew {

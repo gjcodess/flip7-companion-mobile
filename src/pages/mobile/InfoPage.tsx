@@ -1,8 +1,9 @@
 import { useEffect, type ReactNode } from 'react'
-import { ArrowLeft, ArrowRight, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { useAppNavigation } from '../../lib/navigation'
 import { BottomNav } from './MobileApp'
 import { PageArtwork } from './PageArtwork'
+import { AppFooter } from './AppFooter'
 
 export type InfoPageKind = 'rules' | 'faq' | 'privacy' | 'terms' | 'contact'
 
@@ -23,7 +24,7 @@ export function InfoPage({ kind, kicker, title, accent, intro, children }: { kin
     <header className="info-heading"><span className="room-kicker">{kicker}</span><h1>{title}{accent && <><br /><em>{accent}</em></>}</h1><p>{intro}</p></header>
     <nav className="info-page-tabs" aria-label="Help and app information">{links.map(link => <a key={link.kind} href={link.href} aria-current={kind === link.kind ? 'page' : undefined}>{link.label}</a>)}</nav>
     {children}
-    <footer className="info-footer"><ShieldCheck size={15} /><p>Made for the table. Always offline.<small>Independent companion to the physical Flip 7 game.</small></p></footer>
+    <AppFooter />
   </main><BottomNav page="settings" /></div>
 }
 

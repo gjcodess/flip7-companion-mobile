@@ -2,12 +2,14 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, ChevronDown, ChevronRight, CircleHelp, Download, Flag, FolderOpen, History, Home, Medal, MoreHorizontal, Pencil, Pin, Play, Plus, Search, Settings, ShieldCheck, Sparkles, Trash2, Trophy, Upload, Users, X } from 'lucide-react'
 import { useAppNavigation } from '../../lib/navigation'
 import { useScrollNav } from '../../lib/use-scroll-nav'
+import { useKeyboardVisible } from '../../lib/use-keyboard-visible'
 import { canEditRoster, createRoom, decodeLibrary, editRoom, exportBackup, formatBytes, getStorageError, newProfile, playerStats, restoreBackup, roomStatus, saveRoom, startRoom, STORAGE_LIMIT, storageBytes, updateLibrary, useLibrary, type PlayerProfile, type Room } from '../../lib/room-store'
 import { bankerPlayerColors } from '../../game/bankerGame'
 import { CardArtwork } from '../../components/CardArtwork'
 import { ConfirmationModal } from '../../components/ConfirmationModal'
 import { PageArtwork } from './PageArtwork'
 import { TargetScorePicker } from './TargetScorePicker'
+import { AppFooter } from './AppFooter'
 
 type MobilePage = 'home' | 'players' | 'history' | 'settings' | 'new' | 'room'
 const routes = { home: '/landing', players: '/players', history: '/history', settings: '/settings', new: '/new' }
@@ -20,9 +22,10 @@ function ActionButton({ children, onClick, secondary = false, disabled = false }
 export function BottomNav({ page }: { page: MobilePage }) {
   const navigate = useAppNavigation()
   const { navRef, hidden, reveal } = useScrollNav(page)
+  const keyboardVisible = useKeyboardVisible()
   const tabs = [{ page: 'home', label: 'Home', icon: Home }, { page: 'players', label: 'Players', icon: Users }, { page: 'new', label: 'New room', icon: Plus }, { page: 'history', label: 'History', icon: History }, { page: 'settings', label: 'Settings', icon: Settings }] as const
   const activePage = page === 'room' ? 'home' : page
-  return <nav ref={navRef} className={`room-bottom-nav${hidden ? ' is-scroll-hidden' : ''}`} onFocusCapture={reveal} aria-label="Main navigation">{tabs.map(item => <button type="button" key={item.page} aria-current={activePage === item.page ? 'page' : undefined} aria-label={item.label} className={`${item.page === 'new' ? 'nav-create' : 'nav-item'} ${activePage === item.page ? 'active' : ''}`} onClick={() => navigate(routes[item.page])}><span className="nav-icon"><item.icon size={item.page === 'new' ? 27 : 22} strokeWidth={2.3} /></span><span className="nav-label">{item.label}</span></button>)}</nav>
+  return <nav ref={navRef} className={`room-bottom-nav${hidden ? ' is-scroll-hidden' : ''}${keyboardVisible ? ' is-keyboard-hidden' : ''}`} inert={keyboardVisible} onFocusCapture={reveal} aria-label="Main navigation">{tabs.map(item => <button type="button" key={item.page} aria-current={activePage === item.page ? 'page' : undefined} aria-label={item.label} className={`${item.page === 'new' ? 'nav-create' : 'nav-item'} ${activePage === item.page ? 'active' : ''}`} onClick={() => navigate(routes[item.page])}><span className="nav-icon"><item.icon size={item.page === 'new' ? 27 : 22} strokeWidth={2.3} /></span><span className="nav-label">{item.label}</span></button>)}</nav>
 }
 
 function RoomCard({ room, feature = false }: { room: Room; feature?: boolean }) {
@@ -46,9 +49,9 @@ function HomeScreen() {
   const sorted = [...library.rooms].sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.updatedAt - a.updatedAt)
   const visible = sorted.filter(r => (filter === 'all' || (filter === 'active' ? r.state?.phase === 'round' : !r.state)) && r.name.toLowerCase().includes(query.toLowerCase()))
   return <><div className="room-home-hero">
-      <header className="room-home-header"><img src="/assets/flip7-title-logo.png" alt="Flip7 Companion" /></header>
-      <section className="room-welcome"><h1>Your table.<br /><em>Your game night.</em></h1><p>Resume a match or start a new room.</p></section>
-    </div>
+    <header className="room-home-header"><img src="/assets/flip7-title-logo.png" alt="Flip7 Companion" /></header>
+    <section className="room-welcome"><h1>Your table.<br /><em>Your game night.</em></h1><p>Resume a match or start a new room.</p></section>
+  </div>
     <section className="room-create-banner"><div><span className="room-kicker">LET THE GOOD TIMES FLIP</span><h2>A new room.<br />A fresh shot at 200.</h2><button onClick={() => navigate('/new')}>Create a room <ArrowRight size={17} /></button></div><img className="room-promo-art" src="/assets/promo-2.png" alt="" decoding="async" /></section>
     <div className="room-home-stats"><span><b>{library.rooms.length}</b> {library.rooms.length === 1 ? 'room' : 'rooms'}</span><span><b>{library.players.length}</b> {library.players.length === 1 ? 'player' : 'players'}</span><span><b>{library.rooms.filter(r => r.state?.phase === 'results').length}</b> completed</span></div>
     <section className="room-library"><div className="room-section-heading"><h2>Your rooms <span>{library.rooms.length}</span></h2>{active.length > 0 && <span className="room-section-note">{active.length} in progress</span>}</div>
@@ -98,7 +101,7 @@ function RoomForm({ room, onDone }: { room?: Room; onDone?: () => void }) {
     const existing = library.players.find(p => p.name.toLowerCase() === nextName.toLowerCase())
     setRoster([...roster, profile ?? existing ?? newProfile(nextName, roster.length)]); setPlayerName(''); setError('')
   }
-  const move = (index: number, direction: -1 | 1) => { const next = [...roster]; [next[index], next[index + direction]] = [next[index + direction], next[index]]; setRoster(next) }
+  const move = (index: number, direction: -1 | 1) => { const next = [...roster];[next[index], next[index + direction]] = [next[index + direction], next[index]]; setRoster(next) }
   const save = (begin: boolean) => {
     if (!name.trim()) return setError('Give your room a name.')
     if (roster.length < 3) return setError('Add at least 3 players to start your room.')
@@ -112,9 +115,9 @@ function RoomForm({ room, onDone }: { room?: Room; onDone?: () => void }) {
   return <><div className="room-back-row"><button onClick={() => { if (room && onDone) onDone(); else navigate(room ? `/room?id=${room.id}` : '/landing') }}><ArrowLeft size={19} /> {room ? 'Back to room' : 'Your rooms'}</button></div><PageHeading kicker="SET UP YOUR TABLE" title={room ? 'Edit room' : 'New room'} copy={room ? 'Update players before the first card of the round.' : 'Name your room and add your players.'} />
     <section className="room-form-panel"><div className="room-form-section-title"><span>01</span><h2>Make it yours</h2><Flag size={21} /></div><label className="room-field">ROOM NAME<input placeholder="Friday night flips" maxLength={40} value={name} onChange={e => setName(e.target.value)} /></label><div className="room-field">TARGET SCORE<div className="room-target-options">{[100, 200, 300].map(value => <button key={value} className={target === value ? 'selected' : ''} aria-pressed={target === value} onClick={() => setTarget(value)}>{value}<small>PTS</small>{value === 200 && <span>CLASSIC</span>}</button>)}</div><label className="room-custom-target">Custom target<input type="number" min={50} max={500} aria-label="Custom target score" value={target || ''} onChange={e => setTarget(Number(e.target.value))} /></label></div></section>
     <section className="room-form-panel"><div className="room-form-section-title"><span>02</span><h2>Who’s at the table?</h2><b>{roster.length}/18</b></div><p className="room-muted">3–18 players. Arrange your crew in turn order.{room?.state && ' New players join with zero points.'}</p><div className="room-roster">{roster.map((p, i) => <div className="room-roster-row" key={p.id}><span className="room-seat">{String(i + 1).padStart(2, '0')}</span><Avatar player={p} small /><b>{p.name}</b><div className="room-roster-controls"><button aria-label={`Move ${p.name} up`} disabled={i === 0} onClick={() => move(i, -1)}><ArrowUp size={14} /></button><button aria-label={`Move ${p.name} down`} disabled={i === roster.length - 1} onClick={() => move(i, 1)}><ArrowDown size={14} /></button>{(!room?.state || !room.state.players.some(player => player.id === p.id)) && <button aria-label={`Remove ${p.name}`} onClick={() => setRoster(roster.filter(player => player.id !== p.id))}><X size={15} /></button>}</div></div>)}</div>
-    <div className="room-add-player"><input aria-label="New player name" maxLength={24} placeholder="Add a player’s name" value={playerName} onChange={e => setPlayerName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPlayer() } }} /><button aria-label="Add named player" disabled={roster.length >= 18} onClick={() => addPlayer()}><Plus size={20} /></button></div>
-    {library.players.length > 0 && <><button className="room-pick-crew" aria-expanded={showPicker} onClick={() => setShowPicker(!showPicker)}><Users size={16} /> Choose saved players <ChevronDown size={15} /></button>{showPicker && <div className="room-saved-player-picker">{library.players.filter(p => !roster.some(r => r.id === p.id || r.name.toLowerCase() === p.name.toLowerCase())).map(p => <button key={p.id} onClick={() => addPlayer(p)}><Avatar player={p} small />{p.name}<Plus size={14} /></button>)}{library.players.every(p => roster.some(r => r.id === p.id)) && <p>Everyone’s at the table!</p>}</div>}</>}
-    </section><div className="room-save-note"><ShieldCheck size={18} /><p>Your room saves automatically on this device.</p></div>{error && <p className="room-error" role="alert">{error}</p>}<div className="room-form-actions"><ActionButton onClick={() => save(!room)}><Play size={17} fill="currentColor" /> {room ? 'Save room changes' : 'Create & start playing'}</ActionButton>{!room && <ActionButton secondary onClick={() => save(false)}><FolderOpen size={17} /> Save room for later</ActionButton>}</div></>
+      <div className="room-add-player"><input aria-label="New player name" maxLength={24} placeholder="Add a player’s name" value={playerName} onChange={e => setPlayerName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPlayer() } }} /><button aria-label="Add named player" disabled={roster.length >= 18} onClick={() => addPlayer()}><Plus size={20} /></button></div>
+      {library.players.length > 0 && <><button className="room-pick-crew" aria-expanded={showPicker} onClick={() => setShowPicker(!showPicker)}><Users size={16} /> Choose saved players <ChevronDown size={15} /></button>{showPicker && <div className="room-saved-player-picker">{library.players.filter(p => !roster.some(r => r.id === p.id || r.name.toLowerCase() === p.name.toLowerCase())).map(p => <button key={p.id} onClick={() => addPlayer(p)}><Avatar player={p} small />{p.name}<Plus size={14} /></button>)}{library.players.every(p => roster.some(r => r.id === p.id)) && <p>Everyone’s at the table!</p>}</div>}</>}
+    </section><div className="room-save-note"></div>{error && <p className="room-error" role="alert">{error}</p>}<div className="room-form-actions"><ActionButton onClick={() => save(!room)}><Play size={17} fill="currentColor" /> {room ? 'Save room changes' : 'Create & start playing'}</ActionButton>{!room && <ActionButton secondary onClick={() => save(false)}><FolderOpen size={17} /> Save room for later</ActionButton>}</div></>
 }
 
 function RoomDetail({ room }: { room: Room }) {
@@ -140,30 +143,7 @@ function SettingsScreen() {
   return <><PageHeading kicker="YOUR GAME, YOUR WAY" title="Settings" copy="Preferences, backups, and help." /><section className="room-storage-panel"><div className="room-section-heading"><h2><ShieldCheck size={21} /> Device storage</h2></div><p>Game data stays on this device.</p><div className="storage-usage"><strong>{formatBytes(bytes)}</strong><span>used · {formatBytes(STORAGE_LIMIT)} save limit</span></div><div className="room-progress-track"><i style={{ width: `${Math.min(100, Math.max(1, bytes / STORAGE_LIMIT * 100))}%` }} /></div><div className="storage-counts"><span>{library.rooms.length} {library.rooms.length === 1 ? 'room' : 'rooms'}</span><span>{library.players.length} {library.players.length === 1 ? 'player' : 'players'}</span><span>{completed} completed</span></div><p className="storage-explanation">Clearing completed rooms keeps lifetime player stats. Card artwork is bundled once. Actual device storage limits may be lower.</p></section>
     <section className="room-settings-group"><h2>At your table</h2><div className="room-setting-row"><div><Flag size={20} /><span><b>Default target score</b><small>For your next room</small></span></div><TargetScorePicker value={library.settings.targetScore} onChange={targetScore => update(current => ({ ...current, settings: { ...current.settings, targetScore } }))} /></div><div className="room-setting-row"><div><Sparkles size={20} /><span><b>Calmer animations</b><small>A little less movement</small></span></div><button role="switch" aria-checked={library.settings.reducedMotion} aria-label="Calmer animations" className={`room-switch ${library.settings.reducedMotion ? 'on' : ''}`} onClick={() => update(current => ({ ...current, settings: { ...current.settings, reducedMotion: !current.settings.reducedMotion } }))}><span /></button></div></section>
     <section className="room-settings-group"><h2>Keep your memories</h2><button className="room-setting-row" onClick={() => { try { exportBackup(); setNotice('Backup download requested. Keep the JSON file somewhere safe.') } catch (e) { setError((e as Error).message) } }}><div><Download size={20} /><span><b>Export a backup</b><small>Take your rooms and players with you</small></span></div><ChevronRight size={18} /></button><button className="room-setting-row" onClick={() => input.current?.click()}><div><Upload size={20} /><span><b>Restore a backup</b><small>Replace local data from a saved file</small></span></div><ChevronRight size={18} /></button><input ref={input} className="visually-hidden" type="file" accept=".json,application/json" aria-label="Backup file" onChange={e => void readBackup(e.target.files?.[0])} /><button className="room-setting-row danger" disabled={!completed} onClick={() => setClear(true)}><div><Trash2 size={20} /><span><b>Clear completed rooms</b><small>Keep every unfinished game</small></span></div><ChevronRight size={18} /></button></section>
-    <section className="room-settings-group"><h2>A little help</h2>{[['How to play', '/rules', CircleHelp], ['Practice table', '/demo', Play], ['Questions & answers', '/faq', CircleHelp], ['Privacy & local data', '/privacy', ShieldCheck], ['Terms & conditions', '/terms', ShieldCheck], ['Contact & feedback', '/contact', CircleHelp]].map(([label, path, Icon]) => { const I = Icon as typeof CircleHelp; return <button key={String(path)} className="room-setting-row" onClick={() => navigate(String(path))}><div><I size={20} /><b>{String(label)}</b></div><ChevronRight size={18} /></button> })}</section>{error && <p className="room-error" role="alert">{error}</p>}{notice && <p className="room-success" role="status">{notice}</p>}    <footer className="room-app-footer">
-      <div className="room-footer-brand">
-        <img className="room-footer-logo" src="/assets/flip7-title-logo.png" alt="Flip7 Companion" />
-        <p className="room-footer-tagline">Made for the table. Always offline.</p>
-      </div>
-      <div className="room-footer-disclaimer-card">
-        <div className="room-footer-disclaimer-header">
-          <ShieldCheck size={14} />
-          <span>DISCLAIMER &amp; LEGAL NOTICE</span>
-        </div>
-        <p className="room-footer-disclaimer-text">
-          <strong>Flip7 Companion</strong> is an independent digital companion and scorekeeping utility created for tabletop players.
-          This application is <strong>not affiliated with, endorsed by, sponsored by, or associated with</strong> the original creators, designers, or publishers of the physical <em>Flip 7</em> card game.
-        </p>
-        <p className="room-footer-disclaimer-sub">
-          A physical copy of the Flip 7 card game is required to play. All game concepts, card mechanics, and trademarks belong to their respective copyright holders.
-        </p>
-      </div>
-      <div className="room-footer-copy">
-        <span className="room-footer-version">v1.1</span>
-        <span className="room-footer-sep">·</span>
-        <small>© 2026 Flip7 Companion</small>
-      </div>
-    </footer>
+    <section className="room-settings-group"><h2>A little help</h2>{[['How to play', '/rules', CircleHelp], ['Practice table', '/demo', Play], ['Questions & answers', '/faq', CircleHelp], ['Privacy & local data', '/privacy', ShieldCheck], ['Terms & conditions', '/terms', ShieldCheck], ['Contact & feedback', '/contact', CircleHelp]].map(([label, path, Icon]) => { const I = Icon as typeof CircleHelp; return <button key={String(path)} className="room-setting-row" onClick={() => navigate(String(path))}><div><I size={20} /><b>{String(label)}</b></div><ChevronRight size={18} /></button> })}</section>{error && <p className="room-error" role="alert">{error}</p>}{notice && <p className="room-success" role="status">{notice}</p>}<AppFooter />
     {restore && <ConfirmationModal eyebrow="RESTORE BACKUP" title="Replace your local library?" message="Rooms, player profiles, lifetime stats, and preferences will be replaced by this backup. Export your current library first if you want to keep it." confirmLabel="Restore backup" onCancel={() => setRestore(null)} onConfirm={() => { try { restoreBackup(restore); setNotice('Backup restored. Your rooms are ready.'); setRestore(null) } catch (e) { setError((e as Error).message); setRestore(null) } }} />}{clear && <ConfirmationModal eyebrow="FREE UP SPACE" title={`Clear ${completed} completed rooms?`} message="Detailed scores and card history will be removed. Lifetime matches, wins, and best scores stay, along with unfinished games and player profiles. Export a backup first to keep the details." confirmLabel="Clear completed" onCancel={() => setClear(false)} onConfirm={() => { try { updateLibrary(current => ({ ...current, rooms: current.rooms.filter(r => r.state?.phase !== 'results') })); setError(''); setNotice('Completed history cleared. Lifetime player stats kept.'); setClear(false) } catch (e) { setError((e as Error).message); setClear(false) } }} />}</>
 }
 

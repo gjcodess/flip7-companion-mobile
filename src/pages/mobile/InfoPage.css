@@ -18,11 +18,13 @@
 .room-create-banner { background-image: none; }
 .room-create-banner::after { display: none; }
 /* Corner-only print texture, behind content and never intercepting card controls. */
+.room-form-panel,
 .room-app-main:is(.page-home, .page-players, .page-history, .page-settings) :is(.library-room-card, .room-profile-card, .room-create-banner, .room-history-banner, .room-storage-panel, .room-settings-group, .room-crew-banner, .room-empty),
 .room-app-main.page-room :is(.room-detail-hero, .room-standings, .room-round-detail, .room-history-hand, .room-current-note) {
   position: relative;
   isolation: isolate;
 }
+.room-form-panel::before,
 .room-app-main:is(.page-home, .page-players, .page-history, .page-settings) :is(.library-room-card, .room-profile-card, .room-create-banner, .room-history-banner, .room-storage-panel, .room-settings-group, .room-crew-banner, .room-empty)::before,
 .room-app-main.page-room :is(.room-detail-hero, .room-standings, .room-round-detail, .room-history-hand, .room-current-note)::before {
   content: '';
@@ -35,6 +37,14 @@
   background-size: 8px 8px;
   -webkit-mask-image: radial-gradient(ellipse 140px 95px at top left, #000, transparent), radial-gradient(ellipse 140px 95px at bottom right, #000, transparent);
   mask-image: radial-gradient(ellipse 140px 95px at top left, #000, transparent), radial-gradient(ellipse 140px 95px at bottom right, #000, transparent);
+}
+.room-form-panel :is(.room-field input, .room-add-player input) {
+  border-color: #929bb0;
+  box-shadow: 2px 3px 0 #c0b699;
+}
+.room-form-panel :is(.room-field input, .room-add-player input):focus {
+  border-color: #ed4f7e;
+  box-shadow: 3px 3px 0 #ed4f7e;
 }
 .room-app-shell .room-button:active:not(:disabled), .room-heading-action:active { transform: translate(2px, 3px); box-shadow: 1px 1px 0 #132d67; }
 
@@ -122,9 +132,6 @@
 .info-play-callout p { font-size: 11px; color: #53607a; line-height: 1.7; }
 .info-play-callout a { display: inline-flex; align-items: center; gap: 7px; border: 1.5px solid #132d67; border-radius: 8px; background: #ffe05c; color: #132d67; box-shadow: 2px 3px 0 #132d67; padding: 11px 12px; margin-top: 15px; font-size: 10px; font-weight: 850; text-decoration: none; }
 .info-play-callout > img { width: 90px; height: 145px; flex: 0 0 90px; object-fit: contain; transform: rotate(6deg); }
-.info-footer { display: flex; gap: 8px; justify-content: center; align-items: flex-start; margin-top: 30px; color: #687086; text-align: center; }
-.info-footer p { font-size: 10px; line-height: 1.6; }
-.info-footer small { display: block; font-size: 8px; margin-top: 4px; }
 .info-faq-search { margin-top: 28px; }
 .info-faq .info-art-banner { padding-block: 12px; }
 .info-faq .info-card-fan { height: 105px; }
