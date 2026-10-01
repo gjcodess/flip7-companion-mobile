@@ -74,8 +74,8 @@
 }
 
 .room-home-header img {
-  width: 110px;
-  height: 55px;
+  width: 165px;
+  height: 80px;
   object-fit: contain;
   filter: drop-shadow(1px 2px 0 rgba(19, 45, 103, .08));
 }
@@ -2281,7 +2281,7 @@
   }
 
   .room-home-header img {
-    width: 94px;
+    width: 135px;
   }
 
   .room-roster-row {

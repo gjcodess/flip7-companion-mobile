@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { ShieldCheck, Users } from 'lucide-react'
+import { ChevronDown, ShieldCheck, Users } from 'lucide-react'
 import { AssetCardFan, InfoPage } from '../mobile/InfoPage'
 
 type LegalKind = 'privacy' | 'terms'
@@ -98,7 +98,7 @@ export function LegalScreen({ kind }: { kind: LegalKind }) {
   return <InfoPage kind={kind} kicker="APP INFORMATION" title={isPrivacy ? 'Privacy & local data' : 'Terms & conditions'} accent="" intro={isPrivacy ? 'How your saved game information is handled.' : 'The ground rules for using this companion.'}>
     <section className={`info-art-banner ${isPrivacy ? 'cyan' : 'yellow'}`}><div><span className="info-banner-icon">{isPrivacy ? <ShieldCheck size={22} /> : <Users size={22} />}</span><h2>{isPrivacy ? 'Kept close to home.' : 'Made for your table.'}</h2><p>{isPrivacy ? 'No accounts. No online game records. Your rooms stay on this device.' : 'An independent companion. Your physical deck runs the game.'}</p></div><AssetCardFan cards={isPrivacy ? ['Back', 'SECOND CHANCE', '0'] : ['Back', '12', '+6']} /></section>
     <div className="info-document-meta"><span>Updated October 2026</span><span>{isPrivacy ? 'Data Privacy Policy' : 'Terms & Conditions'}</span></div>
-    <details className="info-contents"><summary><span>ON THIS PAGE</span><b>{sections.length} sections</b></summary><nav aria-label={isPrivacy ? 'Privacy policy sections' : 'Terms sections'}>{sections.map(([id, title], i) => <a key={id} href={`#${id}`}><span>{String(i + 1).padStart(2, '0')}</span>{title}</a>)}</nav></details>
+    <details className="info-contents"><summary><span>ON THIS PAGE</span><b>{sections.length} sections</b><ChevronDown className="info-contents-chevron" size={18} aria-hidden="true" /></summary><nav aria-label={isPrivacy ? 'Privacy policy sections' : 'Terms sections'}>{sections.map(([id, title], i) => <a key={id} href={`#${id}`}><span>{String(i + 1).padStart(2, '0')}</span>{title}</a>)}</nav></details>
     <article className="info-legal-document" aria-label={isPrivacy ? 'Data Privacy Policy' : 'Terms & Conditions'}>{isPrivacy ? <PrivacyPolicy /> : <TermsConditions />}</article>
     <div className="info-related-links"><a href="/faq">Questions & answers</a><a href={isPrivacy ? '/terms' : '/privacy'}>{isPrivacy ? 'Read the terms' : 'Privacy & local data'}</a></div>
   </InfoPage>
