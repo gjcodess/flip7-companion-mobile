@@ -2274,9 +2274,9 @@
 }
 
 .demo-shell .demo-topbar {
-  background: #fff7da;
+  background: transparent;
   color: #132d67;
-  border-bottom: 2px solid #132d67;
+  border-bottom: 0;
   min-height: 62px;
 }
 
