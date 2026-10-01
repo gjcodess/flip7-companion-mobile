@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, ChevronDown, ChevronRight, CircleHelp, Download, Flag, FolderOpen, History, Home, Medal, MoreHorizontal, Pencil, Pin, Play, Plus, Search, Settings, ShieldCheck, Sparkles, Trash2, Trophy, Upload, UserPlus, Users, X } from 'lucide-react'
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, ChevronDown, ChevronRight, CircleHelp, Download, Flag, FolderOpen, History, Home, Medal, MoreHorizontal, Pencil, Pin, Play, Plus, Search, Settings, ShieldCheck, Sparkles, Trash2, Trophy, Upload, Users, X } from 'lucide-react'
 import { useAppNavigation } from '../../lib/navigation'
 import { useScrollNav } from '../../lib/use-scroll-nav'
 import { canEditRoster, createRoom, decodeLibrary, editRoom, exportBackup, formatBytes, getStorageError, newProfile, playerStats, restoreBackup, roomStatus, saveRoom, startRoom, STORAGE_LIMIT, storageBytes, updateLibrary, useLibrary, type PlayerProfile, type Room } from '../../lib/room-store'
 import { bankerPlayerColors } from '../../game/bankerGame'
 import { CardArtwork } from '../../components/CardArtwork'
 import { ConfirmationModal } from '../../components/ConfirmationModal'
+import { PageArtwork } from './PageArtwork'
 
 type MobilePage = 'home' | 'players' | 'history' | 'settings' | 'new' | 'room'
 const routes = { home: '/landing', players: '/players', history: '/history', settings: '/settings', new: '/new' }
@@ -46,7 +47,6 @@ function HomeScreen() {
   return <><div className="room-home-hero">
       <header className="room-home-header"><img src="/assets/flip7-title-logo.png" alt="Flip7 Companion" /></header>
       <section className="room-welcome"><h1>Your table.<br /><em>Your game night.</em></h1><p>Resume a match or start a new room.</p></section>
-      <img className="room-home-promo" src="/assets/promo-1.png" alt="" decoding="async" />
     </div>
     <section className="room-create-banner"><div><span className="room-kicker">LET THE GOOD TIMES FLIP</span><h2>A new room.<br />A fresh shot at 200.</h2><button onClick={() => navigate('/new')}>Create a room <ArrowRight size={17} /></button></div><img className="room-promo-art" src="/assets/promo-2.png" alt="" decoding="async" /></section>
     <div className="room-home-stats"><span><b>{library.rooms.length}</b> {library.rooms.length === 1 ? 'room' : 'rooms'}</span><span><b>{library.players.length}</b> {library.players.length === 1 ? 'player' : 'players'}</span><span><b>{library.rooms.filter(r => r.state?.phase === 'results').length}</b> completed</span></div>
@@ -74,7 +74,7 @@ function PlayerEditor({ profile, onClose }: { profile?: PlayerProfile; onClose: 
 function PlayersScreen() {
   const library = useLibrary(); const [query, setQuery] = useState(''); const [editing, setEditing] = useState<PlayerProfile | 'new' | null>(null)
   const players = library.players.filter(p => p.name.toLowerCase().includes(query.toLowerCase()))
-  return <><PageHeading kicker="THE GAME NIGHT CREW" title="Players" copy="Your crew and their lifetime records." action={<button className="room-heading-action" aria-label="Add player" onClick={() => setEditing('new')}><UserPlus size={21} /></button>} />
+  return <><PageHeading kicker="THE GAME NIGHT CREW" title="Players" copy="Your crew and their lifetime records." />
     <label className="room-search"><Search size={18} /><input aria-label="Search players" placeholder="Find a player…" value={query} onChange={e => setQuery(e.target.value)} /></label><div className="room-section-heading"><h2>Your crew <span>{library.players.length}</span></h2></div>
     <div className="room-player-list">{players.map(p => { const stats = playerStats(p.id, library.rooms, library.archivedStats); return <article className="room-profile-card" key={p.id}><Avatar player={p} /><div className="room-profile-copy"><h3>{p.name}</h3><p>{stats.matches} {stats.matches === 1 ? 'match' : 'matches'} <span>·</span> {stats.wins} {stats.wins === 1 ? 'win' : 'wins'}</p><span><Trophy size={12} /> Best score <b>{stats.best || '—'}</b></span></div><button className="room-icon-button" aria-label={`Edit ${p.name}`} onClick={() => setEditing(p)}><Pencil size={17} /></button></article> })}</div>
     {!players.length && <EmptyState icon={<Users size={30} />} title={query ? 'No players found' : 'Save your game night crew'}>{query ? 'Try another name.' : 'Add players here or while creating a room. Their match stats grow as you play.'}</EmptyState>}<button className="room-dashed-action" onClick={() => setEditing('new')}><Plus size={18} /> Add a player</button><p className="room-local-note">Profile edits apply to future rooms. Match records keep their original names.</p>{editing && <PlayerEditor profile={editing === 'new' ? undefined : editing} onClose={() => setEditing(null)} />}</>
@@ -170,5 +170,5 @@ export function MobileApp({ page, roomId }: { page: MobilePage; roomId?: string 
   const library = useLibrary(); const error = getStorageError(); const navigate = useAppNavigation()
   const room = library.rooms.find(r => r.id === roomId)
   useEffect(() => { document.documentElement.classList.add('room-app-active'); return () => { document.documentElement.classList.remove('room-app-active') } }, [])
-  return <div className="room-app-shell"><main className={`room-app-main page-${page}`}>{error && <p className="room-error" role="alert">{error}</p>}{page === 'home' ? <HomeScreen /> : page === 'players' ? <PlayersScreen /> : page === 'history' ? <HistoryScreen /> : page === 'settings' ? <SettingsScreen /> : page === 'new' ? <RoomForm /> : room ? <RoomDetail key={room.id} room={room} /> : <EmptyState icon={<FolderOpen size={30} />} title="This room isn’t here">It may have been removed or restored from a different backup.<ActionButton onClick={() => navigate('/landing')}>Back to your rooms</ActionButton></EmptyState>}</main><BottomNav page={page} /></div>
+  return <div className="room-app-shell"><main className={`room-app-main page-${page}`}>{page !== 'room' && <PageArtwork />}{error && <p className="room-error" role="alert">{error}</p>}{page === 'home' ? <HomeScreen /> : page === 'players' ? <PlayersScreen /> : page === 'history' ? <HistoryScreen /> : page === 'settings' ? <SettingsScreen /> : page === 'new' ? <RoomForm /> : room ? <RoomDetail key={room.id} room={room} /> : <EmptyState icon={<FolderOpen size={30} />} title="This room isn’t here">It may have been removed or restored from a different backup.<ActionButton onClick={() => navigate('/landing')}>Back to your rooms</ActionButton></EmptyState>}</main><BottomNav page={page} /></div>
 }

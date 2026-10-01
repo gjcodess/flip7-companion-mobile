@@ -52,6 +52,9 @@
 }
 
 .room-app-main {
+  --room-page-gutter: 22px;
+  position: relative;
+  isolation: isolate;
   max-width: 520px;
   margin: 0 auto;
   min-height: 100dvh;
@@ -92,6 +95,20 @@
   pointer-events: none;
   z-index: 1;
   transform-origin: center center;
+}
+
+.room-page-art {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.room-page-art .room-home-promo {
+  top: calc(22px + env(safe-area-inset-top, 0px) - 100px);
+  right: calc(var(--room-page-gutter) - 50px);
+  z-index: auto;
 }
 
 .room-kicker {
@@ -2235,6 +2252,7 @@
   }
 
   .room-app-main {
+    --room-page-gutter: 30px;
     background: #fff7da;
     border-inline: 1px solid #d5c9a7;
     padding-inline: 30px;
@@ -2244,6 +2262,7 @@
 
 @media (max-width: 350px) {
   .room-app-main {
+    --room-page-gutter: 16px;
     padding-inline: 16px;
   }
 
