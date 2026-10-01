@@ -89,7 +89,7 @@
   max-height: 290px;
   object-fit: contain;
   transform: rotate(12deg);
-  opacity: 0.28;
+  opacity: 0.16;
   mix-blend-mode: multiply;
   filter: drop-shadow(1px 2px 0 rgba(19, 45, 103, 0.2));
   pointer-events: none;
