@@ -111,6 +111,6 @@ export default function App() {
 
   return <MotionConfig reducedMotion={library.settings.reducedMotion ? 'always' : 'user'}><AppNavigationProvider navigate={navigate} onPopState={syncLocationFromHistory}>
     <PageTransition routeKey={`${location.pathname}${location.search}`}>{content}</PageTransition>
-    {showExitPrompt && <ConfirmationModal eyebrow="EXIT APP" title="Leave Flip7 Companion?" message="Your saved rooms and player records will be here when you come back." cancelLabel="Stay" confirmLabel="Exit app" onCancel={() => setShowExitPrompt(false)} onConfirm={() => { void CapacitorApp.exitApp() }} />}
+    {showExitPrompt && <ConfirmationModal variant="exit-app" eyebrow="EXIT APP" title="Leave Flip7 Companion?" message="Your saved rooms and player records will be here when you come back." cancelLabel="Stay" confirmLabel="Exit app" onCancel={() => setShowExitPrompt(false)} onConfirm={() => { void CapacitorApp.exitApp() }} />}
   </AppNavigationProvider></MotionConfig>
 }

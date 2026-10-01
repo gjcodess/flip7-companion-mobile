@@ -769,7 +769,7 @@
   display: grid;
   place-items: center;
   border: 3px solid var(--cream);
-  outline: 8px solid var(--ink);
+  outline: 10px solid var(--ink);
   border-radius: 50%;
   background: var(--pink);
   width: 50px;

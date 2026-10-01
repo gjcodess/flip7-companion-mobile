@@ -1,0 +1,70 @@
+.exit-confirmation-backdrop {
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  background: #091e4da8;
+  backdrop-filter: blur(4px);
+}
+
+.exit-confirmation-modal {
+  position: relative;
+  isolation: isolate;
+  width: min(100%, 480px);
+  max-height: min(85dvh, calc(100dvh - 48px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
+  padding: 22px 18px 24px;
+  border: 2px solid #132d67;
+  border-radius: 22px;
+  background: #fff9df;
+  box-shadow: 5px 6px 0 #132d67;
+  overscroll-behavior: contain;
+}
+
+.exit-confirmation-modal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image: radial-gradient(circle, #132d6738 1px, transparent 1.2px);
+  background-size: 8px 8px;
+  -webkit-mask-image: radial-gradient(ellipse 130px 90px at top left, #000, transparent), radial-gradient(ellipse 130px 90px at bottom right, #000, transparent);
+  mask-image: radial-gradient(ellipse 130px 90px at top left, #000, transparent), radial-gradient(ellipse 130px 90px at bottom right, #000, transparent);
+}
+
+.exit-confirmation-modal .picker-heading {
+  position: relative;
+  z-index: 1;
+  gap: 12px;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px dashed #b9ad88;
+  background: transparent;
+}
+
+body:has(:is(.banker-shell, .demo-shell)) .exit-confirmation-modal .picker-heading {
+  position: relative;
+  background: transparent;
+}
+
+.exit-confirmation-modal .picker-heading > div:first-child { min-width: 0; }
+.exit-confirmation-modal .picker-heading span { color: #c53264; font-size: 8px; line-height: 1.6; }
+.exit-confirmation-modal h2 { font-size: 25px; line-height: 1.15; letter-spacing: -.8px; overflow-wrap: anywhere; }
+.exit-confirmation-modal .close-button {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border: 1.5px solid #132d67;
+  border-radius: 12px;
+  color: #132d67;
+  background: #dceef0;
+  box-shadow: 2px 3px 0 #132d67;
+}
+
+.exit-confirmation-modal > p { position: relative; color: #53607a; font-size: 12px; line-height: 1.7; }
+.exit-confirmation-modal .home-prompt-actions { position: relative; }
+.exit-confirmation-modal .home-prompt-actions button {
+  min-height: 48px;
+  border: 1.5px solid #132d67;
+  border-radius: 11px;
+  box-shadow: 2px 3px 0 #132d67;
+  font-size: 11px;
+}
