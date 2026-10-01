@@ -20,9 +20,10 @@
 .room-create-banner button { border: 0; background: var(--ink); color: var(--cream); display: flex; gap: 8px; align-items: center; padding: 10px 13px; border-radius: 9px; font-size: 11px; font-weight: 800; margin-top: 17px; min-height: 40px; }
 .room-create-banner > div { flex: 1; min-width: 0; }
 .room-promo-art { position: relative; width: 116px; height: 172px; flex: 0 0 116px; z-index: 1; object-fit: contain; margin-left: 6px; filter: drop-shadow(2px 3px 0 #132d67); }
-.room-home-stats { display: flex; justify-content: space-between; margin: 22px 0 26px; padding: 0 8px; font-size: 10px; color: #5c6370; }
-.room-home-stats b { font-size: 16px; color: var(--ink); font-weight: 900; margin-right: 4px; }
-.room-home-stats > span + span { border-left: 1px solid #ddd5bb; padding-left: 16px; }
+.room-home-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 22px 0 26px; font-size: 10px; color: #5c6370; text-align: center; }
+.room-home-stats > span { display: flex; justify-content: center; align-items: baseline; flex-wrap: wrap; gap: 4px; min-width: 0; padding: 0 6px; }
+.room-home-stats b { font-size: 16px; color: var(--ink); font-weight: 900; overflow-wrap: anywhere; }
+.room-home-stats > span + span { border-left: 1px solid #ddd5bb; }
 .room-section-heading { display: flex; gap: 8px; align-items: center; justify-content: space-between; margin: 24px 0 15px; }
 .room-section-heading h2 { font-size: 18px; font-weight: 900; letter-spacing: -.6px; display: flex; align-items: center; gap: 8px; }
 .room-section-heading h2 > span { background: #ece8cf; border-radius: 7px; font-size: 10px; padding: 4px 7px; letter-spacing: 0; }
