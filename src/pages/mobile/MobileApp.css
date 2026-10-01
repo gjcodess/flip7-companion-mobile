@@ -34,7 +34,13 @@
 .room-search input { width: 100%; min-width: 0; border: 0; outline: none; background: transparent; font-size: 12px; padding: 13px 0; }
 .room-list { display: grid; gap: 16px; }
 .library-room-card { background: #fffdf3; border: 2px solid var(--ink); border-radius: 15px; padding: 14px 15px; box-shadow: 3px 3px 0 #d5cba8; }
-.library-room-card.featured { background: #fdf0c9; box-shadow: 3px 4px 0 var(--yellow); }
+.library-room-card.featured { background: linear-gradient(135deg, #e5f5f7, #cce7ee); box-shadow: 3px 4px 0 var(--yellow); }
+.library-room-card.featured .room-card-meta { color: #4f6279; }
+.library-room-card.featured .room-pin { color: #526d86 !important; }
+.library-room-card.featured .room-pin.pinned { color: var(--pink) !important; }
+.library-room-card.featured .room-progress-strip { border-top-color: #98bac8; }
+.library-room-card.featured .room-progress-strip > span { color: #4f6279; }
+.library-room-card.featured .room-progress-track { background: #adcfd9; }
 .room-card-top { display: flex; justify-content: space-between; align-items: center; height: 26px; }
 .room-badge { display: inline-flex; gap: 5px; align-items: center; border-radius: 6px; padding: 5px 7px; font-size: 8px; font-weight: 850; text-transform: uppercase; letter-spacing: .025em; }
 .room-badge.live { color: #ad2d58; background: #fce0e4; }

@@ -8,11 +8,12 @@ export type Room = {
   id: string; name: string; createdAt: number; updatedAt: number
   targetScore: number; roster: PlayerProfile[]; state: BankerState | null; pinned: boolean
 }
-export type RoomLibrary = { version: 1; rooms: Room[]; players: PlayerProfile[]; settings: { targetScore: number; reducedMotion: boolean } }
+export type PlayerStats = { matches: number; wins: number; best: number }
+export type RoomLibrary = { version: 2; rooms: Room[]; players: PlayerProfile[]; archivedStats: Record<string, PlayerStats>; settings: { targetScore: number; reducedMotion: boolean } }
 export const STORAGE_KEY = 'flip7.rooms.v1'
-export const STORAGE_LIMIT = 2 * 1024 * 1024
+export const STORAGE_LIMIT = 10 * 1024 * 1024
 const listeners = new Set<() => void>()
-const emptyLibrary = (): RoomLibrary => ({ version: 1, rooms: [], players: [], settings: { targetScore: 200, reducedMotion: false } })
+const emptyLibrary = (): RoomLibrary => ({ version: 2, rooms: [], players: [], archivedStats: {}, settings: { targetScore: 200, reducedMotion: false } })
 let library: RoomLibrary | undefined
 let storageError = ''
 
@@ -31,8 +32,11 @@ export function decodeLibrary(raw: string): RoomLibrary {
     const card = pickerCards.find((item) => item.id === value)
     if (!card) throw new Error('Unknown card in saved game.')
     return card
-  }) as RoomLibrary
-  if (data.version !== 1 || !Array.isArray(data.rooms) || !Array.isArray(data.players) || !data.settings) throw new Error('Unsupported save file.')
+  }) as Omit<RoomLibrary, 'version' | 'archivedStats'> & { version: number; archivedStats?: Record<string, PlayerStats> }
+  if (!data || ![1, 2].includes(data.version) || !Array.isArray(data.rooms) || !Array.isArray(data.players) || !data.settings) throw new Error('Unsupported save file.')
+  if (data.version === 2 || data.archivedStats !== undefined) {
+    if (!data.archivedStats || typeof data.archivedStats !== 'object' || Array.isArray(data.archivedStats) || !Object.entries(data.archivedStats).every(([id, stats]) => id.length > 0 && stats && typeof stats === 'object' && Number.isSafeInteger(stats.matches) && stats.matches >= 0 && Number.isSafeInteger(stats.wins) && stats.wins >= 0 && stats.wins <= stats.matches && Number.isSafeInteger(stats.best) && stats.best >= 0)) throw new Error('Invalid saved lifetime stats.')
+  }
   if (!Number.isInteger(data.settings.targetScore) || data.settings.targetScore < 50 || data.settings.targetScore > 500 || typeof data.settings.reducedMotion !== 'boolean') throw new Error('Invalid saved settings.')
   const ids = new Set<string>()
   const validProfile = (p: PlayerProfile) => typeof p?.id === 'string' && typeof p.name === 'string' && p.name.trim().length > 0 && p.name.length <= 24 && /^#[0-9a-f]{6}$/i.test(p.color)
@@ -53,7 +57,8 @@ export function decodeLibrary(raw: string): RoomLibrary {
       state.past = []; state.future = []
     }
   }
-  return data
+  // Version 1 saves retain all their room history; nothing needs to be counted twice.
+  return { ...data, version: 2, archivedStats: data.archivedStats ?? {} }
 }
 
 export function getLibrary(): RoomLibrary {
@@ -70,7 +75,22 @@ export function formatBytes(bytes: number) { return bytes < 1024 ? `${bytes} B` 
 export function updateLibrary(change: (current: RoomLibrary) => RoomLibrary) {
   const current = getLibrary()
   if (storageError) throw new Error(storageError)
-  const next = change(current)
+  let next = change(current)
+  const retainedIds = new Set(next.rooms.map(room => room.id))
+  const archivedStats = { ...next.archivedStats }
+  // Archive only removed, completed matches, in the same atomic save as cleanup.
+  for (const room of current.rooms) {
+    if (retainedIds.has(room.id) || room.state?.phase !== 'results') continue
+    for (const player of room.state.players) {
+      const previous = Object.hasOwn(archivedStats, player.id) ? archivedStats[player.id] : { matches: 0, wins: 0, best: 0 }
+      Object.defineProperty(archivedStats, player.id, { value: {
+        matches: previous.matches + 1,
+        wins: previous.wins + Number(room.state.winnerIds.includes(player.id)),
+        best: Math.max(previous.best, player.totalScore),
+      }, enumerable: true, configurable: true, writable: true })
+    }
+  }
+  next = { ...next, archivedStats }
   const raw = encodeLibrary(next)
   if (raw.length * 2 > STORAGE_LIMIT) throw new Error('Game storage is full. Export a backup, then remove old completed rooms in Settings to free space. Your previous save is safe.')
   try { localStorage.setItem(STORAGE_KEY, raw) }
@@ -110,9 +130,10 @@ export function editRoom(room: Room, name: string, targetScore: number, roster: 
   updateLibrary(current => ({ ...current, rooms: current.rooms.map(r => r.id === room.id ? { ...room, name: name.trim(), targetScore, roster, state, updatedAt: Date.now() } : r), players: [...current.players, ...roster.filter(p => !current.players.some(existing => existing.id === p.id))] }))
 }
 export function roomStatus(room: Room) { return !room.state ? 'Ready to play' : room.state.phase === 'results' ? 'Completed' : 'In progress' }
-export function playerStats(id: string, rooms = getLibrary().rooms) {
+export function playerStats(id: string, rooms = getLibrary().rooms, archivedStats = getLibrary().archivedStats): PlayerStats {
   const completed = rooms.filter(r => r.state?.phase === 'results' && r.roster.some(p => p.id === id))
-  return { matches: completed.length, wins: completed.filter(r => r.state?.winnerIds.includes(id)).length, best: Math.max(0, ...completed.map(r => r.state?.players.find(p => p.id === id)?.totalScore ?? 0)) }
+  const archived = Object.hasOwn(archivedStats, id) ? archivedStats[id] : { matches: 0, wins: 0, best: 0 }
+  return { matches: archived.matches + completed.length, wins: archived.wins + completed.filter(r => r.state?.winnerIds.includes(id)).length, best: Math.max(archived.best, ...completed.map(r => r.state?.players.find(p => p.id === id)?.totalScore ?? 0)) }
 }
 export function exportBackup() {
   const raw = storageError ? localStorage.getItem(STORAGE_KEY) ?? '' : encodeLibrary(getLibrary())
@@ -122,6 +143,9 @@ export function exportBackup() {
 }
 export function restoreBackup(raw: string) {
   const next = decodeLibrary(raw)
-  if (storageBytes(next) > STORAGE_LIMIT) throw new Error('This backup exceeds the 2 MB game-data limit.')
-  localStorage.setItem(STORAGE_KEY, encodeLibrary(next)); library = next; storageError = ''; listeners.forEach(listener => listener())
+  if (storageBytes(next) > STORAGE_LIMIT) throw new Error('This backup exceeds the 10 MB game-data limit.')
+  // Restore replaces the whole library, including lifetime stats, rather than merging counts.
+  try { localStorage.setItem(STORAGE_KEY, encodeLibrary(next)) }
+  catch { throw new Error('This device could not restore the backup. Its storage limit may be lower than 10 MB. Your previous save is safe.') }
+  library = next; storageError = ''; listeners.forEach(listener => listener())
 }

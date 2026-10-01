@@ -111,7 +111,7 @@ const faqGroups = [
       },
       {
         "question": "How much storage do saved games use?",
-        "answer": "Rooms save names, card IDs, and scores in a 2 MB game-data budget. The artwork is bundled once. Settings shows your storage usage and lets you remove completed rooms. Unfinished games are never automatically deleted."
+        "answer": "Rooms save names, card IDs, and scores with a 10 MB save limit; actual device storage limits may be lower. The artwork is bundled once. Clearing completed rooms removes detailed history but keeps lifetime player matches, wins, and best scores. Unfinished games are never automatically deleted."
       }
     ]
   }

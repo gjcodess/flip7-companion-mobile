@@ -32,7 +32,7 @@ function PrivacyPolicy() {
       <p>Because this mobile build is offline, game information is not transmitted to or shared with online service providers.</p>
     </LegalSection>
     <LegalSection id="retention" title="Storage and retention">
-      <p>Rooms and player profiles remain in this device’s local app storage until you remove them. Settings includes backup and completed-room cleanup controls. Clearing app data or uninstalling may remove these saves. The game-data budget is 2 MB; artwork is bundled separately.</p>
+      <p>Rooms and player profiles remain in this device’s local app storage until you remove them. Settings includes backup and completed-room cleanup controls. Removing completed rooms keeps compact lifetime player totals for matches, wins, and best scores, without keeping their detailed card history. Backups include these totals. Clearing app data or uninstalling may remove all saves. The game-data save limit is 10 MB; actual device limits may be lower, and artwork is bundled separately.</p>
       <p>Keeping the app offline reduces network exposure, but no device or software can guarantee absolute security.</p>
     </LegalSection>
     <LegalSection id="choices" title="Your choices">
