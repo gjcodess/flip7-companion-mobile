@@ -32,6 +32,17 @@
   background: #fffdf3;
   box-shadow: 2px 3px 0 #132d67;
 }
+.banker-shell.saved-room-game .banker-topbar:has(.game-topbar-brand) {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr) 80px;
+  gap: 8px;
+  background: transparent;
+  border-bottom: 0;
+}
+.banker-shell .banker-topbar > .brand-button { justify-self: start; color: #132d67; }
+.banker-shell .game-topbar-brand { display: grid; place-items: center; min-width: 0; }
+.banker-shell .game-topbar-brand img { display: block; width: min(100%, 92px); height: 44px; object-fit: contain; }
+.banker-shell .banker-topbar > .exit-button { justify-self: end; width: 80px; padding-inline: 10px; }
 :is(.banker-shell, .demo-shell) .topbar .exit-button {
   min-height: 44px;
   padding: 0 15px;
@@ -75,8 +86,10 @@
   scroll-padding-inline: 16px;
 }
 .banker-shell .banker-player-tab {
-  min-height: 76px;
-  padding: 11px 9px 13px;
+  min-height: 64px;
+  padding: 9px 9px 10px;
+  gap: 3px 6px;
+  align-content: center;
   border-width: 1.5px;
   border-radius: 12px;
   box-shadow: 2px 3px 0 #132d67;
@@ -86,8 +99,11 @@
 .banker-shell .banker-player-tab.busted { background-color: #ffe4e7; box-shadow: 2px 3px 0 #c32950; }
 .banker-shell .banker-player-tab.frozen { background-color: #dff3f8; box-shadow: 2px 3px 0 #2b7897; }
 .banker-shell .banker-player-tab.stayed { background-color: #eef6d9; box-shadow: 2px 3px 0 #4d8a45; }
-.banker-shell .banker-player-tab .mini-avatar { border-radius: 9px; border-width: 1.5px; box-shadow: 1px 2px 0 #132d6726; }
-.banker-shell .banker-player-tab > strong { bottom: 11px; left: 43px; }
+.banker-shell .banker-player-tab .mini-avatar { grid-row: 1 / span 2; border-radius: 9px; border-width: 1.5px; box-shadow: 1px 2px 0 #132d6726; }
+/* Optical centering for uppercase initials: compensate for the font's descent space. */
+.banker-shell .banker-player-tab .banker-avatar-initial { line-height: 1; transform: translateY(1px); }
+.banker-shell .banker-player-tab .opponent-copy { grid-column: 2; grid-row: 1; gap: 2px; padding-bottom: 0; }
+.banker-shell .banker-player-tab > strong { position: static; grid-column: 2; grid-row: 2; }
 :is(.banker-shell, .demo-shell) .table-area { background: none; padding-top: 18px; }
 :is(.banker-shell, .demo-shell) .section-kicker { align-items: center; flex-wrap: wrap; font-size: 10px; letter-spacing: .06em; line-height: 1.6; }
 :is(.banker-shell, .demo-shell) .organize-button {
