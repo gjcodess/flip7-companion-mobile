@@ -29,7 +29,7 @@ type AppNavigationContextValue = {
 
 const navigationContext = createContext<AppNavigationContextValue | null>(null)
 
-const publicPaths = new Set(['/','/landing','/play','/demo','/banker','/rules','/faq','/privacy','/terms','/contact'])
+const publicPaths = new Set(['/','/landing','/play','/demo','/banker','/rules','/faq','/privacy','/terms','/contact','/players','/history','/settings','/new','/room'])
 
 export function readAppLocation(): AppLocation {
   return { pathname: window.location.pathname, search: window.location.search, hash: window.location.hash }
@@ -200,7 +200,7 @@ type ViewTransitionDocument = Document & {
 }
 
 export function runAppViewTransition(update: () => void, options?: { skip?: boolean }) {
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.classList.contains('room-reduced-motion')
   const startViewTransition = (document as ViewTransitionDocument).startViewTransition
   if (options?.skip || reducedMotion || !startViewTransition) {
     update()

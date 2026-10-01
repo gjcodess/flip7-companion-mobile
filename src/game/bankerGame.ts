@@ -14,6 +14,7 @@ export type BankerPlayer = {
 export type BankerRoundResult = {
   round: number
   scores: Record<string, number>
+  hands?: Record<string, { name: string; color: string; status: DemoStatus; entries: DemoState['entries'] }>
 }
 
 export type BankerForcedTurn = {
@@ -102,7 +103,7 @@ function bankerSnapshot(state: BankerState): BankerSnapshot {
 }
 
 function commitBankerState(previous: BankerState, next: BankerState): BankerState {
-  return { ...next, past: [...previous.past, bankerSnapshot(previous)], future: [] }
+  return { ...next, past: [...previous.past, bankerSnapshot(previous)].slice(-30), future: [] }
 }
 
 function undoBankerState(state: BankerState): BankerState {
@@ -240,7 +241,8 @@ export function bankerReducer(state: BankerState, action: BankerAction): BankerS
     if (!allBankerPlayersSettled(state)) return state
     const scores = Object.fromEntries(state.players.map((player) => [player.id, bankerPlayerDerived(player).score]))
     const players = state.players.map((player) => ({ ...player, totalScore: player.totalScore + (scores[player.id] ?? 0) }))
-    const history = [...state.history, { round: state.roundNumber, scores }]
+    const hands = Object.fromEntries(state.players.map((player) => [player.id, { name: player.name, color: player.color, status: player.round.status, entries: player.round.entries }]))
+    const history = [...state.history, { round: state.roundNumber, scores, hands }]
     const reachedTarget = players.some((player) => player.totalScore >= state.targetScore)
     if (reachedTarget) {
       const highestScore = Math.max(...players.map((player) => player.totalScore))

@@ -1,13 +1,14 @@
 import { useCallback, useEffect, type ReactNode, useState } from 'react'
+import { MotionConfig } from 'motion/react'
 import { AppNavigationProvider, PageTransition, currentNavigableUrl, readAppLocation, runAppViewTransition, toNavigablePath, type AppLocation } from './lib/navigation'
-import { LandingScreen } from './pages/landing/LandingScreen'
 import { RulesScreen } from './pages/rules/RulesScreen'
 import { FAQScreen } from './pages/faq/FAQScreen'
 import { LegalScreen } from './pages/legal/LegalScreen'
 import { ContactScreen } from './pages/contact/ContactScreen'
-import { LocalModeScreen } from './pages/local/LocalModeScreen'
 import { DemoScreen } from './pages/game/DemoScreen'
 import { BankerScreen } from './pages/game/BankerScreen'
+import { MobileApp } from './pages/mobile/MobileApp'
+import { useLibrary } from './lib/room-store'
 
 const viewTransitionPaths = new Set(['/landing', '/play', '/rules', '/faq', '/privacy', '/terms', '/contact'])
 
@@ -16,6 +17,8 @@ function shouldSkipViewTransition(fromPath: string, toPath: string) {
 }
 
 export default function App() {
+  const library = useLibrary()
+  useEffect(() => { document.documentElement.classList.toggle('room-reduced-motion', library.settings.reducedMotion) }, [library.settings.reducedMotion])
   const [location, setLocation] = useState<AppLocation>(() => {
     const current = readAppLocation()
     return { ...current, pathname: current.pathname === '/' ? '/landing' : current.pathname }
@@ -54,7 +57,6 @@ export default function App() {
   const isDemoPage = location.pathname === '/demo'
   const isBankerPage = location.pathname === '/banker'
   const isPlayPage = location.pathname === '/play'
-  const showLanding = location.pathname === '/landing'
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
       if (location.hash) {
@@ -66,8 +68,6 @@ export default function App() {
     return () => window.cancelAnimationFrame(frame)
   }, [location.pathname, location.search, location.hash])
 
-  const enterApp = () => navigate('/play', { replace: true })
-
   let content: ReactNode
   if (isRulesPage) content = <RulesScreen />
   else if (isFAQPage) content = <FAQScreen />
@@ -75,12 +75,15 @@ export default function App() {
   else if (isTermsPage) content = <LegalScreen kind="terms" />
   else if (isContactPage) content = <ContactScreen />
   else if (isDemoPage) content = <DemoScreen />
-  else if (isBankerPage) content = <BankerScreen />
-  else if (isPlayPage) content = <LocalModeScreen />
-  else if (showLanding) content = <LandingScreen onStart={enterApp} />
-  else content = <LandingScreen onStart={enterApp} />
+  else if (isBankerPage) { const roomId = new URLSearchParams(location.search).get('room'); content = roomId ? <BankerScreen key={roomId} roomId={roomId} /> : <MobileApp key="new" page="new" /> }
+  else if (isPlayPage || location.pathname === '/new') content = <MobileApp key="new" page="new" />
+  else if (location.pathname === '/players') content = <MobileApp key="players" page="players" />
+  else if (location.pathname === '/history') content = <MobileApp key="history" page="history" />
+  else if (location.pathname === '/settings') content = <MobileApp key="settings" page="settings" />
+  else if (location.pathname === '/room') content = <MobileApp key={`room-${location.search}`} page="room" roomId={new URLSearchParams(location.search).get('id') ?? undefined} />
+  else content = <MobileApp key="home" page="home" />
 
-  return <AppNavigationProvider navigate={navigate} onPopState={syncLocationFromHistory}>
+  return <MotionConfig reducedMotion={library.settings.reducedMotion ? 'always' : 'user'}><AppNavigationProvider navigate={navigate} onPopState={syncLocationFromHistory}>
     <PageTransition routeKey={`${location.pathname}${location.search}`}>{content}</PageTransition>
-  </AppNavigationProvider>
+  </AppNavigationProvider></MotionConfig>
 }
