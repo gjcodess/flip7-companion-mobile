@@ -15,22 +15,36 @@ export function useKeyboardVisible(): boolean {
     const viewport = window.visualViewport
     const viewportHeight = () => Math.min(window.innerHeight, viewport?.height ?? window.innerHeight)
     let fullHeight = viewportHeight()
+    let focusedAt = 0
+    let focusTimer: ReturnType<typeof setTimeout> | undefined
+    let blurFrame = 0
     const update = () => {
       const typing = isTypingField(document.activeElement)
       const currentHeight = viewportHeight()
       if (!typing) fullHeight = Math.max(fullHeight, currentHeight)
-      setVisible(typing && fullHeight - currentHeight > 120)
+      setVisible(fullHeight - currentHeight > 120 || (typing && Date.now() - focusedAt < 500))
+    }
+    const handleFocusIn = () => {
+      if (isTypingField(document.activeElement)) {
+        focusedAt = Date.now()
+        setVisible(true)
+        clearTimeout(focusTimer)
+        focusTimer = setTimeout(update, 500)
+      } else update()
     }
     const resetHeight = () => { fullHeight = viewportHeight(); update() }
 
-    document.addEventListener('focusin', update)
-    document.addEventListener('focusout', update)
+    document.addEventListener('focusin', handleFocusIn)
+    const handleFocusOut = () => { blurFrame = window.requestAnimationFrame(update) }
+    document.addEventListener('focusout', handleFocusOut)
     window.addEventListener('resize', update)
     viewport?.addEventListener('resize', update)
     window.addEventListener('orientationchange', resetHeight)
     return () => {
-      document.removeEventListener('focusin', update)
-      document.removeEventListener('focusout', update)
+      clearTimeout(focusTimer)
+      window.cancelAnimationFrame(blurFrame)
+      document.removeEventListener('focusin', handleFocusIn)
+      document.removeEventListener('focusout', handleFocusOut)
       window.removeEventListener('resize', update)
       viewport?.removeEventListener('resize', update)
       window.removeEventListener('orientationchange', resetHeight)

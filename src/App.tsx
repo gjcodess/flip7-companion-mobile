@@ -1,5 +1,8 @@
 import { useCallback, useEffect, type ReactNode, useState } from 'react'
+import { App as CapacitorApp } from '@capacitor/app'
+import { Capacitor } from '@capacitor/core'
 import { MotionConfig } from 'motion/react'
+import { ConfirmationModal } from './components/ConfirmationModal'
 import { AppNavigationProvider, PageTransition, currentNavigableUrl, readAppLocation, runAppViewTransition, toNavigablePath, type AppLocation } from './lib/navigation'
 import { RulesScreen } from './pages/rules/RulesScreen'
 import { FAQScreen } from './pages/faq/FAQScreen'
@@ -18,6 +21,19 @@ function shouldSkipViewTransition(fromPath: string, toPath: string) {
 }
 
 export default function App() {
+  const [showExitPrompt, setShowExitPrompt] = useState(false)
+  useEffect(() => {
+    if (Capacitor.getPlatform() !== 'android') return
+    let active = true
+    let listener: { remove: () => Promise<void> } | undefined
+    void CapacitorApp.addListener('backButton', () => {
+      setShowExitPrompt(current => !current)
+    }).then(handle => {
+      if (active) listener = handle
+      else void handle.remove()
+    })
+    return () => { active = false; void listener?.remove() }
+  }, [])
   useEffect(() => {
     // Warm the lightweight picker previews after the first screen has painted.
     if ('requestIdleCallback' in window) {
@@ -95,5 +111,6 @@ export default function App() {
 
   return <MotionConfig reducedMotion={library.settings.reducedMotion ? 'always' : 'user'}><AppNavigationProvider navigate={navigate} onPopState={syncLocationFromHistory}>
     <PageTransition routeKey={`${location.pathname}${location.search}`}>{content}</PageTransition>
+    {showExitPrompt && <ConfirmationModal eyebrow="EXIT APP" title="Leave Flip7 Companion?" message="Your saved rooms and player records will be here when you come back." cancelLabel="Stay" confirmLabel="Exit app" onCancel={() => setShowExitPrompt(false)} onConfirm={() => { void CapacitorApp.exitApp() }} />}
   </AppNavigationProvider></MotionConfig>
 }
