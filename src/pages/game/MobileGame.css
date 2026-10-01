@@ -16,6 +16,11 @@
   outline: 3px solid #ed4f7e;
   outline-offset: 4px;
 }
+:is(.banker-shell, .demo-shell) :is(input, textarea):focus {
+  outline: none;
+  border-color: #ed4f7e;
+  box-shadow: 3px 3px 0 #ed4f7e;
+}
 :is(.banker-shell, .demo-shell) .topbar {
   min-height: calc(70px + env(safe-area-inset-top, 0px));
   padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 12px;

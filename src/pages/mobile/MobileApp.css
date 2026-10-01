@@ -37,7 +37,6 @@
 }
 
 .room-app-shell button:focus-visible,
-.room-app-shell input:focus-visible,
 .room-app-shell select:focus-visible,
 .room-app-shell summary:focus-visible {
   outline: 3px solid #ed4f7e;
@@ -95,6 +94,22 @@
   pointer-events: none;
   z-index: 1;
   transform-origin: center center;
+}
+
+.room-app-shell :is(input:not([type="file"]), textarea):focus {
+  outline: none;
+  border-color: var(--pink);
+  box-shadow: 3px 3px 0 var(--pink);
+}
+
+.room-app-shell .room-search:focus-within {
+  border-color: var(--pink);
+  box-shadow: 3px 3px 0 var(--pink);
+}
+
+.room-app-shell .room-search input:focus {
+  outline: none;
+  box-shadow: none;
 }
 
 .room-page-art {
@@ -2000,14 +2015,62 @@
   margin-top: 4px;
 }
 
-.room-setting-row select {
-  border: 1px solid #d7ceb5;
+.room-score-dropdown { position: relative; flex-shrink: 0; }
+.room-settings-group:has(.room-score-dropdown[open]) { z-index: 5; }
+.room-score-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
+  min-height: 44px;
+  border: 1.5px solid var(--ink);
   background: var(--cream);
+  border-radius: 10px;
+  box-shadow: 2px 3px 0 var(--ink);
+  padding: 8px 10px;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  list-style: none;
+  cursor: pointer;
+}
+.room-score-trigger::-webkit-details-marker { display: none; }
+.room-score-dropdown[open] .room-score-trigger {
+  border-color: var(--pink);
+  box-shadow: 3px 3px 0 var(--pink);
+}
+.room-score-dropdown[open] .room-score-trigger svg { transform: rotate(180deg); }
+.room-score-options {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 25;
+  width: 140px;
+  padding: 5px;
+  display: grid;
+  gap: 3px;
+  background: #fffdf3;
+  border: 1.5px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 3px 4px 0 var(--ink);
+}
+.room-score-options button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 0;
   border-radius: 7px;
-  padding: 9px 3px;
-  font-size: 10px;
+  background: transparent;
+  text-align: left;
+  font-size: 12px;
   font-weight: 800;
 }
+.room-score-options button.selected { background: var(--yellow); }
+.room-score-options button:hover { background: var(--cream); }
+.room-score-options button.selected:hover { background: var(--yellow); }
 
 .room-setting-row.danger {
   color: #c33258;
