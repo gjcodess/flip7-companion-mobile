@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, ChevronDown, ChevronRight, CircleHelp, Download, Flag, FolderOpen, History, Home, Medal, MoreHorizontal, Pencil, Pin, Play, Plus, Search, Settings, ShieldCheck, Sparkles, Trash2, Trophy, Upload, UserPlus, Users, X } from 'lucide-react'
 import { useAppNavigation } from '../../lib/navigation'
+import { useScrollNav } from '../../lib/use-scroll-nav'
 import { canEditRoster, createRoom, decodeLibrary, editRoom, exportBackup, formatBytes, getStorageError, newProfile, playerStats, restoreBackup, roomStatus, saveRoom, startRoom, STORAGE_LIMIT, storageBytes, updateLibrary, useLibrary, type PlayerProfile, type Room } from '../../lib/room-store'
 import { bankerPlayerColors } from '../../game/bankerGame'
 import { CardArtwork } from '../../components/CardArtwork'
@@ -16,9 +17,10 @@ function ActionButton({ children, onClick, secondary = false, disabled = false }
 
 export function BottomNav({ page }: { page: MobilePage }) {
   const navigate = useAppNavigation()
+  const { navRef, hidden, reveal } = useScrollNav(page)
   const tabs = [{ page: 'home', label: 'Home', icon: Home }, { page: 'players', label: 'Players', icon: Users }, { page: 'new', label: 'New room', icon: Plus }, { page: 'history', label: 'History', icon: History }, { page: 'settings', label: 'Settings', icon: Settings }] as const
   const activePage = page === 'room' ? 'home' : page
-  return <nav className="room-bottom-nav" aria-label="Main navigation">{tabs.map(item => <button type="button" key={item.page} aria-current={activePage === item.page ? 'page' : undefined} aria-label={item.label} className={`${item.page === 'new' ? 'nav-create' : 'nav-item'} ${activePage === item.page ? 'active' : ''}`} onClick={() => navigate(routes[item.page])}><span className="nav-icon"><item.icon size={item.page === 'new' ? 27 : 22} strokeWidth={2.3} /></span><span className="nav-label">{item.label}</span></button>)}</nav>
+  return <nav ref={navRef} className={`room-bottom-nav${hidden ? ' is-scroll-hidden' : ''}`} onFocusCapture={reveal} aria-label="Main navigation">{tabs.map(item => <button type="button" key={item.page} aria-current={activePage === item.page ? 'page' : undefined} aria-label={item.label} className={`${item.page === 'new' ? 'nav-create' : 'nav-item'} ${activePage === item.page ? 'active' : ''}`} onClick={() => navigate(routes[item.page])}><span className="nav-icon"><item.icon size={item.page === 'new' ? 27 : 22} strokeWidth={2.3} /></span><span className="nav-label">{item.label}</span></button>)}</nav>
 }
 
 function RoomCard({ room, feature = false }: { room: Room; feature?: boolean }) {
