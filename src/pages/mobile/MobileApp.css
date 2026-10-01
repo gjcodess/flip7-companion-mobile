@@ -1,6 +1,6 @@
-.room-app-active { background: #fff7da; }
-.room-app-active body { background: #fff7da; }
-.room-app-shell { --ink: #132d67; --cream: #fff7da; --yellow: #ffe05c; --pink: #ed4f7e; --cyan: #57b8d7; color: var(--ink); min-height: 100dvh; background: var(--cream); font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+.room-app-active { background: #f3e5b5; }
+.room-app-active body { background: #f3e5b5; }
+.room-app-shell { --ink: #132d67; --cream: #fff7da; --yellow: #ffe05c; --pink: #ed4f7e; --cyan: #57b8d7; color: var(--ink); min-height: 100dvh; background: #f3e5b5; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
 .room-app-shell button, .room-app-shell input, .room-app-shell select { font: inherit; color: inherit; }
 .room-app-shell button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .room-app-shell button:disabled { cursor: default; opacity: .4; }
