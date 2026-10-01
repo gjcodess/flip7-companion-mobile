@@ -2079,6 +2079,7 @@
   font-weight: 800;
 }
 .room-score-options button.selected { background: var(--yellow); }
+.room-score-options button span small { display: block; margin-top: 2px; color: #53607a; font-size: 8px; font-weight: 850; letter-spacing: .04em; }
 .room-score-options button:hover { background: var(--cream); }
 .room-score-options button.selected:hover { background: var(--yellow); }
 
