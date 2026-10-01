@@ -18,11 +18,13 @@
 .room-create-banner { background-image: none; }
 .room-create-banner::after { display: none; }
 /* Corner-only print texture, behind content and never intercepting card controls. */
-.room-app-main:is(.page-home, .page-players, .page-history, .page-settings) :is(.library-room-card, .room-profile-card, .room-create-banner, .room-history-banner, .room-storage-panel, .room-settings-group, .room-crew-banner, .room-empty) {
+.room-app-main:is(.page-home, .page-players, .page-history, .page-settings) :is(.library-room-card, .room-profile-card, .room-create-banner, .room-history-banner, .room-storage-panel, .room-settings-group, .room-crew-banner, .room-empty),
+.room-app-main.page-room :is(.room-detail-hero, .room-standings, .room-round-detail, .room-history-hand, .room-current-note) {
   position: relative;
   isolation: isolate;
 }
-.room-app-main:is(.page-home, .page-players, .page-history, .page-settings) :is(.library-room-card, .room-profile-card, .room-create-banner, .room-history-banner, .room-storage-panel, .room-settings-group, .room-crew-banner, .room-empty)::before {
+.room-app-main:is(.page-home, .page-players, .page-history, .page-settings) :is(.library-room-card, .room-profile-card, .room-create-banner, .room-history-banner, .room-storage-panel, .room-settings-group, .room-crew-banner, .room-empty)::before,
+.room-app-main.page-room :is(.room-detail-hero, .room-standings, .room-round-detail, .room-history-hand, .room-current-note)::before {
   content: '';
   position: absolute;
   inset: 0;
