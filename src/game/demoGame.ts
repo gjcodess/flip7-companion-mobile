@@ -143,7 +143,7 @@ function snapshot(state: DemoState): DemoSnapshot {
 }
 
 function commit(state: DemoState, next: DemoSnapshot): DemoState {
-  return { ...next, past: [...state.past, snapshot(state)], future: [] }
+  return { ...next, past: [...state.past, snapshot(state)].slice(-30), future: [] }
 }
 
 function rebuild(entries: DemoEntry[], nextId: number) {

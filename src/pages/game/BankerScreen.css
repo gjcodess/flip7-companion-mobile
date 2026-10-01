@@ -90,4 +90,26 @@
 .banker-results .results-card { margin-top: 18px; }
 .banker-results .results-actions { display: grid; gap: 12px; }
 .banker-results .results-actions p { margin-bottom: 0; }
+.banker-results .results-hero { background: #ffe05c; border-bottom: 2px solid #132d67; }
+.banker-results .results-hero h1 { margin: 9px 0 12px; font-size: 32px; line-height: 1.15; letter-spacing: -1px; }
+.banker-results .results-hero p { font-size: 13px; line-height: 1.7; }
+.banker-results .results-card { margin: 24px 18px; border: 1.5px solid #132d67; border-radius: 14px; padding: 18px 14px; background: #fffdf3; box-shadow: 3px 4px 0 #132d67; }
+.banker-results .results-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 19px; }
+.banker-results .results-heading .eyebrow { font-size: 8px; color: #c53264; }
+.banker-results .results-heading h2 { font-size: 22px; margin: 5px 0 0; }
+.banker-results .results-list { display: grid; gap: 12px; }
+.banker-results .results-player { display: grid; grid-template-columns: 16px 30px minmax(0, 1fr) auto; align-items: center; gap: 7px; padding: 14px 10px; border: 1px solid #d7cfb4; border-radius: 10px; }
+.banker-results .results-player.winner { background: #fff0b7; border-color: #132d67; box-shadow: 2px 2px 0 #ffe05c; }
+.banker-results .results-rank { font-size: 11px; font-weight: 800; color: #66718a; }
+.banker-results .results-player .mini-avatar { width: 30px; height: 30px; }
+.banker-results .results-player-copy { min-width: 0; }
+.banker-results .results-player-name b { display: block; font-size: 13px; line-height: 1.4; overflow-wrap: anywhere; }
+.banker-results .results-player-name small { display: none; }
+.banker-results .results-rounds { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
+.banker-results .round-score { font-size: 9px; padding: 4px 5px; border-radius: 4px; background: #f0ead4; line-height: 1.3; }
+.banker-results .results-total { display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 3px; }
+.banker-results .results-total small { font-size: 8px; color: #66718a; }
+.banker-results .results-total strong { font-size: 24px; line-height: 1; }
+.banker-results .results-actions { padding: 0 20px 20px; }
+.banker-results .results-actions > p { color: #53607a; font-size: 12px; line-height: 1.7; }
 @media (max-width: 520px) { .banker-topbar .topbar-caption { display: none; }.banker-player-tab { flex-basis: 125px; }.banker-hero > svg { width: 40px; height: 40px; } }

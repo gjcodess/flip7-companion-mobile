@@ -14,18 +14,23 @@ The mobile build includes:
 
 - Banker Mode for a whole group sharing one phone or tablet.
 - Demo Mode for private practice.
-- The same responsive Carnival Table interface used by the mobile web layout.
+- A mobile room library, reusable player profiles, match history, and settings.
+- A floating Home / Players / + / History / Settings dock.
 - Local card artwork bundled in the app, with compact WebP assets.
-- No accounts, room codes, multiplayer screens, analytics, backend calls, or internet requirement.
+- Saved offline rooms with automatic game resume and per-round scores and card records.
+- No accounts, online room codes, multiplayer networking, analytics, backend calls, or internet requirement.
 
-The active table is held in memory. Leaving or refreshing the app clears that session.
+Banker rooms are saved automatically in device-local app storage. Leaving, refreshing, or reopening the app retains the current cards, scores, and turn order. Demo practice remains temporary.
+
+Game data has a 2 MB budget, measured conservatively as UTF-16 JSON size. Recorded cards reference the bundled card catalog by ID; images are never duplicated in match saves. Undo snapshots remain in memory and reset when reopening a table. Failed writes retain the previous save and offer a retry before play continues. Settings shows storage usage, backup export/restore, and explicit completed-room cleanup; active rooms are never automatically deleted.
 
 ## Playing offline
 
-1. Open the app and choose **Banker Mode** or **Demo Mode**.
-2. In Banker Mode, add the player names, choose a target score, and start the table.
+1. Open Home and tap **+** to create a room.
+2. Name the room, add 3–18 players, choose a target score, and start or save it for later.
 3. Record the cards revealed from the physical deck.
 4. Use the existing Hit, Stay / Bank, action-card, correction, undo, and round controls.
+5. Return to the room to review standings and each completed round’s cards. Add players before the first card of a round; they join with zero points. Started participants remain in the record.
 
 The APK contains the JavaScript bundle, styles, icons, and card artwork. It does not need a server or internet connection after installation.
 
@@ -65,9 +70,13 @@ The current named copy is `android/app/build/outputs/apk/debug/flip7-companion-m
 
 | Route | Purpose |
 | --- | --- |
-| `/landing` | Mobile landing page and entry point. |
-| `/play` | Offline mode chooser. |
-| `/banker` | Local one-device Banker Mode. |
+| `/landing` | Home and saved room library. |
+| `/players` | Reusable player profiles and match stats. |
+| `/history` | Completed and active match records. |
+| `/settings` | Preferences, storage, backups, and help. |
+| `/new`, `/play` | Create a room and choose its players. |
+| `/room?id=…` | Room standings, editing, and per-round card history. |
+| `/banker?room=…` | Local one-device Banker Mode for a saved room. |
 | `/demo` | Local solo practice table. |
 | `/rules` | Illustrated game rules and scoring reference. |
 | `/faq` | Offline app and gameplay answers. |
@@ -83,8 +92,8 @@ The current named copy is `android/app/build/outputs/apk/debug/flip7-companion-m
 | Android wrapper | Capacitor 8 |
 | Animation | Motion |
 | Icons | Lucide React |
-| Game state | Local React reducers and in-memory state |
-| Styling | Existing responsive Carnival Table CSS |
+| Game state | Local React reducers and compact versioned device saves |
+| Styling | Mobile room shell with preserved Carnival Table gameplay visuals |
 
 ## Project structure
 
@@ -111,11 +120,12 @@ android/                    # Capacitor Android project
 
 ## Design and gameplay
 
-The mobile app intentionally keeps the existing game logic, scoring rules, action-card behavior, card artwork, and mobile layout. This repository is the offline mobile version; the separate web project remains responsible for any online functionality.
+The mobile app keeps the existing scoring rules, action-card behavior, and card artwork. The surrounding mobile screens use the same carnival colors and art style. This repository is the offline mobile version; the separate web project remains responsible for any online functionality.
 
 ## Current limitations
 
-- Game sessions are temporary and are not synchronized between devices.
+- Rooms are local to the device and are not synchronized online. Clearing app data or uninstalling may remove local saves.
+- Backup export uses the platform’s browser download handling. Native Android file export still needs device-level verification.
 - The app is a companion to the physical deck and does not deal cards automatically.
 - The contact form is not built yet; the Contact page provides a copyable email action.
 

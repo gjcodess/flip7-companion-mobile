@@ -4,5 +4,7 @@
 @import './styles/local.css';
 @import './styles/shared-overrides.css';
 @import './pages/landing/LandingScreen.css';
-@import './pages/rules/RulesScreen.css';
 @import './styles/finishing.css';
+@import './pages/mobile/MobileApp.css';
+@import './pages/mobile/InfoPage.css';
+@import './pages/game/MobileGame.css';

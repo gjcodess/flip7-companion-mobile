@@ -1,103 +1,136 @@
-import { useEffect, useState } from 'react'
-import { Menu, X } from 'lucide-react'
-import { LandingFooter } from '../landing/LandingFooter'
-import './FAQScreen.css'
+import { useState } from 'react'
+import { Search, ChevronDown, CircleHelp } from 'lucide-react'
+import { AssetCardFan, InfoPage, InfoPlayCallout } from '../mobile/InfoPage'
 
-function FAQItem({ question, children, open = false }: { question: string; children: string; open?: boolean }) {
-  return <details className="faq-item" open={open}>
-    <summary><span>{question}</span><b aria-hidden="true">+</b></summary>
-    <p>{children}</p>
-  </details>
-}
+const faqGroups = [
+  {
+    "id": "start",
+    "title": "Before the first flip.",
+    "label": "Getting started",
+    "items": [
+      {
+        "question": "What is Flip7 Companion?",
+        "answer": "It is an offline companion for the physical Flip 7 card game. You use the real deck, while the app keeps the local player tables, cards, and scores together on the device."
+      },
+      {
+        "question": "Do I need the physical Flip 7 deck?",
+        "answer": "Yes. The app does not draw cards for you. Players flip from the physical deck and record each card in front of them."
+      },
+      {
+        "question": "How do I start a game?",
+        "answer": "Tap the central + button, name your room, add at least three players, and choose a target score. Start immediately or save the room for later."
+      },
+      {
+        "question": "How do players join?",
+        "answer": "The banker adds each player's name locally. The group then uses the same device to record cards and actions as the round moves around the table."
+      },
+      {
+        "question": "What is Banker Mode?",
+        "answer": "Banker Mode lets one person run the whole table from one device. The banker switches between player tables to record cards and actions, while keeping the player order and scores together locally."
+      },
+      {
+        "question": "Can I resume a game?",
+        "answer": "Yes. Rooms save automatically on this device. Open a room from Home to resume its current round or see scores and cards in Round history. Add players before the first card of a new round."
+      },
+      {
+        "question": "What is Demo Mode?",
+        "answer": "Demo Mode is a private practice table for trying the card flow and scoring by yourself. It does not save the session online."
+      }
+    ]
+  },
+  {
+    "id": "rounds",
+    "title": "Make the call.",
+    "label": "Playing a round",
+    "items": [
+      {
+        "question": "What does Hit do?",
+        "answer": "Hit records another card in front of you so you can keep building your round score. A duplicate Number card makes you bust unless a Second Chance card cancels it."
+      },
+      {
+        "question": "What does Stay / Bank do?",
+        "answer": "Stay ends your turn for the round and banks the points you have collected. You cannot receive more cards after banking."
+      },
+      {
+        "question": "What happens when I bust?",
+        "answer": "Your round score becomes zero and your turn ends automatically. The cards stay visible so the table can see what happened, and the round continues for the other active players."
+      },
+      {
+        "question": "When does the round end?",
+        "answer": "The round ends when everyone is banked, frozen, or busted, or when a player reveals seven unique Number cards and earns the Flip 7 bonus."
+      }
+    ]
+  },
+  {
+    "id": "cards",
+    "title": "Know what counts.",
+    "label": "Cards & scoring",
+    "items": [
+      {
+        "question": "How is a round scored?",
+        "answer": "Add the Number cards, apply ×2 if you have it, add any +2 through +10 Modifier points, then add the +15 Flip 7 bonus if you revealed seven unique Number cards."
+      },
+      {
+        "question": "Do Modifier cards count toward Flip 7?",
+        "answer": "No. Modifier cards change the score but do not count as unique Number cards. You cannot bust on a Modifier card."
+      },
+      {
+        "question": "What does Second Chance do?",
+        "answer": "It cancels one duplicate Number card. Discard the Second Chance card with the duplicate and keep the rest of your round."
+      },
+      {
+        "question": "What do Freeze and Flip Three do?",
+        "answer": "Freeze banks an active player. Flip Three makes an active player accept three cards one at a time."
+      }
+    ]
+  },
+  {
+    "id": "app",
+    "title": "Keep the table moving.",
+    "label": "Local app",
+    "items": [
+      {
+        "question": "Who can start the next round?",
+        "answer": "The banker can proceed once every player is banked, frozen, or busted. The next round starts after the current scores are settled."
+      },
+      {
+        "question": "Can I fix a recording mistake?",
+        "answer": "Yes. Use the card controls, edit or remove the incorrect card, or use Undo while the round is still being recorded."
+      },
+      {
+        "question": "Can I use the app on my phone?",
+        "answer": "Yes. Install the mobile app and use Demo Mode or Banker Mode without an internet connection."
+      },
+      {
+        "question": "Does the app need an internet connection?",
+        "answer": "No. Demo Mode and Banker Mode run locally, and the app does not send game data online."
+      },
+      {
+        "question": "What happens when someone reaches 200 points?",
+        "answer": "The game ends after the round is settled. The player with the most total points wins."
+      },
+      {
+        "question": "How much storage do saved games use?",
+        "answer": "Rooms save names, card IDs, and scores with a 10 MB save limit; actual device storage limits may be lower. The artwork is bundled once. Clearing completed rooms removes detailed history but keeps lifetime player matches, wins, and best scores. Unfinished games are never automatically deleted."
+      }
+    ]
+  }
+]
 
 export function FAQScreen() {
-  const [navScrolled, setNavScrolled] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-
-  useEffect(() => {
-    const onScroll = () => setNavScrolled(window.scrollY > 8)
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
-
-  const closeMobileMenu = () => setMobileMenuOpen(false)
-
-  return <div className="landing-page faq-page">
-    <header className={`landing-nav ${navScrolled ? 'scrolled' : ''}`}>
-      <div className="landing-nav-inner">
-        <a href="/" className="faq-brand"><img className="landing-logo" src="/assets/flip7-title-logo.png" alt="Flip7 Companion" /></a>
-        <nav className="landing-top-links" aria-label="Primary navigation">
-          <a href="/">Home</a><a href="/#landing-how">How it Works</a><a href="/rules">Rules</a><a href="/faq">FAQ</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/contact">Contact</a>
-        </nav>
-        <a href="/play" className="landing-signin">PLAY!</a>
-        <button className="landing-mobile-toggle" type="button" aria-expanded={mobileMenuOpen} aria-controls="faq-mobile-menu" aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'} onClick={() => setMobileMenuOpen((open) => !open)}>{mobileMenuOpen ? <X size={21} /> : <Menu size={21} />}</button>
-      </div>
-      {mobileMenuOpen && <><button className="landing-mobile-backdrop" type="button" aria-label="Close navigation menu" onClick={closeMobileMenu} /><div id="faq-mobile-menu" className="landing-mobile-menu"><nav aria-label="Mobile navigation"><a href="/" onClick={closeMobileMenu}>Home</a><a href="/#landing-how" onClick={closeMobileMenu}>How it Works</a><a href="/rules" onClick={closeMobileMenu}>Game Rules</a><a href="/faq" onClick={closeMobileMenu}>Frequently Asked Questions</a><a href="/privacy" onClick={closeMobileMenu}>Data Privacy Policy</a><a href="/terms" onClick={closeMobileMenu}>Terms &amp; Conditions</a><a href="/contact" onClick={closeMobileMenu}>Contact Us</a></nav><a href="/play" className="landing-mobile-signin" onClick={closeMobileMenu}>PLAY!</a></div></>}
-    </header>
-
-    <main className="faq-main">
-      <section className="faq-hero">
-        <div className="faq-hero-inner">
-          <span className="eyebrow">FLIP7 COMPANION · QUICK ANSWERS</span>
-          <h1>Questions?<br /><em>Keep playing.</em></h1>
-          <p>Find the quick answer, then get back to the table. These answers cover local setup, rounds, cards, scoring, and the companion app.</p>
-          <div className="faq-hero-badges"><span>Local setup</span><span>Cards</span><span>Scoring</span><span>Players</span></div>
-        </div>
-        <div className="faq-hero-cards" aria-hidden="true"><img src="/cards/SECOND CHANCE.webp" alt="" /><img src="/cards/5.webp" alt="" /><img src="/cards/FREEZE.webp" alt="" /></div>
-      </section>
-
-      <div className="faq-content">
-        <section className="faq-intro faq-panel faq-panel-cyan">
-          <div><span className="eyebrow">NEED THE SHORT VERSION?</span><h2>Set up the table, then press your luck.</h2><p>Choose Banker Mode to run the whole table on one device, or use Demo Mode to practice. Everyone records the physical cards they flip, chooses when to bank, and works toward 200 points.</p></div>
-          <div className="faq-quick-actions"><a href="/play" className="faq-primary">Choose a mode</a><a href="/rules" className="faq-secondary">Read the rules</a></div>
-        </section>
-
-        <div className="faq-grid">
-          <section className="faq-panel faq-group faq-group-yellow">
-            <div className="faq-panel-heading"><span className="eyebrow">GETTING STARTED</span><b className="faq-number">01</b></div>
-            <h2>Before the first flip.</h2>
-            <FAQItem question="What is Flip7 Companion?" open>It is an offline companion for the physical Flip 7 card game. You use the real deck, while the app keeps the local player tables, cards, and scores together on the device.</FAQItem>
-            <FAQItem question="Do I need the physical Flip 7 deck?">Yes. The app does not draw cards for you. Players flip from the physical deck and record each card in front of them.</FAQItem>
-            <FAQItem question="How do I start a game?">Choose Banker Mode, add the player names locally, select a target score, and start the table on this device.</FAQItem>
-            <FAQItem question="How do players join?">The banker adds each player's name locally. The group then uses the same device to record cards and actions as the round moves around the table.</FAQItem>
-            <FAQItem question="What is Banker Mode?">Banker Mode lets one person run the whole table from one device. The banker switches between player tables to record cards and actions, while keeping the player order and scores together locally.</FAQItem>
-            <FAQItem question="What is Demo Mode?">Demo Mode is a private practice table for trying the card flow and scoring by yourself. It does not save the session online.</FAQItem>
-          </section>
-
-          <section className="faq-panel faq-group faq-group-cream">
-            <div className="faq-panel-heading"><span className="eyebrow">PLAYING A ROUND</span><b className="faq-number">02</b></div>
-            <h2>Make the call.</h2>
-            <FAQItem question="What does Hit do?" open>Hit records another card in front of you so you can keep building your round score. A duplicate Number card makes you bust unless a Second Chance card cancels it.</FAQItem>
-            <FAQItem question="What does Stay / Bank do?">Stay ends your turn for the round and banks the points you have collected. You cannot receive more cards after banking.</FAQItem>
-            <FAQItem question="What happens when I bust?">Your round score becomes zero and your turn ends automatically. The cards stay visible so the table can see what happened, and the round continues for the other active players.</FAQItem>
-            <FAQItem question="When does the round end?">The round ends when everyone is banked, frozen, or busted, or when a player reveals seven unique Number cards and earns the Flip 7 bonus.</FAQItem>
-          </section>
-
-          <section className="faq-panel faq-group faq-group-pink">
-            <div className="faq-panel-heading"><span className="eyebrow">CARDS &amp; SCORING</span><b className="faq-number">03</b></div>
-            <h2>Know what counts.</h2>
-            <FAQItem question="How is a round scored?" open>Add the Number cards, apply ×2 if you have it, add any +2 through +10 Modifier points, then add the +15 Flip 7 bonus if you revealed seven unique Number cards.</FAQItem>
-            <FAQItem question="Do Modifier cards count toward Flip 7?">No. Modifier cards change the score but do not count as unique Number cards. You cannot bust on a Modifier card.</FAQItem>
-            <FAQItem question="What does Second Chance do?">It cancels one duplicate Number card. Discard the Second Chance card with the duplicate and keep the rest of your round.</FAQItem>
-            <FAQItem question="What do Freeze and Flip Three do?">Freeze banks an active player. Flip Three makes an active player accept three cards one at a time.</FAQItem>
-          </section>
-
-          <section className="faq-panel faq-group faq-group-cyan">
-            <div className="faq-panel-heading"><span className="eyebrow">LOCAL APP</span><b className="faq-number">04</b></div>
-            <h2>Keep the table moving.</h2>
-            <FAQItem question="Who can start the next round?" open>The banker can proceed once every player is banked, frozen, or busted. The next round starts after the current scores are settled.</FAQItem>
-            <FAQItem question="Can I fix a recording mistake?">Yes. Use the card controls, edit or remove the incorrect card, or use Undo while the round is still being recorded.</FAQItem>
-            <FAQItem question="Can I use the app on my phone?">Yes. Install the mobile app and use Demo Mode or Banker Mode without an internet connection.</FAQItem>
-            <FAQItem question="Does the app need an internet connection?">No. Demo Mode and Banker Mode run locally, and the app does not send game data online.</FAQItem>
-            <FAQItem question="What happens when someone reaches 200 points?">The game ends after the round is settled. The player with the most total points wins.</FAQItem>
-          </section>
-        </div>
-
-        <section className="faq-help faq-panel faq-panel-navy"><span className="eyebrow">STILL STUCK?</span><h2>Open the full rules and keep the game moving.</h2><p>The Rules page has the complete deck, action card, round, and scoring reference.</p><a href="/rules" className="faq-secondary">Open the rules</a></section>
-      </div>
-    </main>
-
-    <LandingFooter isRulesPage />
-  </div>
+  const [query, setQuery] = useState('')
+  const [category, setCategory] = useState('all')
+  const normalized = query.trim().toLowerCase()
+  const visible = faqGroups.filter(group => category === 'all' || category === group.id).map(group => ({ ...group, items: group.items.filter(item => !normalized || `${item.question} ${item.answer}`.toLowerCase().includes(normalized)) })).filter(group => group.items.length > 0)
+  const count = visible.reduce((sum, group) => sum + group.items.length, 0)
+  return <InfoPage kind="faq" kicker="A LITTLE HELP FOR GAME NIGHT" title="Questions & answers" accent="" intro="Find a quick answer and get back to the table.">
+    <section className="info-art-banner cyan"><div><h2>We’ve got<br />your back.</h2></div><AssetCardFan cards={['5', 'SECOND CHANCE', 'FREEZE']} /></section>
+    <label className="room-search info-faq-search"><Search size={18} /><input aria-label="Search questions and answers" type="search" placeholder="Search cards, rooms, scoring…" value={query} onChange={event => setQuery(event.target.value)} /></label>
+    <div className="info-category-chips" role="group" aria-label="Question categories"><button type="button" aria-pressed={category === 'all'} onClick={() => setCategory('all')}>All questions</button>{faqGroups.map(group => <button type="button" key={group.id} aria-pressed={category === group.id} onClick={() => setCategory(group.id)}>{group.label}</button>)}</div>
+    <p className="info-result-count" role="status">{count} {count === 1 ? 'answer' : 'answers'}{normalized ? ` for “${query.trim()}”` : ''}</p>
+    <div className="info-faq-groups">{visible.map(group => <section key={group.id} className={`info-faq-group group-${group.id}`}><div className="info-section-top"><span className="room-kicker">{group.label}</span><b>{String(faqGroups.findIndex(g => g.id === group.id) + 1).padStart(2, '0')}</b></div><h2>{group.title}</h2>{group.items.map(item => <details className="info-faq-item" key={item.question}><summary><span>{item.question}</span><ChevronDown size={17} /></summary><p>{item.answer}</p></details>)}</section>)}</div>
+    {!count && <section className="room-empty"><div className="room-empty-icon"><CircleHelp size={28} /></div><h2>No answers found yet.</h2><p>Try “Freeze”, “scores”, or “room”, or choose a different category.</p><button className="room-button secondary" onClick={() => { setQuery(''); setCategory('all') }}>Show all questions</button></section>}
+    <div className="info-related-links"><a href="/rules">Read the full game rules</a><a href="/privacy">Privacy & local data</a></div>
+    <InfoPlayCallout />
+  </InfoPage>
 }

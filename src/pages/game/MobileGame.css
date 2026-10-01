@@ -1,0 +1,315 @@
+/* Presentation only. Card faces, fan geometry, reducers, and handlers stay unchanged. */
+:is(.banker-shell, .demo-shell) {
+  --game-ink: #132d67;
+  --game-paper: #fffdf3;
+  --game-pink: #ed4f7e;
+  background-color: #f3e5b5;
+}
+:is(.banker-shell, .demo-shell) .game-shell {
+  min-height: 100dvh;
+  overflow: visible;
+  background-color: #f3e5b5;
+  background-image: radial-gradient(circle, #132d6715 .8px, transparent .9px), radial-gradient(ellipse at 50% 38%, #fff9dc 0%, #fbefc5 58%, #efe0ae 100%);
+  background-size: 12px 12px, 100% 100%;
+}
+:is(.banker-shell, .demo-shell) button:focus-visible {
+  outline: 3px solid #ed4f7e;
+  outline-offset: 4px;
+}
+:is(.banker-shell, .demo-shell) .topbar {
+  min-height: calc(70px + env(safe-area-inset-top, 0px));
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 12px;
+  background: #fff7da;
+  color: #132d67;
+  border-bottom: 1px solid #132d6726;
+  box-shadow: none;
+}
+.banker-shell .topbar > .brand-button {
+  width: 44px;
+  height: 44px;
+  border: 1.5px solid #132d67;
+  border-radius: 12px;
+  background: #fffdf3;
+  box-shadow: 2px 3px 0 #132d67;
+}
+.banker-shell.saved-room-game .banker-topbar:has(.game-topbar-brand) {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr) 80px;
+  gap: 8px;
+  background: transparent;
+  border-bottom: 0;
+}
+.banker-shell .banker-topbar > .brand-button { justify-self: start; color: #132d67; }
+.banker-shell .game-topbar-brand { display: grid; place-items: center; min-width: 0; }
+.banker-shell .game-topbar-brand img { display: block; width: min(100%, 92px); height: 44px; object-fit: contain; }
+.banker-shell .banker-topbar > .exit-button { justify-self: end; width: 80px; padding-inline: 10px; }
+:is(.banker-shell, .demo-shell) .topbar .exit-button {
+  min-height: 44px;
+  padding: 0 15px;
+  border: 1.5px solid #132d67;
+  border-radius: 12px;
+  background: #132d67;
+  color: #fff7da;
+  box-shadow: 3px 3px 0 #d4bd72;
+  font-size: 11px;
+  font-weight: 850;
+}
+:is(.banker-shell, .demo-shell) .match-strip {
+  margin: 14px 16px 0;
+  padding: 12px 0;
+  min-height: 68px;
+  border: 1.5px solid #132d67;
+  border-radius: 14px;
+  background: #ffe05c;
+  box-shadow: 3px 4px 0 #132d67;
+}
+:is(.banker-shell, .demo-shell) .match-strip span { font-size: 8px; line-height: 1.6; letter-spacing: .12em; }
+:is(.banker-shell, .demo-shell) .match-strip b { font-size: 21px; letter-spacing: -.6px; }
+:is(.banker-shell, .demo-shell) .match-strip .target { border-inline: 1px dashed #132d6760; }
+.banker-shell .banker-turn-callout {
+  justify-content: center;
+  gap: 9px;
+  min-height: 38px;
+  margin: 14px 16px 0;
+  padding: 8px 12px;
+  background: #dceef0;
+  border: 1px solid #9dbbc7;
+  border-radius: 10px;
+}
+.banker-shell .banker-turn-callout > span { font-size: 8px; color: #526783; }
+.banker-shell .banker-turn-callout > b { font-size: 13px; overflow-wrap: anywhere; min-width: 0; }
+.banker-shell .banker-player-strip {
+  padding: 16px 16px 17px;
+  gap: 10px;
+  background: transparent;
+  border-bottom: 1px dashed #132d672b;
+  scroll-padding-inline: 16px;
+}
+.banker-shell .banker-player-tab {
+  min-height: 64px;
+  padding: 9px 9px 10px;
+  gap: 3px 6px;
+  align-content: center;
+  border-width: 1.5px;
+  border-radius: 12px;
+  box-shadow: 2px 3px 0 #132d67;
+  background-color: #fffdf3;
+}
+.banker-shell .banker-player-tab.selected { background-color: #ffe05c; box-shadow: 3px 4px 0 #132d67; }
+.banker-shell .banker-player-tab.busted { background-color: #ffe4e7; box-shadow: 2px 3px 0 #c32950; }
+.banker-shell .banker-player-tab.frozen { background-color: #dff3f8; box-shadow: 2px 3px 0 #2b7897; }
+.banker-shell .banker-player-tab.stayed { background-color: #eef6d9; box-shadow: 2px 3px 0 #4d8a45; }
+.banker-shell .banker-player-tab .mini-avatar { grid-row: 1 / span 2; border-radius: 9px; border-width: 1.5px; box-shadow: 1px 2px 0 #132d6726; }
+/* Optical centering for uppercase initials: compensate for the font's descent space. */
+.banker-shell .banker-player-tab .banker-avatar-initial { line-height: 1; transform: translateY(1px); }
+.banker-shell .banker-player-tab .opponent-copy { grid-column: 2; grid-row: 1; gap: 2px; padding-bottom: 0; }
+.banker-shell .banker-player-tab > strong { position: static; grid-column: 2; grid-row: 2; }
+:is(.banker-shell, .demo-shell) .table-area { background: none; padding-top: 18px; }
+:is(.banker-shell, .demo-shell) .section-kicker { align-items: center; flex-wrap: wrap; font-size: 10px; letter-spacing: .06em; line-height: 1.6; }
+:is(.banker-shell, .demo-shell) .table-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; }
+:is(.banker-shell, .demo-shell) .table-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; min-width: 0; }
+:is(.banker-shell, .demo-shell) .table-heading .section-kicker { font-size: 9px; letter-spacing: .04em; min-width: 0; overflow-wrap: anywhere; }
+:is(.banker-shell, .demo-shell) .organize-button {
+  min-height: 32px;
+  padding: 5px 7px;
+  border-width: 1.5px;
+  border-radius: 8px;
+  font-size: 8px;
+}
+:is(.banker-shell, .demo-shell) .score-display {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  margin-top: 0;
+  padding: 0;
+  min-height: auto;
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+:is(.banker-shell, .demo-shell) .score-display > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 1000;
+  letter-spacing: .08em;
+  color: #132d67;
+}
+:is(.banker-shell, .demo-shell) .score-display > b {
+  margin-left: 0;
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: -.6px;
+  color: #132d67;
+}
+:is(.banker-shell, .demo-shell) .score-display .flip-seven-bonus {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 1000;
+  letter-spacing: .06em;
+  line-height: 1;
+  padding: 4px 8px;
+  border: 2px solid #132d67;
+  border-radius: 6px;
+  box-shadow: 2px 2px 0 #132d67;
+  transform: none;
+  white-space: nowrap;
+}
+:is(.banker-shell, .demo-shell) .score-display .bust-badge {
+  background: #ed4f7e;
+  color: #fffdf5;
+}
+:is(.banker-shell, .demo-shell) .score-display .freeze-badge {
+  background: #57b8d7;
+  color: #132d67;
+}
+:is(.banker-shell, .demo-shell) .score-display .stay-badge {
+  background: #97c844;
+  color: #132d67;
+}
+:is(.banker-shell, .demo-shell) .add-card-card {
+  background: linear-gradient(145deg, #fff0a3, #ffe05c);
+  border: 2px solid #132d67;
+  border-radius: 13px;
+  color: #132d67;
+  box-shadow: 3px 4px 0 #132d67;
+}
+:is(.banker-shell, .demo-shell) .add-card-card > svg { stroke-width: 2.5; }
+@media (hover: hover) {
+  :is(.banker-shell, .demo-shell) .add-card-card:hover:not(:disabled) { background: #ffe05c; }
+}
+:is(.banker-shell, .demo-shell) .add-card-card:active:not(:disabled) { transform: translate(2px, 3px); box-shadow: 1px 1px 0 #132d67; }
+:is(.banker-shell, .demo-shell) .add-card-card:disabled { box-shadow: none; }
+:is(.banker-shell, .demo-shell) .actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 12;
+  gap: 9px;
+  padding: 14px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+  border-top: 1.5px solid #132d67;
+  border-radius: 20px 20px 0 0;
+  background: #fff7da;
+  box-shadow: 0 -5px 0 #132d6710;
+}
+:is(.banker-shell, .demo-shell) .actions button {
+  border-width: 1.5px;
+  border-radius: 11px;
+  font-size: 11px;
+  box-shadow: 2px 3px 0 #132d67;
+}
+:is(.banker-shell, .demo-shell) .actions .stay-action { min-height: 54px; font-size: 12px; }
+:is(.banker-shell, .demo-shell) .actions button:disabled { opacity: .5; box-shadow: none; }
+
+/* Rounded, compact game menu with the same solid-shadow language as the library. */
+.banker-shell .banker-menu {
+  top: calc(100% + 8px);
+  right: 16px;
+  width: min(250px, calc(100vw - 32px));
+  padding: 14px;
+  border: 1.5px solid #132d67;
+  border-radius: 16px;
+  background: #fffdf3;
+  box-shadow: 4px 5px 0 #132d67;
+}
+.banker-shell .banker-menu-title { justify-content: flex-start; padding: 3px 3px 8px; color: #c53264; font-size: 9px; }
+.banker-shell .banker-menu-title::after { content: none; }
+.banker-shell .banker-menu-divider { height: 1px; margin: 3px 0 8px; background: #d8cfb1; }
+.banker-shell .banker-menu > button { min-height: 48px; padding: 12px 10px; border-radius: 10px; font-size: 12px; }
+.banker-shell .banker-menu > button:hover { background: #dceef0; box-shadow: none; }
+
+/* Floating sheets and dialogs; card artwork and grid/fan sizing are not overridden. */
+:is(.banker-shell, .demo-shell) .picker-backdrop,
+body:has(:is(.banker-shell, .demo-shell)) .confirmation-backdrop {
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  background: #091e4da8;
+  backdrop-filter: blur(4px);
+}
+:is(.banker-shell, .demo-shell) .card-picker,
+body:has(:is(.banker-shell, .demo-shell)) .confirmation-modal {
+  width: min(100%, 480px);
+  max-height: min(85dvh, calc(100dvh - 48px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
+  padding: 22px 18px;
+  border: 2px solid #132d67;
+  border-radius: 22px;
+  background: #fff9df;
+  box-shadow: 5px 6px 0 #132d67;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #b8b9ae transparent;
+}
+:is(.banker-shell, .demo-shell) .card-focus-backdrop { align-items: center; }
+:is(.banker-shell, .demo-shell) .card-focus-panel { width: min(100%, 360px); }
+:is(.banker-shell, .demo-shell) .picker-heading,
+body:has(:is(.banker-shell, .demo-shell)) .confirmation-modal .picker-heading {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  gap: 12px;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px dashed #b9ad88;
+  background: #fff9df;
+}
+:is(.banker-shell, .demo-shell) .picker-heading > div:first-child { min-width: 0; }
+:is(.banker-shell, .demo-shell) .picker-heading span,
+body:has(:is(.banker-shell, .demo-shell)) .confirmation-modal .picker-heading span { color: #c53264; font-size: 8px; line-height: 1.6; }
+:is(.banker-shell, .demo-shell) .picker-heading h2,
+body:has(:is(.banker-shell, .demo-shell)) .confirmation-modal h2 { font-size: 25px; line-height: 1.15; letter-spacing: -.8px; overflow-wrap: anywhere; }
+:is(.banker-shell, .demo-shell) .picker-heading .close-button,
+body:has(:is(.banker-shell, .demo-shell)) .confirmation-modal .close-button {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border: 1.5px solid #132d67;
+  border-radius: 12px;
+  color: #132d67;
+  background: #dceef0;
+  box-shadow: 2px 3px 0 #132d67;
+}
+:is(.banker-shell, .demo-shell) .card-picker > p,
+body:has(:is(.banker-shell, .demo-shell)) .confirmation-modal > p { color: #53607a; font-size: 12px; line-height: 1.7; }
+:is(.banker-shell, .demo-shell) .picker-grid button { border-radius: 9px; box-shadow: 2px 3px 0 #132d6733; }
+:is(.banker-shell, .demo-shell) :is(.target-list button, .info-player, .banker-summary-player, .rules-copy section) { border-radius: 12px; border-width: 1.5px; box-shadow: 2px 3px 0 #132d67; }
+:is(.banker-shell, .demo-shell) .target-list button { min-height: 48px; background: #dceef0; }
+:is(.banker-shell, .demo-shell) .rules-copy section { border-color: #132d67; border-left-width: 4px; }
+:is(.banker-shell, .demo-shell) .rules-copy section p { font-size: 12px; line-height: 1.6; }
+:is(.banker-shell, .demo-shell) .banker-status-pill { border-radius: 5px; }
+:is(.banker-shell, .demo-shell) :is(.card-action-buttons button, .banker-results-actions button, .home-prompt-actions button),
+body:has(:is(.banker-shell, .demo-shell)) .confirmation-modal .home-prompt-actions button { min-height: 48px; border: 1.5px solid #132d67; border-radius: 11px; box-shadow: 2px 3px 0 #132d67; font-size: 11px; }
+:is(.banker-shell, .demo-shell) .demo-result-score { border-width: 1.5px; border-radius: 14px; }
+.demo-shell .demo-intro { margin: 14px 16px 0; padding: 22px 16px; border: 1.5px solid #132d67; border-radius: 16px; background: #ffe05c; box-shadow: 3px 4px 0 #132d67; }
+.demo-shell .demo-intro h1 { font-size: 28px; line-height: 1.1; letter-spacing: -1px; }
+.demo-shell .demo-intro p { font-size: 11px; line-height: 1.6; }
+.demo-shell .demo-rules-button { min-height: 44px; border-width: 1.5px; border-radius: 10px; background: #fffdf3; }
+.banker-shell .banker-results { background: transparent; padding-top: 16px; }
+.banker-shell .banker-results .results-hero { margin: 0 16px; border: 1.5px solid #132d67; border-radius: 16px; box-shadow: 3px 4px 0 #132d67; }
+
+/* The same fading corner print as Home/Players, never over the card faces. */
+:is(.banker-shell, .demo-shell) :is(.match-strip, .banker-player-tab, .banker-menu, .card-picker, .demo-intro, .results-hero) { position: relative; isolation: isolate; }
+.banker-shell .banker-menu { position: absolute; }
+:is(.banker-shell, .demo-shell) :is(.match-strip, .banker-player-tab, .banker-menu, .card-picker, .demo-intro, .results-hero)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image: radial-gradient(circle, #132d6738 1px, transparent 1.2px);
+  background-size: 8px 8px;
+  -webkit-mask-image: radial-gradient(ellipse 130px 90px at top left, #000, transparent), radial-gradient(ellipse 130px 90px at bottom right, #000, transparent);
+  mask-image: radial-gradient(ellipse 130px 90px at top left, #000, transparent), radial-gradient(ellipse 130px 90px at bottom right, #000, transparent);
+}
+@media (max-width: 350px) {
+  :is(.banker-shell, .demo-shell) .actions { gap: 6px; padding-inline: 10px; }
+  :is(.banker-shell, .demo-shell) .actions button { font-size: 10px; }
+  :is(.banker-shell, .demo-shell) .actions .stay-action { font-size: 11px; }
+  :is(.banker-shell, .demo-shell) .card-picker { padding-inline: 14px; }
+  :is(.banker-shell, .demo-shell) .picker-heading h2 { font-size: 22px; }
+  :is(.banker-shell, .demo-shell) .panel-heading-actions { gap: 6px; }
+  :is(.banker-shell, .demo-shell) .panel-count { font-size: 9px; padding-inline: 5px; }
+}
