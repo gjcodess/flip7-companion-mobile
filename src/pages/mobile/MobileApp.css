@@ -2041,7 +2041,7 @@
   padding: 5px;
   display: grid;
   gap: 3px;
-  background: #fffdf3;
+  background: var(--cream);
   border: 1.5px solid var(--ink);
   border-radius: 12px;
   box-shadow: 3px 4px 0 var(--ink);
