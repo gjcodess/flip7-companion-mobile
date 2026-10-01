@@ -1,7 +1,10 @@
 import { demoDerived, demoInitialState, demoReducer, type DemoAction, type DemoState, type DemoStatus } from './demoGame'
 import type { Card } from './cards'
 
-export const bankerPlayerColors = ['#ed4f7e', '#57b8d7', '#97c844', '#f7a235', '#9b7bd8', '#e78bba']
+export const bankerPlayerColors = [
+  '#ed4f7e', '#57b8d7', '#97c844', '#f7a235', '#9b7bd8',
+  '#e78bba', '#39bca8', '#e9695b', '#efcf45', '#6387e8',
+]
 
 export type BankerPlayer = {
   id: string

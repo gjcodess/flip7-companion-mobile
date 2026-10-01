@@ -947,6 +947,13 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  padding-right: 32px;
+}
+
+.room-dialog-heading .room-icon-button {
+  position: absolute;
+  top: 18px;
+  right: 10px;
 }
 
 .room-dialog-heading h2 {
@@ -999,6 +1006,16 @@
   letter-spacing: 0;
 }
 
+.room-dialog .room-field input {
+  border-color: var(--ink);
+  box-shadow: 3px 4px 0 var(--ink);
+}
+
+.room-dialog .room-field input:focus {
+  border-color: var(--pink);
+  box-shadow: 3px 4px 0 var(--pink);
+}
+
 .room-field-hint {
   display: block;
   font-size: 9px;
@@ -1010,10 +1027,11 @@
 
 .room-color-picker {
   padding: 0;
-  margin: 25px 0;
+  margin: 25px auto;
   border: 0;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  width: min(100%, 240px);
   gap: 10px;
 }
 
@@ -1025,8 +1043,8 @@
 }
 
 .room-color-picker button {
-  width: 40px;
-  height: 40px;
+  width: 100%;
+  aspect-ratio: 1;
   display: grid;
   place-items: center;
   border: 2px solid var(--ink);
