@@ -41,8 +41,6 @@
 .info-page { padding-top: calc(18px + env(safe-area-inset-top, 0px)); }
 .info-top-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
 .info-top-row > button { display: flex; align-items: center; gap: 7px; padding: 7px 0; min-height: 40px; font-size: 11px; font-weight: 800; border: 0; background: transparent; }
-.info-top-row > a { display: block; height: 42px; }
-.info-top-row img { width: 87px; height: 42px; object-fit: contain; }
 .info-heading h1 { font-size: clamp(29px, 8.1vw, 38px); line-height: 1.12; letter-spacing: -1.5px; font-weight: 950; margin: 8px 0 12px; text-shadow: 1px 1px 0 #ffe05c; }
 .info-heading h1 em { color: #d8386c; font-style: normal; }
 .info-heading p { max-width: 335px; color: #53607a; font-size: 12px; line-height: 1.7; }
