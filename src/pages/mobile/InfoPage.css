@@ -15,8 +15,25 @@
 .room-settings-group, .room-standings, .room-round-detail { border: 1.5px solid #132d67; box-shadow: 3px 4px 0 #132d67; }
 .room-search { border-color: #929bb0; box-shadow: 2px 3px 0 #c0b699; }
 .room-welcome h1, .room-page-heading h1 { text-shadow: 1px 1px 0 #ffe05c; }
-.room-create-banner { background-image: radial-gradient(circle, #132d671c 1px, transparent 1.1px); background-size: 9px 9px; }
+.room-create-banner { background-image: none; }
 .room-create-banner::after { display: none; }
+/* Corner-only print texture, behind content and never intercepting card controls. */
+.room-app-main:is(.page-home, .page-players, .page-history, .page-settings) :is(.library-room-card, .room-profile-card, .room-create-banner, .room-history-banner, .room-storage-panel, .room-settings-group, .room-crew-banner, .room-empty) {
+  position: relative;
+  isolation: isolate;
+}
+.room-app-main:is(.page-home, .page-players, .page-history, .page-settings) :is(.library-room-card, .room-profile-card, .room-create-banner, .room-history-banner, .room-storage-panel, .room-settings-group, .room-crew-banner, .room-empty)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image: radial-gradient(circle, #132d6740 1.1px, transparent 1.3px);
+  background-size: 8px 8px;
+  -webkit-mask-image: radial-gradient(ellipse 140px 95px at top left, #000, transparent), radial-gradient(ellipse 140px 95px at bottom right, #000, transparent);
+  mask-image: radial-gradient(ellipse 140px 95px at top left, #000, transparent), radial-gradient(ellipse 140px 95px at bottom right, #000, transparent);
+}
 .room-app-shell .room-button:active:not(:disabled), .room-heading-action:active { transform: translate(2px, 3px); box-shadow: 1px 1px 0 #132d67; }
 
 .info-page { padding-top: calc(18px + env(safe-area-inset-top, 0px)); }
