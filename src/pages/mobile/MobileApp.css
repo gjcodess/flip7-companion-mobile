@@ -343,10 +343,108 @@
 .room-switch span { display: block; width: 17px; height: 17px; border-radius: 50%; background: #fffdf3; box-shadow: 1px 1px 2px #132d6730; }
 .room-switch.on { background: var(--pink); border-color: var(--pink); }
 .room-switch.on span { transform: translateX(15px); }
-.room-app-footer { margin-top: 31px; text-align: center; }
-.room-app-footer img { width: 87px; height: 45px; object-fit: contain; opacity: .8; }
-.room-app-footer p { font-size: 10px; margin: 7px 0; color: #6f7280; }
-.room-app-footer small { font-size: 8px; color: #898a92; }
+.room-app-footer {
+  margin-top: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  padding-bottom: 8px;
+}
+.room-footer-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.room-footer-logo {
+  width: 145px;
+  max-width: 75%;
+  height: auto;
+  object-fit: contain;
+  opacity: 1;
+  filter: drop-shadow(0 3px 0 rgba(19, 45, 103, 0.25));
+  transition: transform 0.15s ease;
+}
+.room-footer-logo:hover {
+  transform: scale(1.03);
+}
+.room-footer-tagline {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.room-footer-disclaimer-card {
+  width: 100%;
+  max-width: 440px;
+  background: #fffdf4;
+  border: 1.5px solid var(--ink);
+  border-radius: 13px;
+  box-shadow: 2px 3px 0 var(--ink);
+  padding: 14px 16px;
+  text-align: left;
+}
+.room-footer-disclaimer-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  margin-bottom: 7px;
+  text-transform: uppercase;
+}
+.room-footer-disclaimer-header svg {
+  color: var(--pink);
+  flex-shrink: 0;
+}
+.room-footer-disclaimer-text {
+  font-size: 10px;
+  line-height: 1.55;
+  color: #4b5266;
+  margin: 0 0 7px 0;
+}
+.room-footer-disclaimer-text strong {
+  color: var(--ink);
+  font-weight: 850;
+}
+.room-footer-disclaimer-sub {
+  font-size: 9px;
+  line-height: 1.5;
+  color: #6d7386;
+  margin: 0;
+}
+.room-footer-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 2px;
+}
+.room-footer-version {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #ede6d0;
+  border: 1px solid #d4c9a7;
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+}
+.room-footer-sep {
+  color: #a49f8c;
+  font-size: 10px;
+}
+.room-footer-copy small {
+  font-size: 10px;
+  font-weight: 700;
+  color: #7b8092;
+  letter-spacing: 0.02em;
+}
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 .room-reduced-motion *, .room-reduced-motion *::before, .room-reduced-motion *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
 /* The saved-table header changes only the shell. Existing card/table styles stay intact. */
