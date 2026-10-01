@@ -32,7 +32,7 @@ export function ContactScreen() {
       <div className="info-contact-heading"><span className="info-contact-icon"><Mail size={21} /></span><div><span className="info-contact-kicker">GET IN TOUCH</span><h2>Email the project owner</h2></div></div>
       <a className="info-contact-address" href={`mailto:${email}`} aria-label={`Email ${email}`}><span><small>EMAIL ADDRESS</small><strong>{email}</strong></span><ArrowUpRight size={19} aria-hidden="true" /></a>
       <button type="button" onClick={() => void copyEmail()}>{copied ? <Check size={18} /> : <Copy size={18} />}{copied ? 'Email copied' : 'Copy email address'}</button>
-      <p className="info-contact-note" role="status">{error || (copied ? 'Ready to paste into your email app.' : 'Email opens your mail app and needs internet.')}</p>
+      {error && <p className="info-contact-note" role="status">{error}</p>}
     </section>
     <div className="info-related-links"><a href="/faq">Browse FAQs</a><a href="/rules">Read the rules</a></div>
   </InfoPage>
