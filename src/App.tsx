@@ -9,6 +9,7 @@ import { DemoScreen } from './pages/game/DemoScreen'
 import { BankerScreen } from './pages/game/BankerScreen'
 import { MobileApp } from './pages/mobile/MobileApp'
 import { useLibrary } from './lib/room-store'
+import { preloadCardArtwork } from './game/cardArtworkPreloader'
 
 const viewTransitionPaths = new Set(['/landing', '/play', '/rules', '/faq', '/privacy', '/terms', '/contact'])
 
@@ -17,6 +18,15 @@ function shouldSkipViewTransition(fromPath: string, toPath: string) {
 }
 
 export default function App() {
+  useEffect(() => {
+    // Warm the lightweight picker previews after the first screen has painted.
+    if ('requestIdleCallback' in window) {
+      const idle = window.requestIdleCallback(() => { void preloadCardArtwork() }, { timeout: 1500 })
+      return () => window.cancelIdleCallback(idle)
+    }
+    const timer = setTimeout(() => { void preloadCardArtwork() }, 200)
+    return () => clearTimeout(timer)
+  }, [])
   const library = useLibrary()
   useEffect(() => { document.documentElement.classList.toggle('room-reduced-motion', library.settings.reducedMotion) }, [library.settings.reducedMotion])
   const [location, setLocation] = useState<AppLocation>(() => {
