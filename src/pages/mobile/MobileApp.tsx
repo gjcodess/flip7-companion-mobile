@@ -43,8 +43,11 @@ function HomeScreen() {
   const active = library.rooms.filter(r => r.state && r.state.phase === 'round')
   const sorted = [...library.rooms].sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.updatedAt - a.updatedAt)
   const visible = sorted.filter(r => (filter === 'all' || (filter === 'active' ? r.state?.phase === 'round' : !r.state)) && r.name.toLowerCase().includes(query.toLowerCase()))
-  return <><header className="room-home-header"><img src="/assets/flip7-title-logo.png" alt="Flip7 Companion" /></header>
-    <section className="room-welcome"><h1>Your table.<br /><em>Your game night.</em></h1><p>Resume a match or start a new room.</p></section>
+  return <><div className="room-home-hero">
+      <header className="room-home-header"><img src="/assets/flip7-title-logo.png" alt="Flip7 Companion" /></header>
+      <section className="room-welcome"><h1>Your table.<br /><em>Your game night.</em></h1><p>Resume a match or start a new room.</p></section>
+      <img className="room-home-promo" src="/assets/promo-1.png" alt="" decoding="async" />
+    </div>
     <section className="room-create-banner"><div><span className="room-kicker">LET THE GOOD TIMES FLIP</span><h2>A new room.<br />A fresh shot at 200.</h2><button onClick={() => navigate('/new')}>Create a room <ArrowRight size={17} /></button></div><img className="room-promo-art" src="/assets/promo-2.png" alt="" decoding="async" /></section>
     <div className="room-home-stats"><span><b>{library.rooms.length}</b> {library.rooms.length === 1 ? 'room' : 'rooms'}</span><span><b>{library.players.length}</b> {library.players.length === 1 ? 'player' : 'players'}</span><span><b>{library.rooms.filter(r => r.state?.phase === 'results').length}</b> completed</span></div>
     <section className="room-library"><div className="room-section-heading"><h2>Your rooms <span>{library.rooms.length}</span></h2>{active.length > 0 && <span className="room-section-note">{active.length} in progress</span>}</div>
