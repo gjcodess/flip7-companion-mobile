@@ -32,6 +32,29 @@ async function completedFixture(tied = false) {
 }
 
 describe('offline room saves', () => {
+  it('updates a saved player by ID across rooms, active games, and round history', async () => {
+    const { store, roster, room } = await completedFixture()
+    const active = store.createRoom('Another table', 200, roster)
+    store.startRoom(active)
+    const updated = { ...roster[0], name: 'Annie', color: '#39bca8' }
+
+    store.savePlayerProfile(updated)
+    const completed = store.getLibrary().rooms.find(savedRoom => savedRoom.id === room.id)!
+    const playing = store.getLibrary().rooms.find(savedRoom => savedRoom.id === active.id)!
+    expect(store.getLibrary().players.find(player => player.id === updated.id)).toEqual(updated)
+    for (const savedRoom of [completed, playing]) {
+      expect(savedRoom.roster[0]).toEqual(updated)
+      expect(savedRoom.state?.players[0]).toMatchObject(updated)
+      expect(savedRoom.roster[1]).toEqual(roster[1])
+    }
+    expect(completed.state?.history[0].hands?.[updated.id]).toMatchObject({ name: 'Annie', color: '#39bca8' })
+
+    vi.resetModules()
+    const reloaded = await import('./room-store')
+    expect(reloaded.getLibrary().rooms.find(savedRoom => savedRoom.id === active.id)?.state?.players[0]).toMatchObject(updated)
+    expect(reloaded.getLibrary().rooms.find(savedRoom => savedRoom.id === room.id)?.state?.history[0].hands?.[updated.id]).toMatchObject({ name: 'Annie', color: '#39bca8' })
+  })
+
   it('resumes the current player and full forced-turn queue after a fresh load, using card IDs', async () => {
     const { store, room, roster } = await fixture()
     let state = bankerReducer(room.state!, { type: 'record-action', sourcePlayerId: roster[0].id, targetPlayerId: roster[1].id, card: card('action-flip-three') })

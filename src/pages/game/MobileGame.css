@@ -261,6 +261,18 @@ body:has(:is(.banker-shell, .demo-shell)) .confirmation-modal .picker-heading {
   background: #fff9df;
 }
 :is(.banker-shell, .demo-shell) .picker-heading > div:first-child { min-width: 0; }
+.action-target-picker .picker-heading { isolation: isolate; }
+.action-target-picker .picker-heading::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: radial-gradient(circle, #132d6738 1px, transparent 1.2px);
+  background-size: 8px 8px;
+  -webkit-mask-image: radial-gradient(ellipse 130px 90px at top left, #000, transparent);
+  mask-image: radial-gradient(ellipse 130px 90px at top left, #000, transparent);
+}
 :is(.banker-shell, .demo-shell) .picker-heading span,
 body:has(:is(.banker-shell, .demo-shell)) .confirmation-modal .picker-heading span { color: #c53264; font-size: 8px; line-height: 1.6; }
 :is(.banker-shell, .demo-shell) .picker-heading h2,
@@ -282,8 +294,19 @@ body:has(:is(.banker-shell, .demo-shell)) .confirmation-modal > p { color: #5360
 /* Keep the title/close control outside the only scrollable area. */
 html:has(.physical-card-picker), body:has(.physical-card-picker) { overflow: hidden; }
 :is(.banker-shell, .demo-shell) .physical-card-picker { display: flex; flex-direction: column; padding: 0; overflow: hidden; min-height: 0; }
-.physical-picker-header { flex: 0 0 auto; padding: 20px 18px 14px; border-bottom: 1px dashed #b9ad88; background: #fff9df; }
-:is(.banker-shell, .demo-shell) .physical-picker-header .picker-heading { position: static; padding-bottom: 0; margin-bottom: 0; border-bottom: 0; }
+.physical-picker-header { position: relative; isolation: isolate; flex: 0 0 auto; padding: 20px 18px 14px; border-bottom: 1px dashed #b9ad88; background: #fff9df; }
+.physical-picker-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: radial-gradient(circle, #132d6738 1px, transparent 1.2px);
+  background-size: 8px 8px;
+  -webkit-mask-image: radial-gradient(ellipse 130px 90px at top left, #000, transparent);
+  mask-image: radial-gradient(ellipse 130px 90px at top left, #000, transparent);
+}
+:is(.banker-shell, .demo-shell) .physical-picker-header .picker-heading { position: static; padding-bottom: 0; margin-bottom: 0; border-bottom: 0; background: transparent; }
 .physical-picker-header > p { margin: 10px 0 0; color: #53607a; font-size: 11px; line-height: 1.6; }
 .physical-picker-scroll { min-height: 0; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; -webkit-overflow-scrolling: touch; padding: 16px 18px 20px; scrollbar-width: thin; scrollbar-color: #b8b9ae transparent; }
 .physical-picker-scroll .picker-grid { padding-bottom: 4px; }
