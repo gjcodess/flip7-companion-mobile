@@ -31,6 +31,7 @@
 }
 .demo-shell .demo-topbar { background: transparent; border-bottom: 0; }
 .banker-shell .topbar > .brand-button {
+  position: relative;
   width: 44px;
   height: 44px;
   border: 1.5px solid #132d67;
@@ -46,6 +47,21 @@
   border-bottom: 0;
 }
 .banker-shell .banker-topbar > .brand-button { justify-self: start; color: #132d67; }
+.banker-shell .topbar > .brand-button.is-sharing {
+  background: #132d67;
+  color: #fff7da;
+}
+.banker-shell .cast-live-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #22c55e;
+  border: 2px solid #fffdf3;
+  box-shadow: 0 0 0 1px #132d67;
+}
 .banker-shell .game-topbar-brand { display: grid; place-items: center; min-width: 0; }
 .banker-shell .game-topbar-brand img { display: block; width: min(100%, 92px); height: 44px; object-fit: contain; }
 .banker-shell .banker-topbar > .exit-button { justify-self: end; width: 80px; padding-inline: 10px; }
@@ -213,21 +229,101 @@
 :is(.banker-shell, .demo-shell) .actions button:disabled { opacity: .5; box-shadow: none; }
 
 /* Rounded, compact game menu with the same solid-shadow language as the library. */
-.banker-shell .banker-menu {
-  top: calc(100% + 8px);
-  right: 16px;
-  width: min(250px, calc(100vw - 32px));
-  padding: 14px;
-  border: 1.5px solid #132d67;
-  border-radius: 16px;
-  background: #fffdf3;
-  box-shadow: 4px 5px 0 #132d67;
+.banker-menu-dialog {
+  --ink: #132d67;
+  --cream: #fff7da;
+  --yellow: #ffe05c;
+  --pink: #ed4f7e;
+  color: var(--ink);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
 }
-.banker-shell .banker-menu-title { justify-content: flex-start; padding: 3px 3px 8px; color: #c53264; font-size: 9px; }
-.banker-shell .banker-menu-title::after { content: none; }
-.banker-shell .banker-menu-divider { height: 1px; margin: 3px 0 8px; background: #d8cfb1; }
-.banker-shell .banker-menu > button { min-height: 48px; padding: 12px 10px; border-radius: 10px; font-size: 12px; }
-.banker-shell .banker-menu > button:hover { background: #dceef0; box-shadow: none; }
+.banker-menu-dialog .banker-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+.banker-menu-dialog .banker-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--ink);
+  border-radius: 13px;
+  background: #fffdf3;
+  color: var(--ink);
+  box-shadow: 2.5px 3px 0 var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: transform .1s ease, background-color .12s ease, box-shadow .1s ease;
+}
+.banker-menu-dialog .banker-menu-item:hover,
+.banker-menu-dialog .banker-menu-item:active {
+  background: #ffe983;
+  transform: translateY(-1px);
+  box-shadow: 3px 4px 0 var(--ink);
+}
+.banker-menu-dialog .banker-menu-item-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  background: #ffe05c;
+  color: var(--ink);
+  box-shadow: 1.5px 1.5px 0 var(--ink);
+}
+.banker-menu-dialog .banker-menu-item-icon svg {
+  stroke-width: 2.2;
+}
+.banker-menu-dialog .banker-menu-item-danger .banker-menu-item-icon {
+  background: #fde8ef;
+  color: #c53264;
+  border-color: #c53264;
+  box-shadow: 1.5px 1.5px 0 #c53264;
+}
+.banker-menu-dialog .banker-menu-item-danger:hover,
+.banker-menu-dialog .banker-menu-item-danger:active {
+  background: #fde8ef;
+}
+.banker-menu-dialog .banker-menu-item-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.banker-menu-dialog .banker-menu-item-text strong {
+  font-size: 13px;
+  font-weight: 850;
+  color: var(--ink);
+  line-height: 1.25;
+}
+.banker-menu-dialog .banker-menu-item-text span {
+  font-size: 10px;
+  color: #5c6c84;
+  line-height: 1.35;
+  margin-top: 2px;
+}
+.banker-menu-dialog .banker-menu-item-chevron {
+  color: #8c9cb3;
+  flex-shrink: 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* Floating sheets and dialogs; card artwork and grid/fan sizing are not overridden. */
 :is(.banker-shell, .demo-shell) .picker-backdrop,
@@ -341,9 +437,9 @@ body:has(:is(.banker-shell, .demo-shell)) .confirmation-modal .home-prompt-actio
 .banker-shell .banker-results .results-hero { margin: 0 16px; border: 1.5px solid #132d67; border-radius: 16px; box-shadow: 3px 4px 0 #132d67; }
 
 /* The same fading corner print as Home/Players, never over the card faces. */
-:is(.banker-shell, .demo-shell) :is(.match-strip, .banker-player-tab, .banker-menu, .card-picker, .demo-intro, .results-hero) { position: relative; isolation: isolate; }
-.banker-shell .banker-menu { position: absolute; }
-:is(.banker-shell, .demo-shell) :is(.match-strip, .banker-player-tab, .banker-menu, .card-picker, .demo-intro, .results-hero)::before {
+:is(.banker-shell, .demo-shell) :is(.match-strip, .banker-player-tab, .card-picker, .demo-intro, .results-hero) { position: relative; isolation: isolate; }
+
+:is(.banker-shell, .demo-shell) :is(.match-strip, .banker-player-tab, .card-picker, .demo-intro, .results-hero)::before {
   content: '';
   position: absolute;
   inset: 0;

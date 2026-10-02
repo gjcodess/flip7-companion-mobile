@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, Check, CircleHelp, ClipboardList, LogOut, Menu, Monitor, Play, RotateCcw, Users, X } from 'lucide-react'
+import { ArrowLeft, Cast, Check, ChevronRight, CircleHelp, ClipboardList, LogOut, Menu, Monitor, Play, RotateCcw, Users, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import type { Card } from '../../game/cards'
 import { allBankerPlayersSettled, bankerInitialState, bankerPlayerDerived, bankerReducer, isBankerTerminal, type BankerAction, type BankerPlayer, type BankerState } from '../../game/bankerGame'
@@ -11,7 +11,7 @@ import { ConfirmationModal } from '../../components/ConfirmationModal'
 import { CardActionsPanel, CardPickerPanel } from './CardDialogs'
 import { GameControls } from './GameControls'
 import { GameTable } from './GameTable'
-import { tvSharingAvailable } from '../../lib/tv-share'
+import { tvSharingAvailable, useTvSession } from '../../lib/tv-share'
 import { TvShareDialog } from '../mobile/TvShareDialog'
 
 function statusLabel(player: BankerPlayer) {
@@ -37,6 +37,37 @@ function BankerResults({ players, history, targetScore, onNewGame, onExit }: { p
   const ordered = [...players].sort((a, b) => b.totalScore - a.totalScore)
   const winnerScore = ordered[0]?.totalScore ?? 0
   return <div className="banker-results"><section className="results-hero"><span className="eyebrow">BANKER TABLE COMPLETE</span><h1>Match complete!</h1><p>{ordered.filter((player) => player.totalScore === winnerScore).map((player) => player.name).join(' and ')} won with {winnerScore} points. Target: {targetScore}.</p></section><section className="results-card"><div className="results-heading"><div><span className="eyebrow">FINAL SCORES</span><h2>Game results</h2></div><ClipboardList size={24} /></div><div className="results-list">{ordered.map((player, index) => <article className={`results-player ${index === 0 ? 'winner' : ''}`} key={player.id}><span className="results-rank">{index + 1}</span><span className="mini-avatar" style={{ background: player.color }}>{player.name[0]}</span><div className="results-player-copy"><div className="results-player-name"><b>{player.name}</b><small>{player.totalScore} {pointLabel(player.totalScore)} total</small></div><div className="results-rounds">{history.map((round) => <span className="round-score" key={`${player.id}-${round.round}`}>R{round.round}: {round.scores[player.id] ?? 0}</span>)}</div></div><div className="results-total"><small>Total pts</small><strong>{player.totalScore}</strong></div></article>)}</div></section><section className="results-actions"><p>Your final scores and round cards are saved in this room on your device.</p><div className="banker-results-actions"><button className="secondary-action" onClick={onNewGame}><RotateCcw size={16} /> New game</button><button className="primary-wide" onClick={onExit}><ArrowLeft size={16} /> View room</button></div></section></div>
+}
+
+function BankerMenuDialog({ onClose, onOpenPlayers, onOpenRules, onOpenTvShare, onExit }: { onClose: () => void; onOpenPlayers: () => void; onOpenRules: () => void; onOpenTvShare: () => void; onExit: () => void }) {
+  const dialog = useRef<HTMLDialogElement>(null)
+  useEffect(() => { dialog.current?.showModal() }, [])
+  return <dialog ref={dialog} className="room-dialog banker-menu-dialog tv-share-dialog" onCancel={onClose} onClick={event => { if (event.target === event.currentTarget) onClose() }}>
+    <div className="room-dialog-heading"><div><span className="room-kicker">BANKER MODE</span><h2>Game menu</h2></div><button className="room-icon-button" aria-label="Close menu" onClick={onClose}><X size={20} /></button></div>
+    <p>Manage tables, view game rules, cast to TV, or exit this session.</p>
+    <div className="banker-menu-list">
+      <button type="button" className="banker-menu-item" onClick={() => { onClose(); onOpenPlayers() }}>
+        <div className="banker-menu-item-icon"><Users size={20} /></div>
+        <div className="banker-menu-item-text"><strong>Players & Tables</strong><span>View current scores, status, and player details</span></div>
+        <ChevronRight size={18} className="banker-menu-item-chevron" />
+      </button>
+      <button type="button" className="banker-menu-item" onClick={() => { onClose(); onOpenRules() }}>
+        <div className="banker-menu-item-icon"><CircleHelp size={20} /></div>
+        <div className="banker-menu-item-text"><strong>Rules & Guide</strong><span>Scoring rules, action cards, and banking guide</span></div>
+        <ChevronRight size={18} className="banker-menu-item-chevron" />
+      </button>
+      {tvSharingAvailable() && <button type="button" className="banker-menu-item" onClick={() => { onClose(); onOpenTvShare() }}>
+        <div className="banker-menu-item-icon"><Monitor size={20} /></div>
+        <div className="banker-menu-item-text"><strong>TV Scoreboard</strong><span>Cast live scores to a TV or web browser</span></div>
+        <ChevronRight size={18} className="banker-menu-item-chevron" />
+      </button>}
+      <button type="button" className="banker-menu-item banker-menu-item-danger" onClick={() => { onClose(); onExit() }}>
+        <div className="banker-menu-item-icon"><LogOut size={20} /></div>
+        <div className="banker-menu-item-text"><strong>Exit game</strong><span>Return to room details (game stays saved)</span></div>
+        <ChevronRight size={18} className="banker-menu-item-chevron" />
+      </button>
+    </div>
+  </dialog>
 }
 
 export function BankerScreen({ roomId }: { roomId: string }) {
@@ -69,6 +100,8 @@ export function BankerScreen({ roomId }: { roomId: string }) {
   const [playersOpen, setPlayersOpen] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const [tvShareOpen, setTvShareOpen] = useState(false)
+  const tvSession = useTvSession()
+  const isSharing = tvSession?.roomId === roomId
   const cardSelectionRef = useRef(false)
   const pickerSessionRef = useRef(0)
   const activePickerSessionRef = useRef<number | null>(null)
@@ -171,7 +204,7 @@ export function BankerScreen({ roomId }: { roomId: string }) {
   }
   const playerStatus = selectedPlayer?.round.status === 'flip-seven' ? 'stayed' : selectedPlayer?.round.status
   return <div className="app-shell banker-shell saved-room-game"><aside className="desktop-marquee left"><div>FLIP<br />7</div></aside><main className="game-shell">
-    <header className="topbar banker-topbar"><button className="brand-button" aria-label="Back to saved room" onClick={exit}><ArrowLeft size={21} /></button><span className="game-topbar-brand"><img src="/assets/flip7-title-logo.png" alt="Flip 7" /></span><button className="account-pill exit-button" aria-label="Open banker menu" onClick={() => setShowMenu((open) => !open)}><Menu size={16} /> Menu</button>{showMenu && <div className="banker-menu"><div className="banker-menu-title">BANKER MODE</div><div className="banker-menu-divider" /><button onClick={() => { setShowMenu(false); setPlayersOpen(true) }}><Users size={16} /> Players</button><button onClick={() => { setShowMenu(false); setRulesOpen(true) }}><CircleHelp size={16} /> Rules</button>{tvSharingAvailable() && <button onClick={() => { setShowMenu(false); setTvShareOpen(true) }}><Monitor size={16} /> TV scoreboard</button>}<button onClick={exit}><LogOut size={16} /> Exit</button></div>}</header>
+    <header className="topbar banker-topbar"><button className={`brand-button cast-button ${isSharing ? 'is-sharing' : ''}`} aria-label="TV scoreboard" title="TV scoreboard" onClick={() => setTvShareOpen(true)}><Cast size={20} />{isSharing && <span className="cast-live-dot" />}</button><span className="game-topbar-brand"><img src="/assets/flip7-title-logo.png" alt="Flip 7" /></span><button className="account-pill exit-button" aria-label="Open banker menu" onClick={() => setShowMenu(true)}><Menu size={16} /> Menu</button></header>
     {saveError && <div className="room-game-save-error" role="alert"><span>{saveError}</span><button onClick={() => { if (pendingSaveRef.current) persist(pendingSaveRef.current) }}>Retry save</button></div>}
     <section className="match-strip"><div><span>ROUND</span><b>{String(state.roundNumber).padStart(2, '0')}</b></div><div className="target"><span>FIRST TO</span><b>{state.targetScore}</b></div><div><span>VIEWING</span><b>{selectedPlayer?.name || '—'}</b></div></section>
     <div className="banker-turn-callout" role="status"><span>CURRENT TURN</span><b>{turnPlayer?.name || '—'}</b></div>
@@ -188,6 +221,7 @@ export function BankerScreen({ roomId }: { roomId: string }) {
       {newGamePromptOpen && <ConfirmationModal eyebrow="NEW BANKER GAME" title="Start a new game?" message="This match stays saved in its room. Create a separate room for your next game." cancelLabel="Keep table" confirmLabel="New game" onCancel={() => setNewGamePromptOpen(false)} onConfirm={() => { setNewGamePromptOpen(false); setRoundSummaryOpen(false); dispatch({ type: 'reset' }) }} />}
       {rulesOpen && <motion.div key="rules" className="picker-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, pointerEvents: 'none' }} onClick={() => setRulesOpen(false)}><motion.section className="card-picker info-panel" initial={{ y: 50 }} animate={{ y: 0 }} onClick={(event) => event.stopPropagation()}><div className="picker-heading"><div><span>BANKER MODE</span><h2>How it works</h2></div><button className="close-button" aria-label="Close rules" onClick={() => setRulesOpen(false)}><X size={19} /></button></div><div className="rules-copy"><section><h3>Follow the highlighted table</h3><p>After each card, Banker Mode advances to the next active table. You can still open any table to correct, remove, undo, redo, or organize cards.</p></section><section><h3>Action cards</h3><p>Choose an active target. Freeze skips that table, Second Chance stays on its target, and Flip Three routes the next three cards there one at a time before returning to the original order.</p></section><section><h3>Settle the round</h3><p>Bank, bust, and frozen tables are skipped. Seven unique numbered cards end the round immediately and bank every other active table.</p></section></div></motion.section></motion.div>}
     </AnimatePresence>
+    {showMenu && <BankerMenuDialog onClose={() => setShowMenu(false)} onOpenPlayers={() => setPlayersOpen(true)} onOpenRules={() => setRulesOpen(true)} onOpenTvShare={() => setTvShareOpen(true)} onExit={exit} />}
     {tvShareOpen && <TvShareDialog roomId={roomId} onClose={() => setTvShareOpen(false)} />}
   </div>
 }
