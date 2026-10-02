@@ -36,7 +36,7 @@ describe('offline room saves', () => {
     const { store, roster, room } = await completedFixture()
     const active = store.createRoom('Another table', 200, roster)
     store.startRoom(active)
-    const updated = { ...roster[0], name: 'Annie', color: '#39bca8' }
+    const updated = { ...roster[0], name: 'Annie', color: '#39bca8', avatar: 'female-3' as const }
 
     store.savePlayerProfile(updated)
     const completed = store.getLibrary().rooms.find(savedRoom => savedRoom.id === room.id)!
@@ -47,12 +47,23 @@ describe('offline room saves', () => {
       expect(savedRoom.state?.players[0]).toMatchObject(updated)
       expect(savedRoom.roster[1]).toEqual(roster[1])
     }
-    expect(completed.state?.history[0].hands?.[updated.id]).toMatchObject({ name: 'Annie', color: '#39bca8' })
+    expect(completed.state?.history[0].hands?.[updated.id]).toMatchObject({ name: 'Annie', color: '#39bca8', avatar: 'female-3' })
 
     vi.resetModules()
     const reloaded = await import('./room-store')
     expect(reloaded.getLibrary().rooms.find(savedRoom => savedRoom.id === active.id)?.state?.players[0]).toMatchObject(updated)
-    expect(reloaded.getLibrary().rooms.find(savedRoom => savedRoom.id === room.id)?.state?.history[0].hands?.[updated.id]).toMatchObject({ name: 'Annie', color: '#39bca8' })
+    expect(reloaded.getLibrary().rooms.find(savedRoom => savedRoom.id === room.id)?.state?.history[0].hands?.[updated.id]).toMatchObject({ name: 'Annie', color: '#39bca8', avatar: 'female-3' })
+  })
+
+  it('accepts old saves without avatars and rejects unknown avatar IDs', async () => {
+    const { store } = await fixture()
+    const oldSave = JSON.parse(saved.get(store.STORAGE_KEY)!)
+    for (const player of oldSave.players) delete player.avatar
+    for (const player of oldSave.rooms[0].roster) delete player.avatar
+    for (const player of oldSave.rooms[0].state.players) delete player.avatar
+    expect(store.decodeLibrary(JSON.stringify(oldSave)).players[0].avatar).toBeUndefined()
+    oldSave.players[0].avatar = 'unknown-character'
+    expect(() => store.decodeLibrary(JSON.stringify(oldSave))).toThrow('Invalid saved players')
   })
 
   it('resumes the current player and full forced-turn queue after a fresh load, using card IDs', async () => {

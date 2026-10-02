@@ -135,8 +135,6 @@
 .banker-shell .banker-player-tab.stayed { background-color: #eef6d9; box-shadow: 2px 3px 0 #4d8a45; }
 .banker-shell .banker-player-tab.selected:is(.busted, .frozen, .stayed) { background-color: #ffe05c; }
 .banker-shell .banker-player-tab .mini-avatar { grid-row: 1 / span 2; border-radius: 9px; border-width: 1.5px; box-shadow: 1px 2px 0 #132d6726; }
-/* Optical centering for uppercase initials: compensate for the font's descent space. */
-.banker-shell .banker-player-tab .banker-avatar-initial { line-height: 1; transform: translateY(1px); }
 .banker-shell .banker-player-tab .opponent-copy { grid-column: 2; grid-row: 1; gap: 2px; padding-bottom: 0; }
 .banker-shell .banker-player-tab > strong { position: static; grid-column: 2; grid-row: 2; }
 :is(.banker-shell, .demo-shell) .table-area { background: none; padding-top: 18px; }

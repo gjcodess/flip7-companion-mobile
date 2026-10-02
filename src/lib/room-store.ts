@@ -2,8 +2,9 @@ import { useSyncExternalStore } from 'react'
 import { bankerInitialState, bankerPlayerColors, bankerReducer, type BankerState } from '../game/bankerGame'
 import { pickerCards } from '../game/cards'
 import { demoInitialState } from '../game/demoGame'
+import { defaultPlayerAvatarFor, isPlayerAvatarId, type PlayerAvatarId } from './player-avatars'
 
-export type PlayerProfile = { id: string; name: string; color: string }
+export type PlayerProfile = { id: string; name: string; color: string; avatar?: PlayerAvatarId }
 export type Room = {
   id: string; name: string; createdAt: number; updatedAt: number
   targetScore: number; roster: PlayerProfile[]; state: BankerState | null; pinned: boolean
@@ -39,7 +40,7 @@ export function decodeLibrary(raw: string): RoomLibrary {
   }
   if (!Number.isInteger(data.settings.targetScore) || data.settings.targetScore < 50 || data.settings.targetScore > 500 || typeof data.settings.reducedMotion !== 'boolean') throw new Error('Invalid saved settings.')
   const ids = new Set<string>()
-  const validProfile = (p: PlayerProfile) => typeof p?.id === 'string' && typeof p.name === 'string' && p.name.trim().length > 0 && p.name.length <= 24 && /^#[0-9a-f]{6}$/i.test(p.color)
+  const validProfile = (p: PlayerProfile) => typeof p?.id === 'string' && typeof p.name === 'string' && p.name.trim().length > 0 && p.name.length <= 24 && /^#[0-9a-f]{6}$/i.test(p.color) && (p.avatar === undefined || isPlayerAvatarId(p.avatar))
   if (!data.players.every(validProfile) || new Set(data.players.map(p => p.id)).size !== data.players.length) throw new Error('Invalid saved players.')
   for (const room of data.rooms) {
     if (typeof room.id !== 'string' || ids.has(room.id) || typeof room.name !== 'string' || !room.name.trim() || room.name.length > 40 || !Number.isFinite(room.createdAt) || !Number.isFinite(room.updatedAt) || !Number.isInteger(room.targetScore) || room.targetScore < 50 || room.targetScore > 500 || !Array.isArray(room.roster) || room.roster.length < 3 || room.roster.length > 18 || !room.roster.every(validProfile) || new Set(room.roster.map(p => p.id)).size !== room.roster.length) throw new Error('Invalid saved room.')
@@ -53,7 +54,7 @@ export function decodeLibrary(raw: string): RoomLibrary {
         if (!player.round.entries.every(e => typeof e.instanceId === 'string' && typeof e.voided === 'boolean' && e.card)) throw new Error('Invalid saved card.')
         player.round.past = []; player.round.future = []
       }
-      if (!state.history.every(h => Number.isInteger(h.round) && h.round >= 1 && h.scores && Object.values(h.scores).every(score => Number.isInteger(score) && score >= 0) && (!h.hands || Object.values(h.hands).every(hand => typeof hand.name === 'string' && hand.name.length <= 24 && /^#[0-9a-f]{6}$/i.test(hand.color) && ['active', 'stayed', 'busted', 'frozen', 'flip-seven'].includes(hand.status) && Array.isArray(hand.entries) && hand.entries.every(e => e.card && typeof e.instanceId === 'string' && typeof e.voided === 'boolean'))))) throw new Error('Invalid match history.')
+      if (!state.history.every(h => Number.isInteger(h.round) && h.round >= 1 && h.scores && Object.values(h.scores).every(score => Number.isInteger(score) && score >= 0) && (!h.hands || Object.values(h.hands).every(hand => typeof hand.name === 'string' && hand.name.length <= 24 && /^#[0-9a-f]{6}$/i.test(hand.color) && (hand.avatar === undefined || isPlayerAvatarId(hand.avatar)) && ['active', 'stayed', 'busted', 'frozen', 'flip-seven'].includes(hand.status) && Array.isArray(hand.entries) && hand.entries.every(e => e.card && typeof e.instanceId === 'string' && typeof e.voided === 'boolean'))))) throw new Error('Invalid match history.')
       state.past = []; state.future = []
     }
   }
@@ -99,7 +100,7 @@ export function updateLibrary(change: (current: RoomLibrary) => RoomLibrary) {
   listeners.forEach(listener => listener())
 }
 export function newProfile(name: string, index = getLibrary().players.length): PlayerProfile {
-  return { id: crypto.randomUUID(), name: name.trim(), color: bankerPlayerColors[index % bankerPlayerColors.length] }
+  return { id: crypto.randomUUID(), name: name.trim(), color: bankerPlayerColors[index % bankerPlayerColors.length], avatar: defaultPlayerAvatarFor(undefined, index) }
 }
 export function savePlayerProfile(profile: PlayerProfile) {
   updateLibrary(current => {
@@ -107,7 +108,7 @@ export function savePlayerProfile(profile: PlayerProfile) {
     if (!exists) return { ...current, players: [...current.players, profile] }
 
     const withProfile = <T extends PlayerProfile>(player: T): T => player.id === profile.id
-      ? { ...player, name: profile.name, color: profile.color }
+      ? { ...player, name: profile.name, color: profile.color, avatar: profile.avatar ?? defaultPlayerAvatarFor(profile.id) }
       : player
 
     return {
@@ -120,7 +121,7 @@ export function savePlayerProfile(profile: PlayerProfile) {
           players: room.state.players.map(withProfile),
           history: room.state.history.map(round => {
             const hand = round.hands?.[profile.id]
-            return hand ? { ...round, hands: { ...round.hands, [profile.id]: { ...hand, name: profile.name, color: profile.color } } } : round
+            return hand ? { ...round, hands: { ...round.hands, [profile.id]: { ...hand, name: profile.name, color: profile.color, avatar: profile.avatar ?? defaultPlayerAvatarFor(profile.id) } } } : round
           }),
           past: room.state.past.map(snapshot => ({ ...snapshot, players: snapshot.players.map(withProfile) })),
           future: room.state.future.map(snapshot => ({ ...snapshot, players: snapshot.players.map(withProfile) })),

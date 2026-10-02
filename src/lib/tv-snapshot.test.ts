@@ -7,7 +7,7 @@ import { buildTvSnapshot } from './tv-snapshot'
 
 const card = (id: string) => pickerCards.find(item => item.id === id)!
 const roster = [
-  { id: 'a', name: 'Ana', color: '#ed4f7e' },
+  { id: 'a', name: 'Ana', color: '#ed4f7e', avatar: 'female-3' as const },
   { id: 'b', name: 'Ben', color: '#57b8d7' },
   { id: 'c', name: 'Cy', color: '#97c844' },
 ]
@@ -21,6 +21,7 @@ describe('TV scoreboard snapshot', () => {
   it('shows a saved room before play without inventing scores', () => {
     const snapshot = buildTvSnapshot(room)
     expect(snapshot.phase).toBe('ready')
+    expect(snapshot.players[0].avatar).toBe('female-3')
     expect(snapshot.players.map(p => [p.name, p.total, p.roundScore, p.status])).toEqual([
       ['Ana', 0, 0, 'ready'], ['Ben', 0, 0, 'ready'], ['Cy', 0, 0, 'ready'],
     ])
@@ -33,6 +34,7 @@ describe('TV scoreboard snapshot', () => {
       player(2, 114, 'active', 'number-11'),
     ] }
     const snapshot = buildTvSnapshot({ ...room, state })
+    expect(snapshot.players[0].avatar).toBe('female-3')
     expect(snapshot.players.map(p => p.roundScore)).toEqual([5, 0, 11])
     expect(snapshot.players.map(p => p.total)).toEqual([85, 29, 114])
     expect(snapshot.players.find(p => p.isTurn)?.name).toBe('Cy')

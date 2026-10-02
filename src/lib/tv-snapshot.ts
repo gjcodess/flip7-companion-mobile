@@ -1,5 +1,6 @@
 import { bankerPlayerDerived } from '../game/bankerGame'
 import type { Room } from './room-store'
+import type { PlayerAvatarId } from './player-avatars'
 
 export type TvSnapshot = {
   roomId: string
@@ -12,6 +13,7 @@ export type TvSnapshot = {
     id: string
     name: string
     color: string
+    avatar?: PlayerAvatarId
     total: number
     roundScore: number
     status: string
@@ -33,6 +35,7 @@ export function buildTvSnapshot(room: Room): TvSnapshot {
       id: player.id,
       name: player.name,
       color: player.color,
+      avatar: player.avatar,
       total: player.totalScore,
       roundScore: bankerPlayerDerived(player).score,
       status: player.round.status,
@@ -42,6 +45,7 @@ export function buildTvSnapshot(room: Room): TvSnapshot {
       id: player.id,
       name: player.name,
       color: player.color,
+      avatar: player.avatar,
       total: 0,
       roundScore: 0,
       status: 'ready',

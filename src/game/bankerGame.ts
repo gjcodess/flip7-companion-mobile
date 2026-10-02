@@ -1,5 +1,6 @@
 import { demoDerived, demoInitialState, demoReducer, type DemoAction, type DemoState, type DemoStatus } from './demoGame'
 import type { Card } from './cards'
+import type { PlayerAvatarId } from '../lib/player-avatars'
 
 export const bankerPlayerColors = [
   '#ed4f7e', '#57b8d7', '#97c844', '#f7a235', '#9b7bd8',
@@ -10,6 +11,7 @@ export type BankerPlayer = {
   id: string
   name: string
   color: string
+  avatar?: PlayerAvatarId
   totalScore: number
   round: DemoState
 }
@@ -17,7 +19,7 @@ export type BankerPlayer = {
 export type BankerRoundResult = {
   round: number
   scores: Record<string, number>
-  hands?: Record<string, { name: string; color: string; status: DemoStatus; entries: DemoState['entries'] }>
+  hands?: Record<string, { name: string; color: string; avatar?: PlayerAvatarId; status: DemoStatus; entries: DemoState['entries'] }>
 }
 
 export type BankerForcedTurn = {
@@ -244,7 +246,7 @@ export function bankerReducer(state: BankerState, action: BankerAction): BankerS
     if (!allBankerPlayersSettled(state)) return state
     const scores = Object.fromEntries(state.players.map((player) => [player.id, bankerPlayerDerived(player).score]))
     const players = state.players.map((player) => ({ ...player, totalScore: player.totalScore + (scores[player.id] ?? 0) }))
-    const hands = Object.fromEntries(state.players.map((player) => [player.id, { name: player.name, color: player.color, status: player.round.status, entries: player.round.entries }]))
+    const hands = Object.fromEntries(state.players.map((player) => [player.id, { name: player.name, color: player.color, avatar: player.avatar, status: player.round.status, entries: player.round.entries }]))
     const history = [...state.history, { round: state.roundNumber, scores, hands }]
     const reachedTarget = players.some((player) => player.totalScore >= state.targetScore)
     if (reachedTarget) {
