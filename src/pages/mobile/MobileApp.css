@@ -973,6 +973,7 @@
 }
 
 .room-dialog {
+  position: fixed;
   color: var(--ink);
   background: var(--cream);
   border: 2px solid var(--ink);
@@ -1128,49 +1129,116 @@
   align-items: center;
   justify-content: center;
   gap: 7px;
-  min-height: 40px;
-  padding: 8px 12px;
-  border: 1px solid #d8abb8;
-  border-radius: 9px;
-  background: transparent;
+  width: 100%;
+  min-width: 0;
+  min-height: 50px;
+  padding: 8px 7px;
+  border: 1.5px solid var(--ink);
+  border-radius: 11px;
+  background: #fff0ed;
+  box-shadow: 2px 3px var(--ink);
   color: #a9234e !important;
-  font-size: 11px !important;
+  font-size: 10px !important;
   font-weight: 750 !important;
   cursor: pointer;
 }
 
 .room-delete-player:hover,
 .room-delete-player:focus-visible {
-  background: #ffe8eb;
+  background: #ffe4e7;
+  transform: translateY(-1px);
 }
 
-.room-profile-delete {
-  text-align: center;
-  margin-top: 19px;
-  padding-top: 17px;
-  border-top: 1px dashed #c9baa0;
+.room-editor-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.room-editor-actions.has-profile {
+  grid-template-columns: minmax(0, .95fr) minmax(0, 1.2fr);
+  align-items: stretch;
+}
+
+.room-editor-actions .room-button { min-width: 0; }
+
+.room-delete-confirm-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(320px, calc(100% - 48px));
+  max-width: 320px;
+  max-height: calc(100% - 48px);
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.room-delete-confirm-dialog::backdrop {
+  background: #132d6799;
+  backdrop-filter: blur(7px);
 }
 
 .room-profile-delete-confirm {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  width: 100%;
+  max-width: 320px;
   text-align: left;
-  padding: 14px;
-  border: 1.5px solid #c53c63;
-  border-radius: 12px;
-  background: #fff0ed;
+  padding: 18px 16px 16px;
+  border: 2px solid var(--ink);
+  border-radius: 17px;
+  background: #fff9df;
+  box-shadow: 4px 5px 0 var(--ink);
 }
 
-.room-profile-delete-confirm strong {
+.room-profile-delete-confirm::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image: radial-gradient(circle, #132d6733 1px, transparent 1.2px);
+  background-size: 8px 8px;
+  -webkit-mask-image: radial-gradient(ellipse 125px 95px at top left, #000, transparent), radial-gradient(ellipse 125px 95px at bottom right, #000, transparent);
+  mask-image: radial-gradient(ellipse 125px 95px at top left, #000, transparent), radial-gradient(ellipse 125px 95px at bottom right, #000, transparent);
+}
+
+.room-profile-delete-heading {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed #c9baa0;
+}
+
+.room-profile-delete-heading span {
+  color: #c53264;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
+.room-profile-delete-confirm .room-profile-delete-heading strong {
   display: block;
-  color: #9d1f49;
-  font-size: 13px;
+  color: var(--ink);
+  font-size: 19px;
+  line-height: 1.2;
+  letter-spacing: -.4px;
   font-weight: 900;
 }
 
 .room-profile-delete-confirm p {
-  margin-top: 6px;
-  color: #6c5261;
+  position: relative;
+  margin: 11px 0 14px;
+  color: #53607a;
   font-size: 11px;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .room-profile-delete-actions {
@@ -1190,16 +1258,17 @@
   background: #fffdf2;
   color: var(--ink);
   padding: 9px;
-  border-radius: 9px;
+  border-radius: 10px;
+  box-shadow: 2px 3px var(--ink);
   font-size: 11px;
   font-weight: 850;
   cursor: pointer;
 }
 
 .room-profile-delete-actions button:last-child {
-  background: #c53c63;
+  background: var(--pink);
   color: #fff;
-  border-color: #9d1f49;
+  border-color: var(--ink);
 }
 
 .room-button {
