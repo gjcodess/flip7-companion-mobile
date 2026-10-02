@@ -152,6 +152,8 @@ public class TvServerPlugin extends Plugin {
                 sendAsset(socket, "tv.html");
             } else if (path.equals("/state/" + token)) {
                 respond(socket, 200, "application/json; charset=utf-8", snapshot.getBytes(StandardCharsets.UTF_8));
+            } else if (path.equals("/favicon.ico")) {
+                sendAsset(socket, "assets/flip7-companion-icon-512-rounded.png");
             } else if (path.startsWith("/assets/") || path.startsWith("/cards/")) {
                 // URLDecoder treats '+' as a form-space, but modifier card files are named +2.webp, etc.
                 String asset = URLDecoder.decode(path.substring(1).replace("+", "%2B"), StandardCharsets.UTF_8.name());
@@ -185,6 +187,7 @@ public class TvServerPlugin extends Plugin {
         if (path.endsWith(".css")) return "text/css; charset=utf-8";
         if (path.endsWith(".webp")) return "image/webp";
         if (path.endsWith(".png")) return "image/png";
+        if (path.endsWith(".ico")) return "image/x-icon";
         if (path.endsWith(".svg")) return "image/svg+xml";
         if (path.endsWith(".woff2")) return "font/woff2";
         return "application/octet-stream";
