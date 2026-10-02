@@ -509,6 +509,7 @@ body:has(:is(.banker-shell, .demo-shell)) .confirmation-modal .home-prompt-actio
 
 /* Floating confirmation dialogs shared by the room and game screens. */
 .floating-confirmation-backdrop {
+  align-items: center;
   padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
   background: #091e4da8;
   backdrop-filter: blur(4px);
