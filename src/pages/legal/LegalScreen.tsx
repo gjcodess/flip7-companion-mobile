@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { ChevronDown, ShieldCheck, Users } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import { AssetCardFan, InfoPage } from '../mobile/InfoPage'
 
 type LegalKind = 'privacy' | 'terms'
@@ -24,6 +24,10 @@ function PrivacyPolicy() {
     <LegalSection id="local-modes" title="Demo and Banker Mode">
       <p>Demo Mode and Banker Mode are local-only experiences. Room data is saved on this device and is not sent to any online service. Demo practice remains temporary.</p>
       <p>Demo Mode is for private practice. Banker Mode lets one person operate a shared table from one device. Banker rooms save automatically and can be resumed after closing or refreshing the app. Demo practice ends when you leave.</p>
+    </LegalSection>
+    <LegalSection id="tv-cast" title="TV Scoreboard & local casting">
+      <p>The TV Scoreboard (Cast) feature operates solely across your private local area network (LAN) or phone hotspot using an embedded offline web server hosted directly on your Android device.</p>
+      <p>When you start TV sharing, the app creates a direct local HTTP and WebSocket connection to stream the room scoreboard to connected viewing screens (such as a smart TV, tablet, or browser). No game data, spectator connections, device IP addresses, or media feeds are ever transmitted to external cloud servers or third-party analytics providers.</p>
     </LegalSection>
     <LegalSection id="use" title="How we use information">
       <p>The app uses the information you enter only to display the local table, calculate scores, and run the game on your device.</p>
@@ -61,6 +65,10 @@ function TermsConditions() {
       <p>Demo Mode is a private practice experience. Banker Mode is a one-device setup where a banker switches between player tables and records the group's physical cards and actions locally.</p>
       <p>Banker rooms are saved locally and can be resumed. Demo practice is temporary. Keep backups of records you want to preserve; device storage can be cleared or lost. Both modes require the physical deck.</p>
     </LegalSection>
+    <LegalSection id="tv-cast" title="TV Scoreboard & spectator display">
+      <p>The TV Scoreboard (Cast) feature provides a local display interface designed to broadcast round scores and player statuses to external screens on your local network or phone hotspot.</p>
+      <p>You are responsible for managing your local Wi-Fi or hotspot environment and ensuring display devices are authorized by you to connect. The companion app does not guarantee compatibility with all smart TV browsers or network configurations, and operates independently without third-party network dependencies.</p>
+    </LegalSection>
     <LegalSection id="independent" title="Independent companion notice">
       <p>Flip7 Companion is an independent, unofficial companion app created for people who want to play the physical card game with friends. It is not affiliated with, endorsed by, sponsored by, or associated with the creator, publisher, or other rights holders of Flip 7.</p>
       <p>Flip 7 and related game materials belong to their respective owners. This app records the cards that players physically reveal; it does not provide or replace the physical game.</p>
@@ -93,10 +101,10 @@ function TermsConditions() {
 export function LegalScreen({ kind }: { kind: LegalKind }) {
   const isPrivacy = kind === 'privacy'
   const sections = isPrivacy
-    ? [['overview', 'Overview'], ['information', 'Information we collect'], ['local-modes', 'Demo and Banker Mode'], ['use', 'How we use information'], ['sharing', 'When information is shared'], ['retention', 'Storage and retention'], ['choices', 'Your choices'], ['children', "Children's privacy"], ['changes', 'Changes']]
-    : [['acceptance', 'Acceptance of these terms'], ['service', 'The companion service'], ['local-modes', 'Demo and Banker Mode'], ['independent', 'Independent companion'], ['accounts', 'Local session access'], ['fair-play', 'Fair play'], ['content', 'Your game data'], ['availability', 'Availability'], ['responsibility', 'Gameplay responsibility'], ['updates', 'Updates']]
+    ? [['overview', 'Overview'], ['information', 'Information we collect'], ['local-modes', 'Demo and Banker Mode'], ['tv-cast', 'TV Scoreboard & casting'], ['use', 'How we use information'], ['sharing', 'When information is shared'], ['retention', 'Storage and retention'], ['choices', 'Your choices'], ['children', "Children's privacy"], ['changes', 'Changes']]
+    : [['acceptance', 'Acceptance of these terms'], ['service', 'The companion service'], ['local-modes', 'Demo and Banker Mode'], ['tv-cast', 'TV Scoreboard & display'], ['independent', 'Independent companion'], ['accounts', 'Local session access'], ['fair-play', 'Fair play'], ['content', 'Your game data'], ['availability', 'Availability'], ['responsibility', 'Gameplay responsibility'], ['updates', 'Updates']]
   return <InfoPage kind={kind} kicker="APP INFORMATION" title={isPrivacy ? 'Privacy & local data' : 'Terms & conditions'} accent="" intro={isPrivacy ? 'How your saved game information is handled.' : 'The ground rules for using this companion.'}>
-    <section className={`info-art-banner ${isPrivacy ? 'cyan' : 'yellow'}`}><div><span className="info-banner-icon">{isPrivacy ? <ShieldCheck size={22} /> : <Users size={22} />}</span><h2>{isPrivacy ? 'Kept close to home.' : 'Made for your table.'}</h2><p>{isPrivacy ? 'No accounts. No online game records. Your rooms stay on this device.' : 'An independent companion. Your physical deck runs the game.'}</p></div><AssetCardFan cards={isPrivacy ? ['Back', 'SECOND CHANCE', '0'] : ['Back', '12', '+6']} /></section>
+    <section className={`info-art-banner ${isPrivacy ? 'cyan' : 'yellow'}`}><div><h2>{isPrivacy ? 'Kept close to home.' : 'Made for your table.'}</h2><p>{isPrivacy ? 'No accounts. No online game records. Your rooms stay on this device.' : 'An independent companion. Your physical deck runs the game.'}</p></div><AssetCardFan cards={isPrivacy ? ['Back', 'SECOND CHANCE', '0'] : ['Back', '12', '+6']} /></section>
     <div className="info-document-meta"><span>Updated October 2026</span><span>{isPrivacy ? 'Data Privacy Policy' : 'Terms & Conditions'}</span></div>
     <details className="info-contents"><summary><span>ON THIS PAGE</span><b>{sections.length} sections</b><ChevronDown className="info-contents-chevron" size={18} aria-hidden="true" /></summary><nav aria-label={isPrivacy ? 'Privacy policy sections' : 'Terms sections'}>{sections.map(([id, title], i) => <a key={id} href={`#${id}`}><span>{String(i + 1).padStart(2, '0')}</span>{title}</a>)}</nav></details>
     <article className="info-legal-document" aria-label={isPrivacy ? 'Data Privacy Policy' : 'Terms & Conditions'}>{isPrivacy ? <PrivacyPolicy /> : <TermsConditions />}</article>

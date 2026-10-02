@@ -564,10 +564,12 @@
 }
 
 .room-avatar-stack .room-avatar {
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   box-shadow: none;
   border: 2px solid var(--ink);
-  margin-left: -6px;
+  margin-left: -8px;
 }
 
 .room-avatar-stack .room-avatar:first-child {
@@ -577,9 +579,9 @@
 .room-avatar.more {
   background: var(--ink);
   color: var(--cream);
-  font-size: 8px;
-  width: 30px;
-  height: 30px;
+  font-size: 9px;
+  width: 38px;
+  height: 38px;
 }
 
 .room-resume {
@@ -588,12 +590,25 @@
   align-items: center;
   padding: 10px 12px;
   min-height: 37px;
-  border: 0;
+  border: 1.5px solid var(--ink);
   background: var(--pink);
   color: #fff !important;
   border-radius: 8px;
+  box-shadow: 3px 3px 0 var(--ink);
   font-size: 10px !important;
   font-weight: 850 !important;
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+
+.room-resume:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+.room-resume:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 5px;
 }
 
 .room-open {
@@ -958,6 +973,7 @@
 }
 
 .room-dialog {
+  position: fixed;
   color: var(--ink);
   background: var(--cream);
   border: 2px solid var(--ink);
@@ -985,8 +1001,13 @@
 
 .room-dialog-heading .room-icon-button {
   position: absolute;
-  top: 18px;
-  right: 10px;
+  top: 14px;
+  right: 12px;
+  cursor: pointer;
+  transition: opacity .12s ease;
+}
+.room-dialog-heading .room-icon-button:hover {
+  opacity: .7;
 }
 
 .room-dialog-heading h2 {
@@ -1104,51 +1125,150 @@
 }
 
 .room-delete-player {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
-  background: transparent;
-  border: 0;
-  color: #b43255 !important;
-  font-size: 10px !important;
-  padding: 15px;
   width: 100%;
+  min-width: 0;
+  min-height: 50px;
+  padding: 8px 7px;
+  border: 1.5px solid var(--ink);
+  border-radius: 11px;
+  background: #fff0ed;
+  box-shadow: 2px 3px var(--ink);
+  color: #a9234e !important;
+  font-size: 10px !important;
+  font-weight: 750 !important;
+  cursor: pointer;
+}
+
+.room-delete-player:hover,
+.room-delete-player:focus-visible {
+  background: #ffe4e7;
+  transform: translateY(-1px);
+}
+
+.room-editor-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
   margin-top: 8px;
 }
 
-.room-profile-delete {
-  margin-top: 22px;
-  border-top: 1px solid #d9cdb0;
-  padding-top: 15px;
+.room-editor-actions.has-profile {
+  grid-template-columns: minmax(0, .95fr) minmax(0, 1.2fr);
+  align-items: stretch;
 }
 
-.room-profile-delete p {
+.room-editor-actions .room-button { min-width: 0; }
+
+.room-delete-confirm-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(320px, calc(100% - 48px));
+  max-width: 320px;
+  max-height: calc(100% - 48px);
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.room-delete-confirm-dialog::backdrop {
+  background: #132d6799;
+  backdrop-filter: blur(7px);
+}
+
+.room-profile-delete-confirm {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  width: 100%;
+  max-width: 320px;
+  text-align: left;
+  padding: 18px 16px 16px;
+  border: 2px solid var(--ink);
+  border-radius: 17px;
+  background: #fff9df;
+  box-shadow: 4px 5px 0 var(--ink);
+}
+
+.room-profile-delete-confirm::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image: radial-gradient(circle, #132d6733 1px, transparent 1.2px);
+  background-size: 8px 8px;
+  -webkit-mask-image: radial-gradient(ellipse 125px 95px at top left, #000, transparent), radial-gradient(ellipse 125px 95px at bottom right, #000, transparent);
+  mask-image: radial-gradient(ellipse 125px 95px at top left, #000, transparent), radial-gradient(ellipse 125px 95px at bottom right, #000, transparent);
+}
+
+.room-profile-delete-heading {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed #c9baa0;
+}
+
+.room-profile-delete-heading span {
+  color: #c53264;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
+.room-profile-delete-confirm .room-profile-delete-heading strong {
+  display: block;
+  color: var(--ink);
+  font-size: 19px;
+  line-height: 1.2;
+  letter-spacing: -.4px;
+  font-weight: 900;
+}
+
+.room-profile-delete-confirm p {
+  position: relative;
+  margin: 11px 0 14px;
+  color: #53607a;
   font-size: 11px;
-  line-height: 1.7;
-  color: #6d7180;
+  line-height: 1.6;
 }
 
-.room-profile-delete>div {
+.room-profile-delete-actions {
   display: flex;
   gap: 10px;
-  margin-top: 14px;
+  margin-top: 13px;
 }
 
-.room-profile-delete button {
+.room-profile-delete-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   flex: 1;
-  border: 1px solid #a6acb4;
+  min-height: 44px;
+  border: 1.5px solid var(--ink);
   background: #fffdf2;
-  padding: 11px;
-  border-radius: 8px;
-  font-size: 10px;
-  font-weight: 800;
+  color: var(--ink);
+  padding: 9px;
+  border-radius: 10px;
+  box-shadow: 2px 3px var(--ink);
+  font-size: 11px;
+  font-weight: 850;
+  cursor: pointer;
 }
 
-.room-profile-delete button:last-child {
-  background: #fce1e6;
-  color: #b43255;
-  border-color: #db8fa5;
+.room-profile-delete-actions button:last-child {
+  background: var(--pink);
+  color: #fff;
+  border-color: var(--ink);
 }
 
 .room-button {
@@ -1378,6 +1498,7 @@
 
 .room-roster-controls {
   display: flex;
+  flex-shrink: 0;
 }
 
 .room-roster-controls button {
@@ -1388,6 +1509,16 @@
   width: 30px;
   height: 44px;
   padding: 0;
+}
+
+.room-roster-controls .room-roster-remove {
+  color: #b42c58;
+  border-radius: 7px;
+}
+
+.room-roster-controls .room-roster-remove:hover,
+.room-roster-controls .room-roster-remove:focus-visible {
+  background: #fce0e4;
 }
 
 .room-add-player {
@@ -1523,11 +1654,26 @@
 }
 
 .room-detail-hero .room-avatar-stack {
+  --detail-avatar-size: clamp(30px, 10.5vw, 38px);
   margin: 17px 0 22px;
 }
 
 .room-detail-hero .room-avatar {
+  width: var(--detail-avatar-size);
+  height: var(--detail-avatar-size);
   border-color: var(--ink);
+}
+
+.room-detail-hero .room-avatar-stack .room-avatar:not(:first-child) {
+  margin-left: -9px;
+}
+
+.room-detail-hero .room-button.secondary {
+  margin-top: 13px;
+  border: 2px solid var(--ink);
+  background: #fffdf5;
+  color: var(--ink) !important;
+  box-shadow: 3px 4px var(--ink);
 }
 
 .room-edit-explainer {
@@ -2458,3 +2604,23 @@
     gap: 7px;
   }
 }
+
+.room-roster-avatar-edit { position: relative; flex: 0 0 44px; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 10px; background: transparent; cursor: pointer; }
+.room-roster-avatar-edit .room-avatar { pointer-events: none; }
+.room-roster-avatar-edit > svg { position: absolute; right: 0; bottom: 0; width: 16px; height: 16px; padding: 2px; border: 1px solid var(--ink); border-radius: 5px; background: var(--yellow); box-shadow: 1px 1px 0 var(--ink); }
+.room-roster-avatar-edit:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+.room-avatar-picker { margin: 22px 0 16px; padding: 0; border: 0; }
+.room-avatar-picker legend { margin-bottom: 12px; font-size: 9px; font-weight: 850; letter-spacing: .07em; }
+.room-avatar-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+.room-avatar-tabs button { flex: 1; min-height: 32px; padding: 6px 3px; border: 1.5px solid var(--ink); border-radius: 8px; background: #fffdf5; color: var(--ink); font-size: 10px; font-weight: 800; cursor: pointer; }
+.room-avatar-tabs button[aria-pressed=true] { background: var(--yellow); box-shadow: 2px 2px 0 var(--ink); }
+.room-avatar-options { display: grid; grid-template-columns: repeat(4, minmax(0, 54px)); justify-content: center; gap: 8px; min-height: 58px; }
+.room-avatar-options button { position: relative; width: 100%; aspect-ratio: 1; padding: 2px; border: 2px solid var(--ink); border-radius: 13px; background: #fffdf5; cursor: pointer; }
+.room-avatar-options button[aria-pressed=true] { outline: 2px solid var(--ink); outline-offset: 2px; }
+.room-avatar-options button .player-avatar-art { display: block; width: 100%; height: 100%; border-radius: 9px; }
+.room-avatar-check { position: absolute; right: -5px; bottom: -5px; width: 18px; height: 18px; padding: 2px; border: 1.5px solid var(--ink); border-radius: 50%; background: var(--yellow); }
+.room-character-dialog .player-avatar-preview { margin-block: 15px 18px; }
+.room-character-actions { display: grid; grid-template-columns: 1fr 1.65fr; gap: 10px; margin-top: 20px; }
+.room-character-actions .room-button { min-height: 46px; padding: 9px 6px; font-size: 11px !important; }
+.room-character-actions .room-button.secondary { border-color: var(--ink); background: #fffdf5; }

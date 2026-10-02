@@ -36,7 +36,7 @@ describe('offline room saves', () => {
     const { store, roster, room } = await completedFixture()
     const active = store.createRoom('Another table', 200, roster)
     store.startRoom(active)
-    const updated = { ...roster[0], name: 'Annie', color: '#39bca8' }
+    const updated = { ...roster[0], name: 'Annie', color: '#39bca8', avatar: 'female-3' as const }
 
     store.savePlayerProfile(updated)
     const completed = store.getLibrary().rooms.find(savedRoom => savedRoom.id === room.id)!
@@ -47,12 +47,23 @@ describe('offline room saves', () => {
       expect(savedRoom.state?.players[0]).toMatchObject(updated)
       expect(savedRoom.roster[1]).toEqual(roster[1])
     }
-    expect(completed.state?.history[0].hands?.[updated.id]).toMatchObject({ name: 'Annie', color: '#39bca8' })
+    expect(completed.state?.history[0].hands?.[updated.id]).toMatchObject({ name: 'Annie', color: '#39bca8', avatar: 'female-3' })
 
     vi.resetModules()
     const reloaded = await import('./room-store')
     expect(reloaded.getLibrary().rooms.find(savedRoom => savedRoom.id === active.id)?.state?.players[0]).toMatchObject(updated)
-    expect(reloaded.getLibrary().rooms.find(savedRoom => savedRoom.id === room.id)?.state?.history[0].hands?.[updated.id]).toMatchObject({ name: 'Annie', color: '#39bca8' })
+    expect(reloaded.getLibrary().rooms.find(savedRoom => savedRoom.id === room.id)?.state?.history[0].hands?.[updated.id]).toMatchObject({ name: 'Annie', color: '#39bca8', avatar: 'female-3' })
+  })
+
+  it('accepts old saves without avatars and rejects unknown avatar IDs', async () => {
+    const { store } = await fixture()
+    const oldSave = JSON.parse(saved.get(store.STORAGE_KEY)!)
+    for (const player of oldSave.players) delete player.avatar
+    for (const player of oldSave.rooms[0].roster) delete player.avatar
+    for (const player of oldSave.rooms[0].state.players) delete player.avatar
+    expect(store.decodeLibrary(JSON.stringify(oldSave)).players[0].avatar).toBeUndefined()
+    oldSave.players[0].avatar = 'unknown-character'
+    expect(() => store.decodeLibrary(JSON.stringify(oldSave))).toThrow('Invalid saved players')
   })
 
   it('resumes the current player and full forced-turn queue after a fresh load, using card IDs', async () => {
@@ -103,6 +114,32 @@ describe('offline room saves', () => {
     store.saveRoomState(room.id, state)
     expect(store.canEditRoster(store.getLibrary().rooms[0])).toBe(false)
     expect(() => store.editRoom(store.getLibrary().rooms[0], 'Nope', 200, roster)).toThrow('before the first card')
+  })
+
+  it('removes a player between rounds while keeping their completed round history', async () => {
+    const { store, room, roster } = await fixture()
+    const extra = store.newProfile('Dee', 3)
+    store.editRoom(room, room.name, 200, [...roster, extra])
+    let state = store.getLibrary().rooms[0].state!
+    state = bankerReducer(state, { type: 'player', playerId: roster[0].id, action: { type: 'add', card: card('number-5') } })
+    state = bankerReducer(state, { type: 'player', playerId: roster[0].id, action: { type: 'add', card: card('number-2') } })
+    for (const player of [roster[1], roster[2], extra, roster[0]]) {
+      if (player.id !== roster[0].id) for (const id of ['number-1', 'number-2']) state = bankerReducer(state, { type: 'player', playerId: player.id, action: { type: 'add', card: card(id) } })
+      state = bankerReducer(state, { type: 'player', playerId: player.id, action: { type: 'stay' } })
+    }
+    store.saveRoomState(room.id, bankerReducer(state, { type: 'advance-round' }))
+    const current = store.getLibrary().rooms[0]
+    expect(current.state?.turnPlayerId).toBe(roster[0].id)
+
+    store.editRoom(current, current.name, current.targetScore, [roster[1], roster[2], extra])
+    const updated = store.decodeLibrary(saved.get(store.STORAGE_KEY)!).rooms[0]
+    expect(updated.roster.map(player => player.id)).toEqual([roster[1].id, roster[2].id, extra.id])
+    expect(updated.state?.players.map(player => player.id)).toEqual([roster[1].id, roster[2].id, extra.id])
+    expect(updated.state?.turnPlayerId).toBe(roster[1].id)
+    expect(updated.state?.selectedPlayerId).toBe(roster[1].id)
+    expect(updated.state?.history[0].scores[roster[0].id]).toBe(7)
+    expect(updated.state?.history[0].hands?.[roster[0].id].entries).toHaveLength(2)
+    expect(store.getLibrary().players.some(player => player.id === roster[0].id)).toBe(true)
   })
 
   it('retains tied winners and derives player stats from completed matches', async () => {

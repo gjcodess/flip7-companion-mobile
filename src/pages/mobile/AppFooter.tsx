@@ -3,7 +3,7 @@ import { ShieldCheck } from 'lucide-react'
 export function AppFooter() {
   return <footer className="room-app-footer">
     <div className="room-footer-brand">
-      <img className="room-footer-logo" src="/assets/flip7-title-logo.png" alt="Flip7 Companion" />
+      <img className="room-footer-logo" src="/assets/flip7-title-logo.webp" alt="Flip7 Companion" />
       <p className="room-footer-tagline">Made for the table. Always offline.</p>
     </div>
     <div className="room-footer-disclaimer-card">
@@ -20,7 +20,7 @@ export function AppFooter() {
       </p>
     </div>
     <div className="room-footer-copy">
-      <span className="room-footer-version">v1.3</span>
+      <span className="room-footer-version">v1.4</span>
       <span className="room-footer-sep">·</span>
       <small>© 2026 Flip7 Companion</small>
     </div>

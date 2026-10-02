@@ -55,8 +55,12 @@ export function RulesScreen() {
           <div className="guide-card-heading"><span className="eyebrow">CHOOSE YOUR MODE</span><b className="guide-number">04</b></div>
           <h2>Same game, different table setup.</h2>
           <p>Every mode uses the physical Flip 7 deck and the same scoring rules. Choose the setup that fits your group.</p>
-          <div className="guide-deck-details"><div><b>Demo mode</b><span>Practice on one device by yourself. Nothing is saved online, and the session ends when you leave or refresh.</span></div><div><b>Banker mode</b><span>Use one device for the whole group. The banker records cards and actions locally. Rooms save automatically so unfinished games can be resumed.</span></div></div>
-          <div className="guide-callout"><b>For a shared game</b><span>Use Banker Mode when the group is playing together on one device. The app keeps the player tables and scores local to that device.</span></div>
+          <div className="guide-deck-details">
+            <div><b>Demo mode</b><span>Practice on one device by yourself. Nothing is saved online, and the session ends when you leave or refresh.</span></div>
+            <div><b>Banker mode</b><span>Use one device for the whole group. The banker records cards and actions locally. Rooms save automatically so unfinished games can be resumed.</span></div>
+            <div><b>TV Scoreboard (Cast)</b><span>Broadcast a live spectator scoreboard to any smart TV, laptop, or tablet over local Wi-Fi or phone hotspot. Runs completely offline without using mobile data.</span></div>
+          </div>
+          <div className="guide-callout"><b>Big-screen game night</b><span>Tap the Cast icon in Banker Mode to show the live scoreboard on your TV. Players can follow real-time scores, active turns, and card tables together from across the room.</span></div>
         </section>
 
         <section id="guide-modifiers" className="guide-card guide-card-wide guide-card-modifiers">

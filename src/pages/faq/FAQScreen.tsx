@@ -110,6 +110,18 @@ const faqGroups = [
         "answer": "The game ends after the round is settled. The player with the most total points wins."
       },
       {
+        "question": "How do I cast the scoreboard to a TV?",
+        "answer": "In Banker Mode, tap the Cast button in the top header to open the TV Share dialog. Connect your smart TV, tablet, or laptop to the same Wi-Fi network (or your phone's portable hotspot), then scan the QR code or enter the displayed URL into the TV's web browser."
+      },
+      {
+        "question": "Does TV casting require an internet connection or mobile data?",
+        "answer": "No. The TV scoreboard runs 100% locally from an offline server inside the app. It does not use the internet or consume mobile data. You can use your home Wi-Fi router or turn on your phone's portable hotspot (even with mobile data turned off) to connect the TV."
+      },
+      {
+        "question": "Does the TV scoreboard update in real time?",
+        "answer": "Yes. As the banker records cards, busts, freezes, and settles scores on the phone, the TV display updates instantly with live animations for everyone at the table."
+      },
+      {
         "question": "How much storage do saved games use?",
         "answer": "Rooms save names, card IDs, and scores with a 10 MB save limit; actual device storage limits may be lower. The artwork is bundled once. Clearing completed rooms removes detailed history but keeps lifetime player matches, wins, and best scores. Unfinished games are never automatically deleted."
       }
