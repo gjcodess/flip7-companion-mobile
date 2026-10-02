@@ -985,8 +985,13 @@
 
 .room-dialog-heading .room-icon-button {
   position: absolute;
-  top: 18px;
-  right: 10px;
+  top: 14px;
+  right: 12px;
+  cursor: pointer;
+  transition: opacity .12s ease;
+}
+.room-dialog-heading .room-icon-button:hover {
+  opacity: .7;
 }
 
 .room-dialog-heading h2 {

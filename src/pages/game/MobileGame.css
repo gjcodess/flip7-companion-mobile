@@ -41,12 +41,24 @@
 }
 .banker-shell.saved-room-game .banker-topbar:has(.game-topbar-brand) {
   display: grid;
-  grid-template-columns: 80px minmax(0, 1fr) 80px;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
   gap: 8px;
   background: transparent;
   border-bottom: 0;
 }
-.banker-shell .banker-topbar > .brand-button { justify-self: start; color: #132d67; }
+.banker-shell .banker-topbar > .brand-button { color: #132d67; }
+.banker-shell .banker-topbar > .brand-button.cast-button { justify-self: start; }
+.banker-shell .banker-topbar > .brand-button.menu-button {
+  justify-self: end;
+  background: #132d67;
+  color: #fff7da;
+  box-shadow: 2px 3px 0 #d4bd72;
+}
+.banker-shell .banker-topbar > .brand-button.menu-button:hover,
+.banker-shell .banker-topbar > .brand-button.menu-button:active {
+  background: #1a3c87;
+}
 .banker-shell .topbar > .brand-button.is-sharing {
   background: #132d67;
   color: #fff7da;
@@ -64,7 +76,7 @@
 }
 .banker-shell .game-topbar-brand { display: grid; place-items: center; min-width: 0; }
 .banker-shell .game-topbar-brand img { display: block; width: min(100%, 92px); height: 44px; object-fit: contain; }
-.banker-shell .banker-topbar > .exit-button { justify-self: end; width: 80px; padding-inline: 10px; }
+
 :is(.banker-shell, .demo-shell) .topbar .exit-button {
   min-height: 44px;
   padding: 0 15px;
@@ -380,11 +392,23 @@ body:has(:is(.banker-shell, .demo-shell)) .confirmation-modal .close-button {
   width: 44px;
   height: 44px;
   flex: 0 0 44px;
-  border: 1.5px solid #132d67;
-  border-radius: 12px;
+  margin-top: -6px;
+  margin-right: -6px;
+  display: grid;
+  place-items: center;
+  transition: opacity .12s ease;
+  border: 0;
+  border-radius: 0;
+
   color: #132d67;
-  background: #dceef0;
-  box-shadow: 2px 3px 0 #132d67;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+}
+:is(.banker-shell, .demo-shell) .picker-heading .close-button:hover,
+body:has(:is(.banker-shell, .demo-shell)) .confirmation-modal .close-button:hover {
+  background: transparent;
+  opacity: .7;
 }
 :is(.banker-shell, .demo-shell) .card-picker > p,
 body:has(:is(.banker-shell, .demo-shell)) .confirmation-modal > p { color: #53607a; font-size: 12px; line-height: 1.7; }
@@ -518,11 +542,22 @@ body:has(:is(.banker-shell, .demo-shell)) .floating-confirmation-modal .picker-h
   width: 44px;
   height: 44px;
   flex: 0 0 44px;
-  border: 1.5px solid #132d67;
-  border-radius: 12px;
+  margin-top: -6px;
+  margin-right: -6px;
+  display: grid;
+  place-items: center;
+  transition: opacity .12s ease;
+  border: 0;
+  border-radius: 0;
   color: #132d67;
-  background: #dceef0;
-  box-shadow: 2px 3px 0 #132d67;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+}
+:is(.banker-shell, .demo-shell) .picker-heading .close-button:hover,
+body:has(:is(.banker-shell, .demo-shell)) .confirmation-modal .close-button:hover {
+  background: transparent;
+  opacity: .7;
 }
 
 .floating-confirmation-modal > p { position: relative; color: #53607a; font-size: 12px; line-height: 1.7; }
