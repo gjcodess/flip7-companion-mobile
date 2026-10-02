@@ -9,6 +9,8 @@ public class MainActivity extends BridgeActivity {
     protected void onCreate(Bundle savedInstanceState) {
         SplashScreen.installSplashScreen(this);
         registerPlugin(TvServerPlugin.class);
+        registerPlugin(LocalRoomPlugin.class);
+        registerPlugin(QrScannerPlugin.class);
         registerPlugin(ResultsImagePlugin.class);
         super.onCreate(savedInstanceState);
     }

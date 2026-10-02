@@ -3,6 +3,7 @@ import { bankerInitialState, bankerPlayerColors, bankerReducer, type BankerState
 import { pickerCards } from '../game/cards'
 import { demoInitialState } from '../game/demoGame'
 import { defaultPlayerAvatarFor, isPlayerAvatarId, type PlayerAvatarId } from './player-avatars'
+import { newLocalId } from './local-id'
 
 export type PlayerProfile = { id: string; name: string; color: string; avatar?: PlayerAvatarId }
 export type Room = {
@@ -100,7 +101,7 @@ export function updateLibrary(change: (current: RoomLibrary) => RoomLibrary) {
   listeners.forEach(listener => listener())
 }
 export function newProfile(name: string, index = getLibrary().players.length): PlayerProfile {
-  return { id: crypto.randomUUID(), name: name.trim(), color: bankerPlayerColors[index % bankerPlayerColors.length], avatar: defaultPlayerAvatarFor(undefined, index) }
+  return { id: newLocalId(), name: name.trim(), color: bankerPlayerColors[index % bankerPlayerColors.length], avatar: defaultPlayerAvatarFor(undefined, index) }
 }
 export function savePlayerProfile(profile: PlayerProfile) {
   updateLibrary(current => {
@@ -132,7 +133,7 @@ export function savePlayerProfile(profile: PlayerProfile) {
   })
 }
 export function createRoom(name: string, targetScore: number, roster: PlayerProfile[]) {
-  const room: Room = { id: crypto.randomUUID(), name: name.trim(), targetScore, roster, createdAt: Date.now(), updatedAt: Date.now(), pinned: false, state: null }
+  const room: Room = { id: newLocalId(), name: name.trim(), targetScore, roster, createdAt: Date.now(), updatedAt: Date.now(), pinned: false, state: null }
   updateLibrary(current => ({ ...current, rooms: [room, ...current.rooms], players: [...current.players, ...roster.filter(p => !current.players.some(existing => existing.id === p.id))] }))
   return room
 }

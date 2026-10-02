@@ -1,0 +1,64 @@
+.local-profile-save { width: 100%; margin-top: 24px; }
+.local-guest-shell { --ink: #132d67; --cream: #fff7da; --yellow: #ffe05c; --pink: #ed4f7e; --cyan: #57b8d7; min-height: 100vh; }
+.local-guest-main { padding-bottom: 52px; }
+.local-guest-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 16px 12px; gap: 12px; }
+.local-guest-header button { display: inline-flex; align-items: center; gap: 7px; border: 0; background: transparent; color: #132d67; font-weight: 800; }
+.local-guest-header span, .local-guest-connection { display: inline-flex; align-items: center; gap: 7px; color: #132d67; font-size: 12px; font-weight: 850; letter-spacing: .08em; }
+.local-guest-connection { display: flex; flex-wrap: wrap; padding: 9px 17px; background: #eaf9f8; border-block: 1px solid #132d67; }
+.local-guest-connection a { margin-left: auto; color: #132d67; text-decoration: underline; }
+.local-guest-hero, .local-guest-panel { position: relative; margin: 16px; padding: 19px; border: 2px solid #132d67; border-radius: 20px; box-shadow: 5px 6px 0 #132d67; background: #fff9dd; }
+.local-guest-hero { background: #ffe569; }
+.local-guest-hero h1, .local-guest-panel h1, .local-guest-panel h2 { margin: 8px 0; color: #132d67; line-height: 1.05; }
+.local-guest-hero p, .local-guest-panel p { color: #263d6c; line-height: 1.45; }
+.local-guest-panel > .room-button { width: 100%; margin-top: 15px; }
+.local-guest-panel > .room-button:disabled { opacity: .55; box-shadow: none; cursor: not-allowed; }
+.local-scan-button { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 52px; margin-top: 18px; border: 2px solid #132d67; border-radius: 12px; background: #ffe569; box-shadow: 4px 4px 0 #132d67; color: #132d67; font: inherit; font-weight: 900; cursor: pointer; }
+.local-scan-button:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 #132d67; }
+.local-scan-button:disabled { opacity: .55; cursor: not-allowed; }
+.local-guest-panel .room-field { display: block; margin-top: 18px; }
+.local-guest-table-heading { display: flex; align-items: center; justify-content: space-between; margin: 24px 18px 8px; color: #132d67; }
+.local-guest-table-heading h2 { margin: 3px 0; }
+.local-round-badge { padding: 8px; background: #ffe569; border: 1px solid #132d67; border-radius: 8px; font-size: 11px; font-weight: 850; }
+.local-guest-players { padding: 8px 16px 16px; }
+.local-profile-row, .local-seat-list button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px; border: 1px solid #132d67; border-radius: 12px; background: #fffdf4; color: #132d67; text-align: left; }
+.local-profile-row span { display: grid; gap: 2px; flex: 1; }
+.local-profile-row small { font-size: 11px; }
+.local-profile-row .player-avatar, .local-seat-list .player-avatar, .local-result-row .player-avatar { width: 42px; height: 42px; flex: 0 0 42px; }
+.local-seat-list { display: grid; gap: 8px; margin-top: 16px; }
+.local-seat-list button[aria-pressed="true"] { background: #ffe569; box-shadow: 3px 3px 0 #132d67; }
+.local-seat-list button:disabled { opacity: .55; }
+.local-seat-list button span { flex: 1; font-weight: 800; }
+.local-seat-list small { font-size: 10px; font-weight: 900; }
+.local-waiting { display: flex; align-items: center; gap: 8px; font-weight: 750; }
+.local-result-row { display: flex; align-items: center; gap: 10px; border-top: 1px dashed #c6bfa3; padding: 9px 0; color: #132d67; }
+.local-result-row b { flex: 1; }
+.local-round-history { margin-top: 11px; padding: 10px; border: 1px solid #132d67; border-radius: 10px; }
+.local-round-history summary { display: flex; justify-content: space-between; cursor: pointer; font-weight: 850; color: #132d67; }
+.local-round-history summary span { font-size: 11px; }
+.local-round-player { padding: 12px 0; border-top: 1px dashed #c6bfa3; }
+.local-round-player > span { float: right; }
+.local-round-player > div { display: flex; gap: 3px; flex-wrap: wrap; margin-top: 6px; }
+.local-round-player > div img { width: 35px; height: 51px; object-fit: contain; }
+.local-offline-note { margin: 16px; color: #132d67; }
+.local-share-qr { display: grid; place-items: center; padding: 10px; margin: 16px auto; width: max-content; background: #fff; border: 2px solid #132d67; border-radius: 15px; }
+.local-share-qr img { width: min(58vw, 218px); height: min(58vw, 218px); }
+.local-share-url { display: block; padding: 12px; border: 1px solid #132d67; border-radius: 10px; background: #fffdf4; color: #132d67; overflow-wrap: anywhere; font-size: 12px; }
+.local-share-code { display: block; margin: 0 auto 10px; text-align: center; color: #132d67; font-size: 28px; font-weight: 950; letter-spacing: .2em; }
+.local-join-request { display: flex; gap: 10px; align-items: center; border-top: 1px dashed #bbb; padding: 11px 0; }
+.local-join-request > span { flex: 1; color: #132d67; }
+.local-join-request small { display: block; }
+.local-join-request button { border: 1px solid #132d67; border-radius: 8px; padding: 8px; font-weight: 850; background: #ffe569; color: #132d67; }
+.local-join-request button:last-child { background: #fff; }
+.local-claimed-seat { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-top: 1px dashed #bbb; color: #132d67; }
+.local-claimed-seat button { background: transparent; border: 0; color: #d73b65; font-weight: 800; }
+.local-joined-card { display: flex; align-items: center; gap: 10px; width: 100%; padding: 14px; border: 2px solid #132d67; border-radius: 15px; box-shadow: 4px 4px 0 #132d67; background: #fffdf4; color: #132d67; text-align: left; }
+.local-joined-card b { flex: 1; }
+.local-joined-card small { font-size: 11px; }
+.local-my-profile { margin: 12px 0 22px; padding: 16px; border: 2px solid #132d67; border-radius: 18px; box-shadow: 5px 5px 0 #132d67; background: #ffe569; }
+.local-my-profile h2 { margin: 5px 0 12px; color: #132d67; }
+.local-my-profile button { display: flex; align-items: center; gap: 11px; width: 100%; padding: 10px; border: 1px solid #132d67; border-radius: 11px; background: #fffdf4; color: #132d67; text-align: left; }
+.local-my-profile button .room-avatar { width: 52px; height: 52px; flex: 0 0 52px; }
+.local-my-profile button span { display: grid; gap: 3px; flex: 1; }
+.local-my-profile button small { font-size: 11px; }
+.menu-button { position: relative; }
+.local-request-dot { position: absolute; top: 3px; right: 3px; width: 9px; height: 9px; border-radius: 50%; background: #ed4f7e; border: 1px solid #fff; }

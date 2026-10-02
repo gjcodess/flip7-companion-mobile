@@ -22,11 +22,11 @@ const faqGroups = [
       },
       {
         "question": "How do players join?",
-        "answer": "The banker adds each player's name locally. The group then uses the same device to record cards and actions as the round moves around the table."
+        "answer": "The host adds players to the room and opens Invite players. On another Android phone connected to the same Wi-Fi or hotspot, tap Join a nearby room on Home, then Scan QR code. You can enter the six-character code or local address instead. Choose a seat and wait for host approval. Players without a connected phone stay under host control."
       },
       {
         "question": "What is Banker Mode?",
-        "answer": "Banker Mode lets one person run the whole table from one device. The banker switches between player tables to record cards and actions, while keeping the player order and scores together locally."
+        "answer": "Banker Mode lets the host run the whole table from one device. The host can still invite nearby players to manage their own tables and can step in for any player."
       },
       {
         "question": "Can I resume a game?",
@@ -103,7 +103,15 @@ const faqGroups = [
       },
       {
         "question": "Does the app need an internet connection?",
-        "answer": "No. Demo Mode and Banker Mode run locally, and the app does not send game data online."
+        "answer": "No. Solo play runs on the phone. Shared rooms and the TV scoreboard use the same local Wi-Fi or hotspot, without a cloud game server or mobile data connection."
+      },
+      {
+        "question": "Can a guest change another player's cards?",
+        "answer": "No. An approved guest can record cards and bank only their claimed table. They can view other tables, while the host can correct any table or take back a seat. A card such as Freeze can still be aimed at an active player as part of the game rules."
+      },
+      {
+        "question": "Does a guest keep the game history?",
+        "answer": "The host keeps the main room record. A joined Android app also saves a read-only copy of the room and round history after each update, so the latest received copy remains visible when the host is offline. These guest copies and My character are separate from the Settings backup."
       },
       {
         "question": "What happens when someone reaches 200 points?",

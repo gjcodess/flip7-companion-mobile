@@ -14,6 +14,8 @@ import { MobileApp } from './pages/mobile/MobileApp'
 import { useLibrary } from './lib/room-store'
 import { preloadCardArtwork } from './game/cardArtworkPreloader'
 import { syncTvSharing } from './lib/tv-share'
+import { listenLocalRoomHost, syncLocalRoom } from './lib/local-room'
+import { GuestRoomScreen } from './pages/mobile/GuestRoomScreen'
 
 const viewTransitionPaths = new Set(['/landing', '/play', '/rules', '/faq', '/privacy', '/terms', '/contact'])
 
@@ -48,6 +50,12 @@ export default function App() {
     return () => { active = false; void listener?.remove() }
   }, [])
   useEffect(() => {
+    let cleanup: (() => void) | undefined
+    let active = true
+    void listenLocalRoomHost().then(stop => { if (active) cleanup = stop; else stop() })
+    return () => { active = false; cleanup?.() }
+  }, [])
+  useEffect(() => {
     // Warm the lightweight picker previews after the first screen has painted.
     if ('requestIdleCallback' in window) {
       const idle = window.requestIdleCallback(() => { void preloadCardArtwork() }, { timeout: 1500 })
@@ -58,6 +66,7 @@ export default function App() {
   }, [])
   const library = useLibrary()
   useEffect(() => { void syncTvSharing(library).catch(() => {}) }, [library])
+  useEffect(() => { void syncLocalRoom(library).catch(() => {}) }, [library])
   useEffect(() => { document.documentElement.classList.toggle('room-reduced-motion', library.settings.reducedMotion) }, [library.settings.reducedMotion])
   const [location, setLocation] = useState<AppLocation>(() => {
     const current = readAppLocation()
@@ -75,6 +84,21 @@ export default function App() {
       setLocation({ ...current, pathname: current.pathname === '/' ? '/landing' : current.pathname })
     }, { skip: shouldSkipViewTransition(currentPath === '/' ? '/landing' : currentPath, nextPath) })
   }, [])
+  useEffect(() => {
+    if (Capacitor.getPlatform() !== 'android') return
+    let active = true
+    let listener: { remove: () => Promise<void> } | undefined
+    void CapacitorApp.addListener('appUrlOpen', event => {
+      try {
+        const link = new URL(event.url)
+        if (link.protocol === 'flip7:' && link.host === 'join') {
+          const url = link.searchParams.get('url')
+          if (url) navigate(`/join?url=${encodeURIComponent(url)}`)
+        }
+      } catch { /* Ignore other application links. */ }
+    }).then(handle => { if (active) listener = handle; else void handle.remove() })
+    return () => { active = false; void listener?.remove() }
+  }, [navigate])
   useEffect(() => {
     if (window.location.pathname === '/') {
       const next = toNavigablePath(`${window.location.pathname}${window.location.search}${window.location.hash}`)
@@ -97,6 +121,7 @@ export default function App() {
   const isDemoPage = location.pathname === '/demo'
   const isBankerPage = location.pathname === '/banker'
   const isPlayPage = location.pathname === '/play'
+  const isJoinPage = location.pathname === '/join' || location.pathname.startsWith('/join/')
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
       if (location.hash) {
@@ -115,6 +140,7 @@ export default function App() {
   else if (isTermsPage) content = <LegalScreen kind="terms" />
   else if (isContactPage) content = <ContactScreen />
   else if (isDemoPage) content = <DemoScreen />
+  else if (isJoinPage) content = <GuestRoomScreen inviteUrl={location.pathname.startsWith('/join/') ? window.location.origin + location.pathname : new URLSearchParams(location.search).get('url') ?? ''} />
   else if (isBankerPage) { const roomId = new URLSearchParams(location.search).get('room'); content = roomId ? <BankerScreen key={roomId} roomId={roomId} /> : <MobileApp key="new" page="new" /> }
   else if (isPlayPage || location.pathname === '/new') content = <MobileApp key="new" page="new" />
   else if (location.pathname === '/players') content = <MobileApp key="players" page="players" />
