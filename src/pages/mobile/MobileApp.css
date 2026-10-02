@@ -232,6 +232,33 @@
   filter: drop-shadow(2px 3px 0 #132d67);
 }
 
+.room-promo-carousel { margin-top: 25px; }
+.room-promo-carousel .room-create-banner { margin-top: 0; height: 230px; }
+.room-promo-slide { animation: room-promo-enter .28s ease-out both; }
+.room-promo-slide-1 { background: #bce3e7; }
+.room-promo-slide-2 { background: #e2ddf6; }
+.room-promo-slide-3 { background: #f9d9df; }
+.room-promo-slide-3 h2 { font-size: 20px; }
+.room-promo-slide h2 span { display: block; white-space: nowrap; }
+.room-promo-copy { position: relative; z-index: 1; }
+.room-promo-copy p { max-width: 185px; margin-top: 9px; color: #435574; font-size: 10px; line-height: 1.5; }
+.room-promo-slide-1 .room-promo-art { width: 120px; flex-basis: 120px; }
+.room-create-banner .room-rules-art { position: relative; z-index: 1; flex: 0 0 120px; width: 120px; height: 150px; margin-left: 4px; }
+.room-rules-art img { position: absolute; width: 82px; border-radius: 5px; box-shadow: 3px 4px 0 var(--ink); }
+.room-rules-art img:first-child { top: 25px; left: 3px; transform: rotate(-14deg); }
+.room-rules-art img:last-child { top: 16px; left: 31px; transform: rotate(9deg); }
+.room-promo-soon-label { display: inline-block; margin-top: 16px; padding: 8px 10px; border: 1.5px solid var(--ink); border-radius: 8px; background: #fff9df; box-shadow: 2px 2px 0 var(--ink); font-size: 9px; font-weight: 900; letter-spacing: .06em; }
+.room-vengeance-art { position: relative; z-index: 1; display: flex; flex: 0 0 120px; width: 120px; flex-direction: column; align-items: center; justify-content: center; gap: 5px; margin-left: 5px; }
+.room-vengeance-base-logo { display: block; width: 108px; max-height: 42px; object-fit: contain; transform: rotate(-15deg); filter: drop-shadow(1px 2px 0 #132d6740); }
+.room-vengeance-logo { display: block; width: 128px; max-height: 100px; object-fit: contain; filter: drop-shadow(2px 3px 0 #132d6740); }
+.room-promo-controls { display: flex; align-items: center; justify-content: center; gap: 15px; min-height: 32px; margin-top: 11px; }
+.room-promo-arrow { width: 30px; height: 30px; display: grid; place-items: center; padding: 0; border: 1.5px solid var(--ink); border-radius: 9px; background: #fff9df; color: var(--ink); box-shadow: 2px 2px 0 var(--ink); cursor: pointer; }
+.room-promo-dots { display: flex; align-items: center; gap: 7px; }
+.room-promo-dots button { width: 10px; height: 10px; padding: 0; border: 1.5px solid var(--ink); border-radius: 999px; background: #fff9df; cursor: pointer; transition: width .2s ease, background .2s ease; }
+.room-promo-dots button.active { width: 26px; background: var(--pink); }
+@keyframes room-promo-enter { from { opacity: .65; transform: translateX(8px); } to { opacity: 1; transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) { .room-promo-slide { animation: none; } }
+
 .room-home-stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2389,6 +2416,17 @@
     height: 152px;
     flex-basis: 92px;
   }
+
+  .room-promo-slide-1 .room-promo-art { width: 94px; flex-basis: 94px; }
+  .room-promo-slide-2 h2 { font-size: 19px; }
+  .room-promo-slide-3 h2 { font-size: 18px; }
+  .room-create-banner .room-rules-art { width: 94px; flex-basis: 94px; }
+  .room-rules-art img { width: 68px; }
+  .room-rules-art img:first-child { left: 1px; }
+  .room-rules-art img:last-child { left: 25px; }
+  .room-vengeance-art { width: 94px; flex-basis: 94px; }
+  .room-vengeance-base-logo { width: 90px; }
+  .room-vengeance-logo { width: 98px; }
 
   .room-home-header img {
     width: 135px;

@@ -10,6 +10,7 @@ import { ConfirmationModal } from '../../components/ConfirmationModal'
 import { PageArtwork } from './PageArtwork'
 import { TargetScorePicker, targetScorePresets } from './TargetScorePicker'
 import { AppFooter } from './AppFooter'
+import { HomePromoCarousel } from './HomePromoCarousel'
 
 type MobilePage = 'home' | 'players' | 'history' | 'settings' | 'new' | 'room'
 const routes = { home: '/landing', players: '/players', history: '/history', settings: '/settings', new: '/new' }
@@ -52,7 +53,7 @@ function HomeScreen() {
     <header className="room-home-header"><img src="/assets/flip7-title-logo.png" alt="Flip7 Companion" /></header>
     <section className="room-welcome"><h1>Your table.<br /><em>Your game night.</em></h1><p>Resume a match or start a new room.</p></section>
   </div>
-    <section className="room-create-banner"><div><span className="room-kicker">LET THE GOOD TIMES FLIP</span><h2>A new room.<br />A fresh shot at 200.</h2><button onClick={() => navigate('/new')}>Create a room <ArrowRight size={17} /></button></div><img className="room-promo-art" src="/assets/promo-2.png" alt="" decoding="async" /></section>
+    <HomePromoCarousel />
     <div className="room-home-stats"><span><b>{library.rooms.length}</b> {library.rooms.length === 1 ? 'room' : 'rooms'}</span><span><b>{library.players.length}</b> {library.players.length === 1 ? 'player' : 'players'}</span><span><b>{library.rooms.filter(r => r.state?.phase === 'results').length}</b> completed</span></div>
     <section className="room-library"><div className="room-section-heading"><h2>Your rooms <span>{library.rooms.length}</span></h2>{active.length > 0 && <span className="room-section-note">{active.length} in progress</span>}</div>
       {library.rooms.length > 0 && <><div className="room-filter-tabs">{[['all', 'All rooms'], ['active', 'In progress'], ['ready', 'Ready to play']].map(([value, label]) => <button key={value} aria-pressed={filter === value} className={filter === value ? 'selected' : ''} onClick={() => setFilter(value)}>{label}</button>)}</div><label className="room-search"><Search size={18} /><input placeholder="Find a room…" aria-label="Search rooms" value={query} onChange={e => setQuery(e.target.value)} /></label></>}
