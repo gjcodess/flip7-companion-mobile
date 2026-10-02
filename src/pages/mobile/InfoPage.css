@@ -76,9 +76,9 @@
 .info-card-fan img:nth-child(2) { left: 27px; top: 12px; transform: rotate(-2deg); }
 .info-card-fan img:nth-child(3) { left: 55px; transform: rotate(17deg); }
 .info-banner-icon { display: grid; place-items: center; width: 37px; height: 37px; background: #fff7da; border: 1.5px solid #132d67; border-radius: 10px; box-shadow: 2px 2px 0 #132d67; }
-.info-quick-facts { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 25px 3px; }
-.info-quick-facts > span { display: flex; flex-direction: column; gap: 5px; font-size: 9px; color: #626c80; text-align: center; }
-.info-quick-facts > span + span { border-left: 1px solid #d2c7a7; padding-left: 18px; }
+.info-quick-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 25px 3px; }
+.info-quick-facts > span { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 0; padding-inline: 4px; font-size: 9px; color: #626c80; text-align: center; }
+.info-quick-facts > span + span { border-left: 1px solid #d2c7a7; }
 .info-quick-facts b { font-size: 23px; line-height: 1; font-weight: 950; color: #132d67; }
 .info-jump-links { display: flex; gap: 8px; margin: 25px 0; }
 .info-jump-links a { flex: 1; display: grid; place-items: center; min-height: 44px; border: 1.5px solid #132d67; border-radius: 8px; background: #fffdf3; box-shadow: 2px 3px 0 #132d67; font-size: 10px; font-weight: 850; text-decoration: none; color: #132d67; }
