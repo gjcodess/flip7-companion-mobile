@@ -9,8 +9,9 @@
   min-height: 100dvh;
   overflow: visible;
   background-color: #f3e5b5;
-  background-image: radial-gradient(circle, #132d6715 .8px, transparent .9px), radial-gradient(ellipse at 50% 38%, #fff9dc 0%, #fbefc5 58%, #efe0ae 100%);
-  background-size: 12px 12px, 100% 100%;
+  background-image: radial-gradient(circle, #132d671c .8px, transparent .9px), radial-gradient(ellipse at center, #fff9e2 0%, #f9e9bd 56%, #e9d29a 100%);
+  background-size: 12px 12px, 100% 115dvh;
+  background-repeat: repeat, repeat-y;
 }
 :is(.banker-shell, .demo-shell) button:focus-visible {
   outline: 3px solid #ed4f7e;
@@ -49,9 +50,7 @@
   justify-content: space-between;
   gap: 12px;
   background-color: transparent !important;
-  background-image: radial-gradient(circle, #132d6715 .8px, transparent .9px) !important;
-  background-size: 12px 12px;
-  background-position: 0 0;
+  background-image: none !important;
   border: 0 !important;
   box-shadow: none !important;
 }
