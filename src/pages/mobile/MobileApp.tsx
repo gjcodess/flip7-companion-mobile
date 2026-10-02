@@ -56,7 +56,7 @@ function HomeScreen() {
   const sorted = [...library.rooms].sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.updatedAt - a.updatedAt)
   const visible = sorted.filter(r => (filter === 'all' || (filter === 'active' ? r.state?.phase === 'round' : !r.state)) && r.name.toLowerCase().includes(query.toLowerCase()))
   return <><div className="room-home-hero">
-    <header className="room-home-header"><img src="/assets/flip7-title-logo.png" alt="Flip7 Companion" /></header>
+    <header className="room-home-header"><img src="/assets/flip7-title-logo.webp" alt="Flip7 Companion" /></header>
     <section className="room-welcome"><h1>Your table.<br /><em>Your game night.</em></h1><p>Resume a match or start a new room.</p></section>
   </div>
     <HomePromoCarousel />

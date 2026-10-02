@@ -59,7 +59,7 @@ function TvDisplay() {
   }, [previewMode])
 
   return <div className="tv-shell">
-    <header className="tv-header"><img src="/assets/flip7-title-logo.png" alt="Flip7 Companion" /><div className="tv-connection"><span className={connected ? 'online' : ''} />{connected ? 'LIVE FROM THE TABLE' : snapshot ? 'RECONNECTING…' : 'WAITING FOR THE TABLE'}</div></header>
+    <header className="tv-header"><img src="/assets/flip7-title-logo.webp" alt="Flip7 Companion" /><div className="tv-connection"><span className={connected ? 'online' : ''} />{connected ? 'LIVE FROM THE TABLE' : snapshot ? 'RECONNECTING…' : 'WAITING FOR THE TABLE'}</div></header>
     {snapshot ? <main className="tv-main">
       <section className="tv-hero"><div><span className="tv-kicker">{snapshot.phase === 'results' ? 'MATCH COMPLETE' : snapshot.phase === 'ready' ? 'READY TO PLAY' : 'GAME NIGHT LIVE'}</span><h1>{snapshot.roomName}</h1><p>{snapshot.players.length} players at the table</p></div><div className="tv-hero-stats"><span><small>ROUND</small><strong>{String(snapshot.round).padStart(2, '0')}</strong></span><span><small>FIRST TO</small><strong>{snapshot.targetScore}</strong></span></div></section>
       <div className="tv-section-heading"><div><span className="tv-kicker">AT THIS TABLE</span><h2>{snapshot.phase === 'results' ? 'Final standings' : 'Players & scores'}</h2></div><span className="tv-view-only">VIEW ONLY</span></div>

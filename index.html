@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#132d67" />
+    <meta name="theme-color" content="#fff7da" />
     <meta name="description" content="A live companion for the physical Flip 7 card game." />
     <link rel="icon" type="image/png" href="/assets/flip7-companion-icon-512-rounded.png" />
     <link rel="apple-touch-icon" href="/assets/flip7-companion-icon-512-rounded.png" />
@@ -12,8 +12,34 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Flip7 Companion</title>
+    <style>
+      html, body { background: #f3e5b5; }
+      .launch-splash { position: fixed; inset: 0; z-index: 2147483647; display: grid; place-items: center; overflow: hidden; background-color: #f3e5b5; background-image: radial-gradient(circle, #132d671c .8px, transparent .9px), radial-gradient(ellipse at center, #fff9e2 0%, #f9e9bd 56%, #e9d29a 100%); background-size: 12px 12px, 100% 115dvh; background-repeat: repeat, repeat-y; opacity: 1; visibility: visible; transition: opacity 420ms ease, visibility 420ms ease; }
+      .launch-splash.is-dismissing { opacity: 0; visibility: hidden; }
+      .launch-splash-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 24px; animation: launch-arrive 600ms cubic-bezier(.2,.8,.2,1) both; }
+      .launch-splash-app-icon { display: block; width: 116px; height: 116px; object-fit: contain; border: 2px solid #132d67; border-radius: 25px; box-shadow: 4px 5px 0 #132d67; transform-origin: center; animation: launch-icon-pop 850ms cubic-bezier(.2,.75,.25,1) both; }
+      .launch-splash-content img { display: block; width: min(250px, 70vw); max-height: 82px; object-fit: contain; animation: launch-logo 620ms 120ms ease both; }
+      .launch-splash-caption { color: #132d67; font: 900 9px/1.4 ui-sans-serif, system-ui, sans-serif; letter-spacing: .16em; }
+      .launch-splash-loader { display: flex; gap: 6px; margin-top: -8px; }
+      .launch-splash-loader i { width: 6px; height: 6px; border-radius: 50%; background: #ed4f7e; animation: launch-dot 900ms ease-in-out infinite alternate; }
+      .launch-splash-loader i:nth-child(2) { animation-delay: 150ms; }
+      .launch-splash-loader i:nth-child(3) { animation-delay: 300ms; }
+      @keyframes launch-arrive { from { opacity: 0; transform: translateY(12px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+      @keyframes launch-icon-pop { 0% { opacity: 0; transform: perspective(500px) rotateY(-65deg) rotate(-7deg) scale(.84); } 68% { opacity: 1; transform: perspective(500px) rotateY(10deg) rotate(3deg) scale(1.04); } 100% { opacity: 1; transform: perspective(500px) rotateY(0) rotate(0) scale(1); } }
+      @keyframes launch-logo { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes launch-dot { from { opacity: .38; transform: translateY(0); } to { opacity: 1; transform: translateY(-4px); } }
+      @media (prefers-reduced-motion: reduce) { .launch-splash *, .launch-splash { animation: none !important; transition-duration: 1ms !important; } }
+    </style>
   </head>
   <body>
+    <div id="launch-splash" class="launch-splash" aria-hidden="true">
+      <div class="launch-splash-content">
+        <img class="launch-splash-app-icon" src="/assets/flip7-companion-icon-rounded.webp" alt="" />
+        <img src="/assets/flip7-title-logo.webp" alt="" />
+        <span class="launch-splash-caption">GAME NIGHT STARTS HERE</span>
+        <span class="launch-splash-loader"><i></i><i></i><i></i></span>
+      </div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

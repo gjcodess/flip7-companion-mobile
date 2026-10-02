@@ -65,7 +65,7 @@ export async function createResultsImage(roomName: string, players: BankerPlayer
   ctx.fillRect(0, 0, width, canvas.height)
   dots(ctx, 10, 10, width, canvas.height, '#132d6718')
   const [logo, ...avatars] = await Promise.all([
-    loadImage('/assets/flip7-title-logo.png'),
+    loadImage('/assets/flip7-title-logo.webp'),
     ...ordered.map(player => loadImage(playerAvatarSrc(player.avatar, player.id))),
   ])
   if (logo) ctx.drawImage(logo, 56, 33, 300, 107)

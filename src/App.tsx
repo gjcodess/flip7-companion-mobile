@@ -24,6 +24,18 @@ function shouldSkipViewTransition(fromPath: string, toPath: string) {
 export default function App() {
   const [showExitPrompt, setShowExitPrompt] = useState(false)
   useEffect(() => {
+    const splash = document.getElementById('launch-splash')
+    if (!splash) return
+    if (Capacitor.getPlatform() !== 'android') { splash.remove(); return }
+    const dismissTimer = window.setTimeout(() => {
+      splash.classList.add('is-dismissing')
+      const removeSplash = () => splash.remove()
+      splash.addEventListener('transitionend', removeSplash, { once: true })
+      window.setTimeout(removeSplash, 500)
+    }, 700)
+    return () => window.clearTimeout(dismissTimer)
+  }, [])
+  useEffect(() => {
     if (Capacitor.getPlatform() !== 'android') return
     let active = true
     let listener: { remove: () => Promise<void> } | undefined

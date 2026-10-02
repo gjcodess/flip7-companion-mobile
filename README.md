@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/assets/flip7-title-logo.png" width="300" alt="Flip7 Companion" />
+  <img src="public/assets/flip7-title-logo.webp" width="300" alt="Flip7 Companion" />
 </p>
 
 <h1 align="center">Flip7 Companion Mobile</h1>
