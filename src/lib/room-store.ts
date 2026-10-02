@@ -151,12 +151,27 @@ export function startRoom(room: Room) {
 export function canEditRoster(room: Room) { return !room.state || (room.state.phase === 'round' && room.state.forcedTurns.length === 0 && room.state.players.every(p => p.round.status === 'active' && p.round.entries.length === 0)) }
 export function editRoom(room: Room, name: string, targetScore: number, roster: PlayerProfile[]) {
   if (!canEditRoster(room)) throw new Error('Change players before the first card of a round.')
-  if (room.state && room.state.players.some(p => !roster.some(r => r.id === p.id))) throw new Error('Players who have started a match must stay in its score history.')
+  if (roster.length < 3 || roster.length > 18) throw new Error('A room needs 3–18 players.')
   if (room.state && targetScore <= Math.max(...room.state.players.map(p => p.totalScore))) throw new Error('The new target must be higher than the current leading score.')
-  const state = room.state ? { ...room.state, targetScore, players: roster.map(p => {
-    const existing = room.state!.players.find(player => player.id === p.id)
-    return existing ? { ...existing, ...p } : { ...p, totalScore: 0, round: demoInitialState() }
-  }), past: [], future: [] } : null
+  const currentState = room.state
+  const state = currentState ? (() => {
+    const retainedIds = new Set(roster.map(player => player.id))
+    const turnPlayerId = currentState.turnPlayerId && retainedIds.has(currentState.turnPlayerId) ? currentState.turnPlayerId : roster[0].id
+    return {
+      ...currentState,
+      targetScore,
+      players: roster.map(p => {
+        const existing = currentState.players.find(player => player.id === p.id)
+        return existing ? { ...existing, ...p } : { ...p, totalScore: 0, round: demoInitialState() }
+      }),
+      dealerId: currentState.dealerId && retainedIds.has(currentState.dealerId) ? currentState.dealerId : turnPlayerId,
+      selectedPlayerId: currentState.selectedPlayerId && retainedIds.has(currentState.selectedPlayerId) ? currentState.selectedPlayerId : turnPlayerId,
+      turnPlayerId,
+      roundFinisherId: currentState.roundFinisherId && retainedIds.has(currentState.roundFinisherId) ? currentState.roundFinisherId : null,
+      winnerIds: currentState.winnerIds.filter(id => retainedIds.has(id)),
+      past: [], future: [],
+    }
+  })() : null
   updateLibrary(current => ({ ...current, rooms: current.rooms.map(r => r.id === room.id ? { ...room, name: name.trim(), targetScore, roster, state, updatedAt: Date.now() } : r), players: [...current.players, ...roster.filter(p => !current.players.some(existing => existing.id === p.id))] }))
 }
 export function roomStatus(room: Room) { return !room.state ? 'Ready to play' : room.state.phase === 'results' ? 'Completed' : 'In progress' }

@@ -564,10 +564,12 @@
 }
 
 .room-avatar-stack .room-avatar {
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   box-shadow: none;
   border: 2px solid var(--ink);
-  margin-left: -6px;
+  margin-left: -8px;
 }
 
 .room-avatar-stack .room-avatar:first-child {
@@ -577,9 +579,9 @@
 .room-avatar.more {
   background: var(--ink);
   color: var(--cream);
-  font-size: 8px;
-  width: 30px;
-  height: 30px;
+  font-size: 9px;
+  width: 38px;
+  height: 38px;
 }
 
 .room-resume {
@@ -588,12 +590,25 @@
   align-items: center;
   padding: 10px 12px;
   min-height: 37px;
-  border: 0;
+  border: 1.5px solid var(--ink);
   background: var(--pink);
   color: #fff !important;
   border-radius: 8px;
+  box-shadow: 3px 3px 0 var(--ink);
   font-size: 10px !important;
   font-weight: 850 !important;
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+
+.room-resume:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+.room-resume:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 5px;
 }
 
 .room-open {
@@ -1414,6 +1429,7 @@
 
 .room-roster-controls {
   display: flex;
+  flex-shrink: 0;
 }
 
 .room-roster-controls button {
@@ -1424,6 +1440,16 @@
   width: 30px;
   height: 44px;
   padding: 0;
+}
+
+.room-roster-controls .room-roster-remove {
+  color: #b42c58;
+  border-radius: 7px;
+}
+
+.room-roster-controls .room-roster-remove:hover,
+.room-roster-controls .room-roster-remove:focus-visible {
+  background: #fce0e4;
 }
 
 .room-add-player {
@@ -1559,11 +1585,18 @@
 }
 
 .room-detail-hero .room-avatar-stack {
+  --detail-avatar-size: clamp(30px, 10.5vw, 38px);
   margin: 17px 0 22px;
 }
 
 .room-detail-hero .room-avatar {
+  width: var(--detail-avatar-size);
+  height: var(--detail-avatar-size);
   border-color: var(--ink);
+}
+
+.room-detail-hero .room-avatar-stack .room-avatar:not(:first-child) {
+  margin-left: -9px;
 }
 
 .room-edit-explainer {

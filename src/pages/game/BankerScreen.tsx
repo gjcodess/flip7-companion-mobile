@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, Cast, Check, ChevronRight, CircleHelp, ClipboardList, LogOut, Menu, Monitor, Play, RotateCcw, Users, X } from 'lucide-react'
+import { ArrowLeft, Cast, Check, ChevronRight, CircleHelp, ClipboardList, Download, LogOut, Menu, Monitor, Play, RotateCcw, Share2, Users, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import type { Card } from '../../game/cards'
 import { allBankerPlayersSettled, bankerInitialState, bankerPlayerDerived, bankerReducer, isBankerTerminal, type BankerAction, type BankerPlayer, type BankerState } from '../../game/bankerGame'
@@ -14,6 +14,7 @@ import { GameTable } from './GameTable'
 import { tvSharingAvailable, useTvSession } from '../../lib/tv-share'
 import { TvShareDialog } from '../mobile/TvShareDialog'
 import { PlayerAvatar } from '../../components/PlayerAvatar'
+import { saveGameResults, shareGameResults } from '../../lib/results-sharing'
 
 function statusLabel(player: BankerPlayer) {
   const status = player.round.status
@@ -37,7 +38,53 @@ function playerTabSummary(player: BankerPlayer) {
 function BankerResults({ players, history, targetScore, onNewGame, onExit }: { players: BankerPlayer[]; history: { round: number; scores: Record<string, number> }[]; targetScore: number; onNewGame: () => void; onExit: () => void }) {
   const ordered = [...players].sort((a, b) => b.totalScore - a.totalScore)
   const winnerScore = ordered[0]?.totalScore ?? 0
-  return <div className="banker-results"><section className="results-hero"><span className="eyebrow">BANKER TABLE COMPLETE</span><h1>Match complete!</h1><p>{ordered.filter((player) => player.totalScore === winnerScore).map((player) => player.name).join(' and ')} won with {winnerScore} points. Target: {targetScore}.</p></section><section className="results-card"><div className="results-heading"><div><span className="eyebrow">FINAL SCORES</span><h2>Game results</h2></div><ClipboardList size={24} /></div><div className="results-list">{ordered.map((player, index) => <article className={`results-player ${index === 0 ? 'winner' : ''}`} key={player.id}><span className="results-rank">{index + 1}</span><PlayerAvatar player={player} className="mini-avatar" /><div className="results-player-copy"><div className="results-player-name"><b>{player.name}</b><small>{player.totalScore} {pointLabel(player.totalScore)} total</small></div><div className="results-rounds">{history.map((round) => <span className="round-score" key={`${player.id}-${round.round}`}>R{round.round}: {round.scores[player.id] ?? 0}</span>)}</div></div><div className="results-total"><small>Total pts</small><strong>{player.totalScore}</strong></div></article>)}</div></section><section className="results-actions"><p>Your final scores and round cards are saved in this room on your device.</p><div className="banker-results-actions"><button className="secondary-action" onClick={onNewGame}><RotateCcw size={16} /> New game</button><button className="primary-wide" onClick={onExit}><ArrowLeft size={16} /> View room</button></div></section></div>
+  return <div className="banker-results">
+    <section className="results-hero"><span className="eyebrow">BANKER TABLE COMPLETE</span><h1>Match complete!</h1><p>{ordered.filter((player) => player.totalScore === winnerScore).map((player) => player.name).join(' and ')} won with {winnerScore} points. Target: {targetScore}.</p></section>
+    <section className="results-card">
+      <div className="results-heading"><div><span className="eyebrow">FINAL SCORES</span><h2>Game results</h2></div><span className="results-heading-icon" aria-hidden="true"><ClipboardList size={21} /></span></div>
+      <div className="results-list">{ordered.map((player) => {
+        const rank = ordered.findIndex((entry) => entry.totalScore === player.totalScore) + 1
+        return <article className={`results-player ${player.totalScore === winnerScore ? 'winner' : ''}`} key={player.id}>
+          <span className="results-rank" aria-label={`Rank ${rank}`}>{rank}</span>
+          <PlayerAvatar player={player} className="mini-avatar" />
+          <div className="results-player-copy"><div className="results-player-name"><b>{player.name}</b></div><div className="results-rounds">{history.map((round) => <span className="round-score" key={`${player.id}-${round.round}`}>R{round.round}: {round.scores[player.id] ?? 0}</span>)}</div></div>
+          <div className="results-total"><small>Total pts</small><strong>{player.totalScore}</strong></div>
+        </article>
+      })}</div>
+    </section>
+    <section className="results-actions"><p>Your final scores and round cards are saved in this room on your device.</p><div className="banker-results-actions"><button className="secondary-action" onClick={onNewGame}><RotateCcw size={16} /> New game</button><button className="primary-wide" onClick={onExit}><ArrowLeft size={16} /> View room</button></div></section>
+  </div>
+}
+
+function ResultsShareDialog({ roomName, players, history, targetScore, onClose }: { roomName: string; players: BankerPlayer[]; history: BankerState['history']; targetScore: number; onClose: () => void }) {
+  const dialog = useRef<HTMLDialogElement>(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
+  useEffect(() => { dialog.current?.showModal() }, [])
+  const act = async (action: 'share' | 'save') => {
+    setBusy(true)
+    setError('')
+    setNotice('')
+    try {
+      const options = { roomName, players, history, targetScore }
+      const message = action === 'share' ? await shareGameResults(options) : await saveGameResults(options)
+      setNotice(message)
+    } catch (failure) {
+      if ((failure as Error).name !== 'AbortError') setError((failure as Error).message)
+    } finally { setBusy(false) }
+  }
+  return <dialog ref={dialog} className="room-dialog banker-menu-dialog results-share-dialog" onCancel={event => { if (busy) event.preventDefault(); else onClose() }} onClick={event => { if (!busy && event.target === event.currentTarget) onClose() }}>
+    <div className="room-dialog-heading"><div><span className="room-kicker">FINAL SCORES</span><h2>Share game results</h2></div><button type="button" className="room-icon-button" aria-label="Close sharing options" disabled={busy} onClick={onClose}><X size={20} /></button></div>
+    <p>Keep a picture of your final scoreboard or send it to your crew.</p>
+    <div className="banker-menu-list">
+      <button type="button" className="banker-menu-item" disabled={busy} onClick={() => void act('share')}><span className="banker-menu-item-icon"><Share2 size={20} /></span><span className="banker-menu-item-text"><strong>Share results</strong><span>Send the score image to another app</span></span><ChevronRight size={18} className="banker-menu-item-chevron" /></button>
+      <button type="button" className="banker-menu-item" disabled={busy} onClick={() => void act('save')}><span className="banker-menu-item-icon"><Download size={20} /></span><span className="banker-menu-item-text"><strong>Save image</strong><span>Keep a PNG copy on this device</span></span><ChevronRight size={18} className="banker-menu-item-chevron" /></button>
+    </div>
+    {busy && <p className="results-share-status" role="status">Preparing your results image…</p>}
+    {notice && <p className="results-share-status" role="status">{notice}</p>}
+    {error && <p className="room-error" role="alert">{error}</p>}
+  </dialog>
 }
 
 function BankerMenuDialog({ onClose, onOpenPlayers, onOpenRules, onOpenTvShare, onExit }: { onClose: () => void; onOpenPlayers: () => void; onOpenRules: () => void; onOpenTvShare: () => void; onExit: () => void }) {
@@ -101,6 +148,7 @@ export function BankerScreen({ roomId }: { roomId: string }) {
   const [playersOpen, setPlayersOpen] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const [tvShareOpen, setTvShareOpen] = useState(false)
+  const [resultsShareOpen, setResultsShareOpen] = useState(false)
   const tvSession = useTvSession()
   const isSharing = tvSession?.roomId === roomId
   const cardSelectionRef = useRef(false)
@@ -145,7 +193,7 @@ export function BankerScreen({ roomId }: { roomId: string }) {
   if (!room || !room.state) return <div className="room-app-shell"><main className="room-app-main"><h1>{room ? 'This room is ready to start.' : 'This room is unavailable.'}</h1><button className="room-button" onClick={() => navigate(room ? `/room?id=${roomId}` : '/landing')}>Back to rooms</button></main></div>
 
 
-  if (state.phase === 'results') return <div className="app-shell banker-shell saved-room-game"><aside className="desktop-marquee left"><div>FLIP<br />7</div></aside><main className="game-shell"><header className="topbar banker-topbar"><button className="brand-button" aria-label="Exit banker mode" onClick={exit}><img className="brand-logo" src="/assets/flip7-title-logo.png" alt="Flip 7" /></button><span className="topbar-caption">BANKER MODE · LOCAL ONLY</span></header><BankerResults players={state.players} history={state.history} targetScore={state.targetScore} onNewGame={() => setNewGamePromptOpen(true)} onExit={exit} />{newGamePromptOpen && <ConfirmationModal eyebrow="NEW BANKER GAME" title="Start a new game?" message="Your completed match stays saved in its room. Create a separate room for your next game." cancelLabel="Keep results" confirmLabel="New game" onCancel={() => setNewGamePromptOpen(false)} onConfirm={() => { setNewGamePromptOpen(false); dispatch({ type: 'reset' }) }} />}</main><aside className="desktop-marquee right"><div>PRESS<br />YOUR<br />LUCK</div></aside></div>
+  if (state.phase === 'results') return <div className="app-shell banker-shell saved-room-game"><aside className="desktop-marquee left"><div>FLIP<br />7</div></aside><main className="game-shell"><header className="topbar banker-topbar banker-results-topbar"><span className="banker-results-brand"><img src="/assets/flip7-title-logo.png" alt="Flip 7 Companion" /></span><span className="topbar-caption">BANKER MODE · LOCAL ONLY</span><button type="button" className="brand-button banker-results-share" aria-label="Share game results" title="Share game results" onClick={() => setResultsShareOpen(true)}><Share2 size={20} /></button></header><BankerResults players={state.players} history={state.history} targetScore={state.targetScore} onNewGame={() => setNewGamePromptOpen(true)} onExit={exit} />{resultsShareOpen && <ResultsShareDialog roomName={room.name} players={state.players} history={state.history} targetScore={state.targetScore} onClose={() => setResultsShareOpen(false)} />}{newGamePromptOpen && <ConfirmationModal eyebrow="NEW BANKER GAME" title="Start a new game?" message="Your completed match stays saved in its room. Create a separate room for your next game." cancelLabel="Keep results" confirmLabel="New game" onCancel={() => setNewGamePromptOpen(false)} onConfirm={() => { setNewGamePromptOpen(false); dispatch({ type: 'reset' }) }} />}</main><aside className="desktop-marquee right"><div>PRESS<br />YOUR<br />LUCK</div></aside></div>
 
   const newRound = () => { dispatch({ type: 'advance-round' }); setRoundSummaryOpen(false); setOrganized(false) }
   const resetForNewGame = () => setNewGamePromptOpen(true)

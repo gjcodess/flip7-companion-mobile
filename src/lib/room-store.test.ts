@@ -116,6 +116,32 @@ describe('offline room saves', () => {
     expect(() => store.editRoom(store.getLibrary().rooms[0], 'Nope', 200, roster)).toThrow('before the first card')
   })
 
+  it('removes a player between rounds while keeping their completed round history', async () => {
+    const { store, room, roster } = await fixture()
+    const extra = store.newProfile('Dee', 3)
+    store.editRoom(room, room.name, 200, [...roster, extra])
+    let state = store.getLibrary().rooms[0].state!
+    state = bankerReducer(state, { type: 'player', playerId: roster[0].id, action: { type: 'add', card: card('number-5') } })
+    state = bankerReducer(state, { type: 'player', playerId: roster[0].id, action: { type: 'add', card: card('number-2') } })
+    for (const player of [roster[1], roster[2], extra, roster[0]]) {
+      if (player.id !== roster[0].id) for (const id of ['number-1', 'number-2']) state = bankerReducer(state, { type: 'player', playerId: player.id, action: { type: 'add', card: card(id) } })
+      state = bankerReducer(state, { type: 'player', playerId: player.id, action: { type: 'stay' } })
+    }
+    store.saveRoomState(room.id, bankerReducer(state, { type: 'advance-round' }))
+    const current = store.getLibrary().rooms[0]
+    expect(current.state?.turnPlayerId).toBe(roster[0].id)
+
+    store.editRoom(current, current.name, current.targetScore, [roster[1], roster[2], extra])
+    const updated = store.decodeLibrary(saved.get(store.STORAGE_KEY)!).rooms[0]
+    expect(updated.roster.map(player => player.id)).toEqual([roster[1].id, roster[2].id, extra.id])
+    expect(updated.state?.players.map(player => player.id)).toEqual([roster[1].id, roster[2].id, extra.id])
+    expect(updated.state?.turnPlayerId).toBe(roster[1].id)
+    expect(updated.state?.selectedPlayerId).toBe(roster[1].id)
+    expect(updated.state?.history[0].scores[roster[0].id]).toBe(7)
+    expect(updated.state?.history[0].hands?.[roster[0].id].entries).toHaveLength(2)
+    expect(store.getLibrary().players.some(player => player.id === roster[0].id)).toBe(true)
+  })
+
   it('retains tied winners and derives player stats from completed matches', async () => {
     const { store, room, roster } = await fixture(50)
     let state = room.state!

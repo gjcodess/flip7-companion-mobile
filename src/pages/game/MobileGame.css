@@ -30,6 +30,7 @@
   box-shadow: none;
 }
 .demo-shell .demo-topbar { background: transparent; border-bottom: 0; }
+.banker-shell .banker-topbar { background: transparent; border-bottom: 0; }
 .banker-shell .topbar > .brand-button {
   position: relative;
   width: 44px;
@@ -39,6 +40,15 @@
   background: #fffdf3;
   box-shadow: 2px 3px 0 #132d67;
 }
+.banker-shell .banker-results-topbar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 10px;
+}
+.banker-shell .banker-results-brand img { display: block; width: 116px; height: 44px; object-fit: contain; }
+.banker-shell .banker-results-topbar .topbar-caption { min-width: 0; text-align: right; }
+.banker-shell .banker-results-topbar .banker-results-share { display: grid; grid-column: 3; place-items: center; justify-self: end; margin-left: 0; }
 .banker-shell.saved-room-game .banker-topbar:has(.game-topbar-brand) {
   display: grid;
   grid-template-columns: 44px minmax(0, 1fr) 44px;
@@ -321,6 +331,11 @@
   color: #8c9cb3;
   flex-shrink: 0;
 }
+.results-share-dialog .room-kicker { display: block; margin-bottom: 6px; color: #c53264; font-size: 8px; font-weight: 900; letter-spacing: .1em; }
+.results-share-dialog .banker-menu-item:disabled { opacity: .6; cursor: wait; transform: none; }
+.results-share-dialog .room-error,
+.results-share-dialog > .results-share-status { margin: 16px 0 0; font-size: 11px; line-height: 1.5; }
+.results-share-dialog > .results-share-status { color: #2d641d; font-weight: 800; }
 
 
 
@@ -459,9 +474,9 @@ body:has(:is(.banker-shell, .demo-shell)) .confirmation-modal .home-prompt-actio
 .banker-shell .banker-results .results-hero { margin: 0 16px; border: 1.5px solid #132d67; border-radius: 16px; box-shadow: 3px 4px 0 #132d67; }
 
 /* The same fading corner print as Home/Players, never over the card faces. */
-:is(.banker-shell, .demo-shell) :is(.match-strip, .banker-player-tab, .card-picker, .demo-intro, .results-hero) { position: relative; isolation: isolate; }
+:is(.banker-shell, .demo-shell) :is(.match-strip, .banker-player-tab, .card-picker, .demo-intro, .results-hero, .results-card, .results-player) { position: relative; isolation: isolate; }
 
-:is(.banker-shell, .demo-shell) :is(.match-strip, .banker-player-tab, .card-picker, .demo-intro, .results-hero)::before {
+:is(.banker-shell, .demo-shell) :is(.match-strip, .banker-player-tab, .card-picker, .demo-intro, .results-hero, .results-card, .results-player)::before {
   content: '';
   position: absolute;
   inset: 0;
