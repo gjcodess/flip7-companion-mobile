@@ -1,11 +1,12 @@
 /* Shared carnival treatment for the mobile library and its help pages. */
 .room-app-main {
-  /* Cream center and golden paper edges, inspired by the number-card artwork. */
+  /* Repeat a viewport-sized cream-to-gold glow so long pages keep the gradient visible. */
   background-color: #f3e5b5;
   background-image:
-    radial-gradient(circle, #132d6715 .8px, transparent .9px),
-    radial-gradient(ellipse at 50% 38%, #fff9dc 0%, #fbefc5 58%, #efe0ae 100%);
-  background-size: 12px 12px, 100% 100%;
+    radial-gradient(circle, #132d671c .8px, transparent .9px),
+    radial-gradient(ellipse at center, #fff9e2 0%, #f9e9bd 56%, #e9d29a 100%);
+  background-size: 12px 12px, 100% 115dvh;
+  background-repeat: repeat, repeat-y;
 }
 .room-bottom-nav { box-shadow: 0 5px 0 #d4bd72; }
 .room-create-banner, .room-detail-hero, .room-history-banner, .room-storage-panel { box-shadow: 5px 6px 0 #132d67; }
