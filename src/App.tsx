@@ -13,6 +13,7 @@ import { BankerScreen } from './pages/game/BankerScreen'
 import { MobileApp } from './pages/mobile/MobileApp'
 import { useLibrary } from './lib/room-store'
 import { preloadCardArtwork } from './game/cardArtworkPreloader'
+import { syncTvSharing } from './lib/tv-share'
 
 const viewTransitionPaths = new Set(['/landing', '/play', '/rules', '/faq', '/privacy', '/terms', '/contact'])
 
@@ -44,6 +45,7 @@ export default function App() {
     return () => clearTimeout(timer)
   }, [])
   const library = useLibrary()
+  useEffect(() => { void syncTvSharing(library).catch(() => {}) }, [library])
   useEffect(() => { document.documentElement.classList.toggle('room-reduced-motion', library.settings.reducedMotion) }, [library.settings.reducedMotion])
   const [location, setLocation] = useState<AppLocation>(() => {
     const current = readAppLocation()
@@ -111,6 +113,6 @@ export default function App() {
 
   return <MotionConfig reducedMotion={library.settings.reducedMotion ? 'always' : 'user'}><AppNavigationProvider navigate={navigate} onPopState={syncLocationFromHistory}>
     <PageTransition routeKey={`${location.pathname}${location.search}`}>{content}</PageTransition>
-    {showExitPrompt && <ConfirmationModal variant="exit-app" eyebrow="EXIT APP" title="Leave Flip7 Companion?" message="Your saved rooms and player records will be here when you come back." cancelLabel="Stay" confirmLabel="Exit app" onCancel={() => setShowExitPrompt(false)} onConfirm={() => { void CapacitorApp.exitApp() }} />}
+    {showExitPrompt && <ConfirmationModal variant="floating" eyebrow="EXIT APP" title="Leave Flip7 Companion?" message="Your saved rooms and player records will be here when you come back." cancelLabel="Stay" confirmLabel="Exit app" onCancel={() => setShowExitPrompt(false)} onConfirm={() => { void CapacitorApp.exitApp() }} />}
   </AppNavigationProvider></MotionConfig>
 }

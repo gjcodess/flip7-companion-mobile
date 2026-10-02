@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, Check, CircleHelp, ClipboardList, LogOut, Menu, Play, RotateCcw, Users, X } from 'lucide-react'
+import { ArrowLeft, Check, CircleHelp, ClipboardList, LogOut, Menu, Monitor, Play, RotateCcw, Users, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import type { Card } from '../../game/cards'
 import { allBankerPlayersSettled, bankerInitialState, bankerPlayerDerived, bankerReducer, isBankerTerminal, type BankerAction, type BankerPlayer, type BankerState } from '../../game/bankerGame'
@@ -11,6 +11,8 @@ import { ConfirmationModal } from '../../components/ConfirmationModal'
 import { CardActionsPanel, CardPickerPanel } from './CardDialogs'
 import { GameControls } from './GameControls'
 import { GameTable } from './GameTable'
+import { tvSharingAvailable } from '../../lib/tv-share'
+import { TvShareDialog } from '../mobile/TvShareDialog'
 
 function statusLabel(player: BankerPlayer) {
   const status = player.round.status
@@ -66,6 +68,7 @@ export function BankerScreen({ roomId }: { roomId: string }) {
   const [rulesOpen, setRulesOpen] = useState(false)
   const [playersOpen, setPlayersOpen] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
+  const [tvShareOpen, setTvShareOpen] = useState(false)
   const cardSelectionRef = useRef(false)
   const pickerSessionRef = useRef(0)
   const activePickerSessionRef = useRef<number | null>(null)
@@ -168,7 +171,7 @@ export function BankerScreen({ roomId }: { roomId: string }) {
   }
   const playerStatus = selectedPlayer?.round.status === 'flip-seven' ? 'stayed' : selectedPlayer?.round.status
   return <div className="app-shell banker-shell saved-room-game"><aside className="desktop-marquee left"><div>FLIP<br />7</div></aside><main className="game-shell">
-    <header className="topbar banker-topbar"><button className="brand-button" aria-label="Back to saved room" onClick={exit}><ArrowLeft size={21} /></button><span className="game-topbar-brand"><img src="/assets/flip7-title-logo.png" alt="Flip 7" /></span><button className="account-pill exit-button" aria-label="Open banker menu" onClick={() => setShowMenu((open) => !open)}><Menu size={16} /> Menu</button>{showMenu && <div className="banker-menu"><div className="banker-menu-title">BANKER MODE</div><div className="banker-menu-divider" /><button onClick={() => { setShowMenu(false); setPlayersOpen(true) }}><Users size={16} /> Players</button><button onClick={() => { setShowMenu(false); setRulesOpen(true) }}><CircleHelp size={16} /> Rules</button><button onClick={exit}><LogOut size={16} /> Exit</button></div>}</header>
+    <header className="topbar banker-topbar"><button className="brand-button" aria-label="Back to saved room" onClick={exit}><ArrowLeft size={21} /></button><span className="game-topbar-brand"><img src="/assets/flip7-title-logo.png" alt="Flip 7" /></span><button className="account-pill exit-button" aria-label="Open banker menu" onClick={() => setShowMenu((open) => !open)}><Menu size={16} /> Menu</button>{showMenu && <div className="banker-menu"><div className="banker-menu-title">BANKER MODE</div><div className="banker-menu-divider" /><button onClick={() => { setShowMenu(false); setPlayersOpen(true) }}><Users size={16} /> Players</button><button onClick={() => { setShowMenu(false); setRulesOpen(true) }}><CircleHelp size={16} /> Rules</button>{tvSharingAvailable() && <button onClick={() => { setShowMenu(false); setTvShareOpen(true) }}><Monitor size={16} /> TV scoreboard</button>}<button onClick={exit}><LogOut size={16} /> Exit</button></div>}</header>
     {saveError && <div className="room-game-save-error" role="alert"><span>{saveError}</span><button onClick={() => { if (pendingSaveRef.current) persist(pendingSaveRef.current) }}>Retry save</button></div>}
     <section className="match-strip"><div><span>ROUND</span><b>{String(state.roundNumber).padStart(2, '0')}</b></div><div className="target"><span>FIRST TO</span><b>{state.targetScore}</b></div><div><span>VIEWING</span><b>{selectedPlayer?.name || '—'}</b></div></section>
     <div className="banker-turn-callout" role="status"><span>CURRENT TURN</span><b>{turnPlayer?.name || '—'}</b></div>
@@ -185,5 +188,6 @@ export function BankerScreen({ roomId }: { roomId: string }) {
       {newGamePromptOpen && <ConfirmationModal eyebrow="NEW BANKER GAME" title="Start a new game?" message="This match stays saved in its room. Create a separate room for your next game." cancelLabel="Keep table" confirmLabel="New game" onCancel={() => setNewGamePromptOpen(false)} onConfirm={() => { setNewGamePromptOpen(false); setRoundSummaryOpen(false); dispatch({ type: 'reset' }) }} />}
       {rulesOpen && <motion.div key="rules" className="picker-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, pointerEvents: 'none' }} onClick={() => setRulesOpen(false)}><motion.section className="card-picker info-panel" initial={{ y: 50 }} animate={{ y: 0 }} onClick={(event) => event.stopPropagation()}><div className="picker-heading"><div><span>BANKER MODE</span><h2>How it works</h2></div><button className="close-button" aria-label="Close rules" onClick={() => setRulesOpen(false)}><X size={19} /></button></div><div className="rules-copy"><section><h3>Follow the highlighted table</h3><p>After each card, Banker Mode advances to the next active table. You can still open any table to correct, remove, undo, redo, or organize cards.</p></section><section><h3>Action cards</h3><p>Choose an active target. Freeze skips that table, Second Chance stays on its target, and Flip Three routes the next three cards there one at a time before returning to the original order.</p></section><section><h3>Settle the round</h3><p>Bank, bust, and frozen tables are skipped. Seven unique numbered cards end the round immediately and bank every other active table.</p></section></div></motion.section></motion.div>}
     </AnimatePresence>
+    {tvShareOpen && <TvShareDialog roomId={roomId} onClose={() => setTvShareOpen(false)} />}
   </div>
 }

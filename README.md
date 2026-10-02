@@ -64,7 +64,9 @@ The debug APK is created at:
 android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Named APK versions are kept in `APK Versions/`, including `flip7-companion-v1.1.apk` and `flip7-companion-v1.2.apk`.
+Named APK versions are kept in `APK Versions/`, including `flip7-companion-v1.1.apk`, `flip7-companion-v1.2.apk`, and `flip7-companion-v1.3.apk`.
+
+The room's **Show live scores on TV** action starts a local read-only scoreboard server and displays its address. Open that address in a TV web browser on the same local network. The phone keeps control of the game; the TV receives live score updates without internet access. TVs need a compatible browser and access to the phone's local IP address.
 
 ## Product pages
 
