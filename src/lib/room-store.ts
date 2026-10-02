@@ -43,7 +43,7 @@ export function decodeLibrary(raw: string): RoomLibrary {
   const validProfile = (p: PlayerProfile) => typeof p?.id === 'string' && typeof p.name === 'string' && p.name.trim().length > 0 && p.name.length <= 24 && /^#[0-9a-f]{6}$/i.test(p.color) && (p.avatar === undefined || isPlayerAvatarId(p.avatar))
   if (!data.players.every(validProfile) || new Set(data.players.map(p => p.id)).size !== data.players.length) throw new Error('Invalid saved players.')
   for (const room of data.rooms) {
-    if (typeof room.id !== 'string' || ids.has(room.id) || typeof room.name !== 'string' || !room.name.trim() || room.name.length > 40 || !Number.isFinite(room.createdAt) || !Number.isFinite(room.updatedAt) || !Number.isInteger(room.targetScore) || room.targetScore < 50 || room.targetScore > 500 || !Array.isArray(room.roster) || room.roster.length < 3 || room.roster.length > 18 || !room.roster.every(validProfile) || new Set(room.roster.map(p => p.id)).size !== room.roster.length) throw new Error('Invalid saved room.')
+    if (typeof room.id !== 'string' || ids.has(room.id) || typeof room.name !== 'string' || !room.name.trim() || room.name.length > 40 || !Number.isFinite(room.createdAt) || !Number.isFinite(room.updatedAt) || !Number.isInteger(room.targetScore) || room.targetScore < 50 || room.targetScore > 500 || !Array.isArray(room.roster) || room.roster.length < 2 || room.roster.length > 18 || !room.roster.every(validProfile) || new Set(room.roster.map(p => p.id)).size !== room.roster.length) throw new Error('Invalid saved room.')
     ids.add(room.id)
     if (room.state) {
       const state = room.state
@@ -151,7 +151,7 @@ export function startRoom(room: Room) {
 export function canEditRoster(room: Room) { return !room.state || (room.state.phase === 'round' && room.state.forcedTurns.length === 0 && room.state.players.every(p => p.round.status === 'active' && p.round.entries.length === 0)) }
 export function editRoom(room: Room, name: string, targetScore: number, roster: PlayerProfile[]) {
   if (!canEditRoster(room)) throw new Error('Change players before the first card of a round.')
-  if (roster.length < 3 || roster.length > 18) throw new Error('A room needs 3–18 players.')
+  if (roster.length < 2 || roster.length > 18) throw new Error('A room needs 2–18 players.')
   if (room.state && targetScore <= Math.max(...room.state.players.map(p => p.totalScore))) throw new Error('The new target must be higher than the current leading score.')
   const currentState = room.state
   const state = currentState ? (() => {
