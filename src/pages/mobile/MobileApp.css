@@ -1599,6 +1599,14 @@
   margin-left: -9px;
 }
 
+.room-detail-hero .room-button.secondary {
+  margin-top: 13px;
+  border: 2px solid var(--ink);
+  background: #fffdf5;
+  color: var(--ink) !important;
+  box-shadow: 3px 4px var(--ink);
+}
+
 .room-edit-explainer {
   display: flex;
   align-items: center;
