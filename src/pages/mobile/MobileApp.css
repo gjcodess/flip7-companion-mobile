@@ -1002,6 +1002,20 @@
   margin: 7px 0 18px;
 }
 
+.tv-share-dialog { --ink: #132d67; --cream: #fff7da; --yellow: #ffe05c; --pink: #ed4f7e; color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+.tv-share-dialog .room-dialog-heading .room-kicker { display: block; margin-bottom: 6px; color: #c53264; font-size: 8px; font-weight: 900; letter-spacing: .1em; }
+.tv-share-dialog .room-dialog-heading h2 { line-height: 1.15; }
+.tv-share-instructions { display: flex; align-items: center; gap: 16px; padding: 18px; border: 1.5px dashed #9aa5b7; border-radius: 12px; background: #fffdf3; }
+.tv-share-instructions svg { flex: 0 0 auto; }
+.tv-share-instructions p, .tv-share-active p { margin: 0; color: #52617c; font-size: 11px; line-height: 1.5; }
+.tv-share-active { display: grid; gap: 11px; padding: 17px; border: 1.5px solid var(--ink); border-radius: 12px; background: #ffe983; box-shadow: 3px 4px 0 var(--ink); }
+.tv-share-active > span { display: flex; align-items: center; gap: 7px; color: #2d641d; font-size: 9px; font-weight: 900; letter-spacing: .08em; }
+.tv-share-active code { padding: 11px; border: 1.5px solid var(--ink); border-radius: 8px; background: #fffdf3; color: var(--ink); font-size: 12px; font-weight: 850; overflow-wrap: anywhere; user-select: all; }
+.tv-share-active button, .tv-share-stop { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; border: 1.5px solid var(--ink); border-radius: 9px; background: #fffdf3; color: var(--ink); font-size: 11px; font-weight: 850; }
+.tv-share-dialog .tv-share-start { margin-top: 18px; }
+.tv-share-dialog .tv-share-stop { width: 100%; margin-top: 19px; }
+.tv-share-dialog .tv-share-note, .tv-share-dialog .tv-share-switch { margin: 14px 0 0; font-size: 10px; line-height: 1.5; }
+
 .player-avatar-preview {
   display: flex;
   justify-content: center;

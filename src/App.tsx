@@ -13,6 +13,7 @@ import { BankerScreen } from './pages/game/BankerScreen'
 import { MobileApp } from './pages/mobile/MobileApp'
 import { useLibrary } from './lib/room-store'
 import { preloadCardArtwork } from './game/cardArtworkPreloader'
+import { syncTvSharing } from './lib/tv-share'
 
 const viewTransitionPaths = new Set(['/landing', '/play', '/rules', '/faq', '/privacy', '/terms', '/contact'])
 
@@ -44,6 +45,7 @@ export default function App() {
     return () => clearTimeout(timer)
   }, [])
   const library = useLibrary()
+  useEffect(() => { void syncTvSharing(library).catch(() => {}) }, [library])
   useEffect(() => { document.documentElement.classList.toggle('room-reduced-motion', library.settings.reducedMotion) }, [library.settings.reducedMotion])
   const [location, setLocation] = useState<AppLocation>(() => {
     const current = readAppLocation()
