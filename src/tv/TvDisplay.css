@@ -24,6 +24,7 @@ body { margin: 0; min-width: 320px; }
 .tv-section-heading h2 { margin: 3px 0 0; font-size: clamp(27px, 2.6vw, 47px); letter-spacing: -.04em; }
 .tv-view-only { padding: 7px 12px; border: 2px solid #132d67; border-radius: 999px; background: #fffdf3; font-size: clamp(10px, .8vw, 14px); font-weight: 900; letter-spacing: .1em; }
 .tv-player-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: clamp(14px, 1.6vw, 26px); }
+.tv-player-grid--dense { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(12px, 1.1vw, 20px); }
 .tv-player { position: relative; isolation: isolate; overflow: hidden; min-width: 0; padding: clamp(17px, 1.5vw, 28px); border: 2px solid #132d67; border-radius: 20px; background: #fffdf3; box-shadow: 5px 7px 0 #132d67; }
 .tv-player::after { right: 10px; bottom: 8px; mask-image: linear-gradient(315deg, #000, transparent 80%); }
 .tv-player.tv-current { background: #ffe05c; }
@@ -45,6 +46,16 @@ body { margin: 0; min-width: 320px; }
 .tv-card-row img.voided { opacity: .5; filter: grayscale(1); }
 .tv-card-row > span { font-size: 12px; font-weight: 900; }
 .tv-card-row .tv-no-cards { color: #717b90; font-size: 12px; font-weight: 700; }
+.tv-player-grid--dense .tv-player { padding: clamp(12px, 1vw, 18px); }
+.tv-player-grid--dense .tv-player-top { gap: clamp(8px, .7vw, 12px); }
+.tv-player-grid--dense .tv-avatar { flex-basis: clamp(38px, 2.7vw, 48px); width: clamp(38px, 2.7vw, 48px); height: clamp(38px, 2.7vw, 48px); border-radius: 13px; font-size: clamp(19px, 1.4vw, 24px); }
+.tv-player-grid--dense .tv-player h3 { font-size: clamp(16px, 1.15vw, 21px); line-height: 1.1; }
+.tv-player-grid--dense .tv-player-identity span { font-size: clamp(9px, .6vw, 10px); }
+.tv-player-grid--dense .tv-player-scores { margin: 11px 0 9px; padding: 8px 0; }
+.tv-player-grid--dense .tv-player-scores small { font-size: clamp(9px, .6vw, 10px); }
+.tv-player-grid--dense .tv-player-scores strong { font-size: clamp(27px, 1.9vw, 34px); }
+.tv-player-grid--dense .tv-card-row { min-height: 48px; flex-wrap: wrap; gap: 6px; }
+.tv-player-grid--dense .tv-card-row img { width: clamp(23px, 1.8vw, 31px); }
 .tv-waiting { min-height: 65vh; display: grid; place-items: center; }
 .tv-waiting-card { max-width: 750px; padding: 50px; border: 3px solid #132d67; border-radius: 26px; background: #ffe05c; box-shadow: 8px 10px 0 #132d67; }
 .tv-waiting-card h1 { font-size: clamp(35px, 5vw, 70px); margin: 10px 0; }
@@ -52,3 +63,6 @@ body { margin: 0; min-width: 320px; }
 .tv-footer { margin: 36px 4px 0; font-size: 12px; font-weight: 900; letter-spacing: .1em; }
 .tv-footer span { color: #ed4f7e; padding: 0 5px; }
 @media (max-width: 650px) { .tv-hero { align-items: flex-start; flex-direction: column; } .tv-header { align-items: flex-start; } .tv-connection { max-width: 180px; } .tv-hero-stats { width: 100%; justify-content: space-around; } }
+@media (max-width: 1050px) { .tv-player-grid--dense { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 700px) { .tv-player-grid--dense { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 430px) { .tv-player-grid--dense { grid-template-columns: minmax(0, 1fr); } }
