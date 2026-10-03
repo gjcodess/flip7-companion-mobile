@@ -18,7 +18,7 @@ const faqGroups = [
       },
       {
         "question": "How do I start a game?",
-        "answer": "Tap the central + button, name your room, add at least three players, and choose a target score. Start immediately or save the room for later."
+        "answer": "Tap the central + button, name your room, add at least two players, and choose a target score. Start immediately or save the room for later."
       },
       {
         "question": "How do players join?",
