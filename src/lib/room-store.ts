@@ -1,8 +1,15 @@
 import { useSyncExternalStore } from 'react'
+import { Capacitor, registerPlugin } from '@capacitor/core'
 import { bankerInitialState, bankerPlayerColors, bankerReducer, type BankerState } from '../game/bankerGame'
 import { pickerCards } from '../game/cards'
 import { demoInitialState } from '../game/demoGame'
 import { defaultPlayerAvatarFor, isPlayerAvatarId, type PlayerAvatarId } from './player-avatars'
+
+type NativeBackupPlugin = {
+  shareBackup(options: { data: string; fileName: string; text?: string }): Promise<{ success: boolean }>
+}
+
+const getNativeBackup = () => registerPlugin<NativeBackupPlugin>('NativeBackup')
 
 export type PlayerProfile = { id: string; name: string; color: string; avatar?: PlayerAvatarId }
 export type Room = {
@@ -180,11 +187,88 @@ export function playerStats(id: string, rooms = getLibrary().rooms, archivedStat
   const archived = Object.hasOwn(archivedStats, id) ? archivedStats[id] : { matches: 0, wins: 0, best: 0 }
   return { matches: archived.matches + completed.length, wins: archived.wins + completed.filter(r => r.state?.winnerIds.includes(id)).length, best: Math.max(archived.best, ...completed.map(r => r.state?.players.find(p => p.id === id)?.totalScore ?? 0)) }
 }
-export function exportBackup() {
+export async function exportBackup(): Promise<{ success: boolean; canceled?: boolean; method: string }> {
   const raw = storageError ? localStorage.getItem(STORAGE_KEY) ?? '' : encodeLibrary(getLibrary())
-  const url = URL.createObjectURL(new Blob([raw], { type: 'application/json' }))
-  const link = document.createElement('a'); link.href = url; link.download = `flip7-backup-${new Date().toISOString().slice(0, 10)}.json`; link.click()
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
+  const dateStr = new Date().toISOString().slice(0, 10)
+  const fileName = `flip7-backup-${dateStr}.json`
+
+  // 1. Android Native Platform
+  if (Capacitor.getPlatform() === 'android') {
+    try {
+      await getNativeBackup().shareBackup({
+        data: raw,
+        fileName,
+        text: 'Flip7 Companion game data backup'
+      })
+      return { success: true, method: 'native-share' }
+    } catch (err: any) {
+      const msg = String(err?.message ?? err).toLowerCase()
+      if (msg.includes('cancel') || msg.includes('dismiss') || msg.includes('abort')) {
+        return { success: false, canceled: true, method: 'native-share' }
+      }
+      throw err
+    }
+  }
+
+  // 2. Modern Web File System Access API (allows user to choose exact save folder)
+  if (typeof window !== 'undefined' && 'showSaveFilePicker' in window) {
+    try {
+      const handle = await (window as any).showSaveFilePicker({
+        suggestedName: fileName,
+        types: [{
+          description: 'JSON Backup File',
+          accept: { 'application/json': ['.json'] }
+        }]
+      })
+      const writable = await handle.createWritable()
+      await writable.write(raw)
+      await writable.close()
+      return { success: true, method: 'file-picker' }
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        return { success: false, canceled: true, method: 'file-picker' }
+      }
+    }
+  }
+
+  // 3. Web Share API with File
+  if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+    try {
+      const file = new File([raw], fileName, { type: 'application/json' })
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'Flip7 Backup',
+          text: 'Flip7 Companion game data backup'
+        })
+        return { success: true, method: 'web-share' }
+      }
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        return { success: false, canceled: true, method: 'web-share' }
+      }
+    }
+  }
+
+  // 4. Standard Browser Anchor Download Fallback
+  if (typeof document !== 'undefined') {
+    const blob = new Blob([raw], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = fileName
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+    return { success: true, method: 'browser-download' }
+  }
+
+  return { success: true, method: 'unknown' }
+}
+
+export function getBackupRawData(): string {
+  return storageError ? localStorage.getItem(STORAGE_KEY) ?? '' : encodeLibrary(getLibrary())
 }
 export function restoreBackup(raw: string) {
   const next = decodeLibrary(raw)
