@@ -62,7 +62,7 @@ public class LocalRoomPlugin extends Plugin {
         final String name;
         final String avatar;
         final String color;
-        final String seatId;
+        volatile String seatId = "";
         volatile String status = "pending";
         volatile String secret;
 
@@ -71,7 +71,6 @@ public class LocalRoomPlugin extends Plugin {
             this.name = body.optString("name", "").trim();
             this.avatar = body.optString("avatar", "");
             this.color = body.optString("color", "");
-            this.seatId = body.optString("seatId", "");
         }
 
         JSONObject json(boolean includeSecret) {
@@ -144,12 +143,12 @@ public class LocalRoomPlugin extends Plugin {
     }
 
     @PluginMethod
-    public void approve(PluginCall call) {
+    public synchronized void approve(PluginCall call) {
         JoinRequest request = requests.get(call.getString("requestId", ""));
         String seatId = call.getString("seatId", "");
         if (request == null || !request.status.equals("pending") || seatId.isEmpty()) { call.reject("This join request is no longer available."); return; }
-        if (!request.seatId.equals(seatId)) { call.reject("The selected seat changed. Ask the player to join again."); return; }
         if (seatsBySecret.containsValue(seatId)) { call.reject("That seat is already controlled by another phone."); return; }
+        request.seatId = seatId;
         request.secret = newToken(32);
         request.status = "approved";
         seatsBySecret.put(request.secret, seatId);
@@ -337,7 +336,7 @@ public class LocalRoomPlugin extends Plugin {
             if (method.equals("POST") && path.equals("/api/join/" + activeToken)) {
                 JSONObject data = new JSONObject(body);
                 JoinRequest join = new JoinRequest(newToken(24), data);
-                if (join.name.isEmpty() || join.name.length() > 24 || join.seatId.isEmpty() || requests.size() >= 50) { respond(client, 400, "application/json", "{\"error\":\"Choose a player seat and name.\"}"); return; }
+                if (join.name.isEmpty() || join.name.length() > 24 || requests.size() >= 50) { respond(client, 400, "application/json", "{\"error\":\"Set your name before asking to join.\"}"); return; }
                 requests.put(join.id, join);
                 JSObject event = new JSObject(); event.put("request", join.json(false)); notifyListeners("joinRequest", event);
                 respond(client, 200, "application/json", join.json(false).toString());

@@ -32,6 +32,34 @@ async function completedFixture(tied = false) {
 }
 
 describe('offline room saves', () => {
+  it('saves an empty waiting room but requires two players to start', async () => {
+    const store = await import('./room-store')
+    const room = store.createRoom('Waiting for friends', 200, [])
+    expect(store.decodeLibrary(saved.get(store.STORAGE_KEY)!).rooms[0].roster).toEqual([])
+    expect(() => store.startRoom(room)).toThrow('at least 2 players')
+    const first = store.newProfile('Ana')
+    store.editRoom(room, room.name, room.targetScore, [first])
+    expect(store.decodeLibrary(saved.get(store.STORAGE_KEY)!).rooms[0].roster).toHaveLength(1)
+  })
+
+  it('keeps approved late players off the active round and activates them next round', async () => {
+    const { store, room, roster } = await fixture()
+    const late = store.newProfile('Dee', 3)
+    store.updateLibrary(current => ({ ...current, rooms: current.rooms.map(item => item.id === room.id ? { ...item, pendingPlayers: [late] } : item) }))
+    expect(store.getLibrary().rooms[0].state?.players).toHaveLength(3)
+    let state = store.getLibrary().rooms[0].state!
+    for (const player of roster) {
+      state = bankerReducer(state, { type: 'player', playerId: player.id, action: { type: 'add', card: card('number-1') } })
+      state = bankerReducer(state, { type: 'player', playerId: player.id, action: { type: 'add', card: card('number-2') } })
+      state = bankerReducer(state, { type: 'player', playerId: player.id, action: { type: 'stay' } })
+    }
+    const next = store.saveRoomState(room.id, bankerReducer(state, { type: 'advance-round' }))
+    expect(next.roundNumber).toBe(2)
+    expect(next.players[3]).toMatchObject({ id: late.id, totalScore: 0 })
+    expect(next.history[0].scores[late.id]).toBeUndefined()
+    expect(store.decodeLibrary(saved.get(store.STORAGE_KEY)!).rooms[0]).toMatchObject({ pendingPlayers: [], roster: [...roster, late] })
+  })
+
   it('updates a saved player by ID across rooms, active games, and round history', async () => {
     const { store, roster, room } = await completedFixture()
     const active = store.createRoom('Another table', 200, roster)

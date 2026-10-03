@@ -8,7 +8,7 @@ import { newLocalId } from './local-id'
 export type PlayerProfile = { id: string; name: string; color: string; avatar?: PlayerAvatarId }
 export type Room = {
   id: string; name: string; createdAt: number; updatedAt: number
-  targetScore: number; roster: PlayerProfile[]; state: BankerState | null; pinned: boolean
+  targetScore: number; roster: PlayerProfile[]; pendingPlayers?: PlayerProfile[]; state: BankerState | null; pinned: boolean
 }
 export type PlayerStats = { matches: number; wins: number; best: number }
 export type RoomLibrary = { version: 2; rooms: Room[]; players: PlayerProfile[]; archivedStats: Record<string, PlayerStats>; settings: { targetScore: number; reducedMotion: boolean } }
@@ -44,10 +44,12 @@ export function decodeLibrary(raw: string): RoomLibrary {
   const validProfile = (p: PlayerProfile) => typeof p?.id === 'string' && typeof p.name === 'string' && p.name.trim().length > 0 && p.name.length <= 24 && /^#[0-9a-f]{6}$/i.test(p.color) && (p.avatar === undefined || isPlayerAvatarId(p.avatar))
   if (!data.players.every(validProfile) || new Set(data.players.map(p => p.id)).size !== data.players.length) throw new Error('Invalid saved players.')
   for (const room of data.rooms) {
-    if (typeof room.id !== 'string' || ids.has(room.id) || typeof room.name !== 'string' || !room.name.trim() || room.name.length > 40 || !Number.isFinite(room.createdAt) || !Number.isFinite(room.updatedAt) || !Number.isInteger(room.targetScore) || room.targetScore < 50 || room.targetScore > 500 || !Array.isArray(room.roster) || room.roster.length < 2 || room.roster.length > 18 || !room.roster.every(validProfile) || new Set(room.roster.map(p => p.id)).size !== room.roster.length) throw new Error('Invalid saved room.')
+    if (typeof room.id !== 'string' || ids.has(room.id) || typeof room.name !== 'string' || !room.name.trim() || room.name.length > 40 || !Number.isFinite(room.createdAt) || !Number.isFinite(room.updatedAt) || !Number.isInteger(room.targetScore) || room.targetScore < 50 || room.targetScore > 500 || !Array.isArray(room.roster) || room.roster.length > 18 || !room.roster.every(validProfile) || new Set(room.roster.map(p => p.id)).size !== room.roster.length) throw new Error('Invalid saved room.')
+    if ((room.pendingPlayers !== undefined && (!Array.isArray(room.pendingPlayers) || !room.pendingPlayers.every(validProfile))) || room.roster.length + (room.pendingPlayers?.length ?? 0) > 18 || new Set([...room.roster, ...(room.pendingPlayers ?? [])].map(p => p.id)).size !== room.roster.length + (room.pendingPlayers?.length ?? 0)) throw new Error('Invalid players waiting for the next round.')
     ids.add(room.id)
     if (room.state) {
       const state = room.state
+      if (room.roster.length < 2) throw new Error('Invalid saved match.')
       if (!['round', 'results'].includes(state.phase) || !Number.isInteger(state.roundNumber) || state.roundNumber < 1 || state.targetScore !== room.targetScore || !Array.isArray(state.players) || state.players.length !== room.roster.length || !Array.isArray(state.history) || !Array.isArray(state.forcedTurns) || !Array.isArray(state.winnerIds)) throw new Error('Invalid saved match.')
       if (new Set(state.players.map(p => p.id)).size !== state.players.length || ![state.dealerId, state.selectedPlayerId, state.turnPlayerId, state.roundFinisherId, ...state.winnerIds].every(id => id === null || state.players.some(p => p.id === id)) || !state.forcedTurns.every(turn => state.players.some(p => p.id === turn.targetPlayerId) && state.players.some(p => p.id === turn.resumeAfterPlayerId) && Number.isInteger(turn.remaining) && turn.remaining >= 1 && turn.remaining <= 3)) throw new Error('Invalid saved turn order.')
       for (const player of state.players) {
@@ -133,6 +135,7 @@ export function savePlayerProfile(profile: PlayerProfile) {
   })
 }
 export function createRoom(name: string, targetScore: number, roster: PlayerProfile[]) {
+  if (!name.trim() || name.length > 40 || !Number.isInteger(targetScore) || targetScore < 50 || targetScore > 500 || roster.length > 18) throw new Error('Check the room name, target, and players.')
   const room: Room = { id: newLocalId(), name: name.trim(), targetScore, roster, createdAt: Date.now(), updatedAt: Date.now(), pinned: false, state: null }
   updateLibrary(current => ({ ...current, rooms: [room, ...current.rooms], players: [...current.players, ...roster.filter(p => !current.players.some(existing => existing.id === p.id))] }))
   return room
@@ -141,9 +144,13 @@ export function saveRoom(room: Room) { updateLibrary(current => ({ ...current, r
 export function saveRoomState(roomId: string, state: BankerState) {
   const room = getLibrary().rooms.find(r => r.id === roomId)
   if (!room) throw new Error('This room is no longer available.')
-  saveRoom({ ...room, state })
+  const joiningNextRound = room.state?.phase === 'round' && state.phase === 'round' && state.roundNumber > room.state.roundNumber ? room.pendingPlayers ?? [] : []
+  const nextState = joiningNextRound.length ? { ...state, players: [...state.players, ...joiningNextRound.map(player => ({ ...player, totalScore: 0, round: demoInitialState() }))] } : state
+  saveRoom({ ...room, roster: joiningNextRound.length ? [...room.roster, ...joiningNextRound] : room.roster, pendingPlayers: joiningNextRound.length ? [] : room.pendingPlayers, state: nextState })
+  return nextState
 }
 export function startRoom(room: Room) {
+  if (room.roster.length < 2) throw new Error('Add at least 2 players before starting the game.')
   const started = bankerReducer(bankerInitialState(), { type: 'start', targetScore: room.targetScore, names: room.roster.map(p => p.name) })
   const firstId = room.roster[0].id
   const state: BankerState = { ...started, players: started.players.map((p, i) => ({ ...p, ...room.roster[i] })), dealerId: firstId, selectedPlayerId: firstId, turnPlayerId: firstId }
@@ -152,7 +159,7 @@ export function startRoom(room: Room) {
 export function canEditRoster(room: Room) { return !room.state || (room.state.phase === 'round' && room.state.forcedTurns.length === 0 && room.state.players.every(p => p.round.status === 'active' && p.round.entries.length === 0)) }
 export function editRoom(room: Room, name: string, targetScore: number, roster: PlayerProfile[]) {
   if (!canEditRoster(room)) throw new Error('Change players before the first card of a round.')
-  if (roster.length < 2 || roster.length > 18) throw new Error('A room needs 2–18 players.')
+  if ((room.state && roster.length < 2) || roster.length + (room.pendingPlayers?.length ?? 0) > 18) throw new Error('A game needs 2–18 players.')
   if (room.state && targetScore <= Math.max(...room.state.players.map(p => p.totalScore))) throw new Error('The new target must be higher than the current leading score.')
   const currentState = room.state
   const state = currentState ? (() => {
@@ -175,7 +182,7 @@ export function editRoom(room: Room, name: string, targetScore: number, roster: 
   })() : null
   updateLibrary(current => ({ ...current, rooms: current.rooms.map(r => r.id === room.id ? { ...room, name: name.trim(), targetScore, roster, state, updatedAt: Date.now() } : r), players: [...current.players, ...roster.filter(p => !current.players.some(existing => existing.id === p.id))] }))
 }
-export function roomStatus(room: Room) { return !room.state ? 'Ready to play' : room.state.phase === 'results' ? 'Completed' : 'In progress' }
+export function roomStatus(room: Room) { return !room.state ? room.roster.length < 2 ? 'Waiting for players' : 'Ready to start' : room.state.phase === 'results' ? 'Completed' : 'In progress' }
 export function playerStats(id: string, rooms = getLibrary().rooms, archivedStats = getLibrary().archivedStats): PlayerStats {
   const completed = rooms.filter(r => r.state?.phase === 'results' && r.roster.some(p => p.id === id))
   const archived = Object.hasOwn(archivedStats, id) ? archivedStats[id] : { matches: 0, wins: 0, best: 0 }

@@ -4,6 +4,7 @@ import { bankerReducer, type BankerAction, type BankerState } from '../game/bank
 import { pickerCards } from '../game/cards'
 import { getLibrary, saveRoomState, updateLibrary, type PlayerProfile, type Room, type RoomLibrary } from './room-store'
 import { isPlayerAvatarId } from './player-avatars'
+import { newLocalId } from './local-id'
 
 export type JoinRequest = { id: string; name: string; avatar: string; color: string; seatId: string; status: string }
 type Session = { roomId: string; joinUrl: string; code: string; requests: JoinRequest[]; claimedSeats: string[] }
@@ -60,18 +61,30 @@ export async function syncLocalRoom(_library: RoomLibrary) {
 export async function approveLocalJoin(request: JoinRequest) {
   if (!session) throw new Error('Start sharing this room first.')
   const room = getLibrary().rooms.find(item => item.id === session?.roomId)
-  if (!room || !room.roster.some(player => player.id === request.seatId)) throw new Error('That seat is no longer in the room.')
+  if (!room) throw new Error('This room is no longer available.')
+  if (room.state?.phase === 'results') throw new Error('This match has finished. Start a new room to invite players.')
+  if (room.roster.length + (room.pendingPlayers?.length ?? 0) >= 18) throw new Error('This room already has 18 players.')
   if (!request.name.trim() || !/^#[0-9a-f]{6}$/i.test(request.color) || !isPlayerAvatarId(request.avatar)) throw new Error('The player profile is invalid.')
-  await plugin.approve({ requestId: request.id, seatId: request.seatId })
-  const profile: PlayerProfile = { id: request.seatId, name: request.name.trim(), color: request.color, avatar: request.avatar }
+  if ([...room.roster, ...(room.pendingPlayers ?? [])].some(player => player.name.toLowerCase() === request.name.trim().toLowerCase())) throw new Error(`${request.name} is already at the table. Ask them to use a different name.`)
+  const profile: PlayerProfile = { id: newLocalId(), name: request.name.trim(), color: request.color, avatar: request.avatar }
+  let added = false
   try {
     updateLibrary(current => ({ ...current, rooms: current.rooms.map(item => item.id !== room.id ? item : {
       ...item,
-      roster: item.roster.map(player => player.id === profile.id ? profile : player),
-      state: item.state ? { ...item.state, players: item.state.players.map(player => player.id === profile.id ? { ...player, ...profile } : player) } : null,
+      roster: item.state ? item.roster : [...item.roster, profile],
+      pendingPlayers: item.state ? [...(item.pendingPlayers ?? []), profile] : item.pendingPlayers,
+      updatedAt: Date.now(),
     }) }))
+    added = true
+    await plugin.approve({ requestId: request.id, seatId: profile.id })
   } catch (error) {
-    await plugin.revoke({ seatId: request.seatId })
+    if (added) try {
+      updateLibrary(current => ({ ...current, rooms: current.rooms.map(item => item.id !== room.id ? item : {
+        ...item,
+        roster: item.roster.filter(player => player.id !== profile.id),
+        pendingPlayers: item.pendingPlayers?.filter(player => player.id !== profile.id),
+      }) }))
+    } catch { /* Preserve the original approval error. */ }
     throw error
   }
   await refreshLocalRoomRequests()

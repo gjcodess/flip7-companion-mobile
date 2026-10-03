@@ -14,9 +14,10 @@ import { HomePromoCarousel } from './HomePromoCarousel'
 import { tvSharingAvailable } from '../../lib/tv-share'
 import { TvShareDialog } from './TvShareDialog'
 import { LocalRoomDialog } from './LocalRoomDialog'
+import { localRoomAvailable, useLocalRoomSession } from '../../lib/local-room'
 import { MyProfileEditor } from './MyProfileEditor'
 import { useMyProfile } from '../../lib/my-profile'
-import { useJoinedRooms } from '../../lib/joined-rooms'
+import { useJoinedRooms, forgetJoinedRoom } from '../../lib/joined-rooms'
 import { PlayerAvatar } from '../../components/PlayerAvatar'
 import { defaultPlayerAvatarFor, playerAvatars, type PlayerAvatarId } from '../../lib/player-avatars'
 
@@ -37,42 +38,167 @@ export function BottomNav({ page }: { page: MobilePage }) {
   return <nav ref={navRef} className={`room-bottom-nav${hidden ? ' is-scroll-hidden' : ''}${keyboardVisible ? ' is-keyboard-hidden' : ''}`} inert={keyboardVisible} onFocusCapture={reveal} aria-label="Main navigation">{tabs.map(item => <button type="button" key={item.page} aria-current={activePage === item.page ? 'page' : undefined} aria-label={item.label} className={`${item.page === 'new' ? 'nav-create' : 'nav-item'} ${activePage === item.page ? 'active' : ''}`} onClick={() => navigate(routes[item.page])}><span className="nav-icon"><item.icon size={item.page === 'new' ? 27 : 22} strokeWidth={2.3} /></span><span className="nav-label">{item.label}</span></button>)}</nav>
 }
 
-function RoomCard({ room, feature = false }: { room: Room; feature?: boolean }) {
+function RoomCard({ room, joinedUrl, onForget, feature = false }: { room: Room; joinedUrl?: string; onForget?: () => void; feature?: boolean }) {
   const navigate = useAppNavigation()
   const state = room.state
   const topScore = state ? Math.max(...state.players.map(player => player.totalScore)) : 0
   const leaders = state?.players.filter(player => player.totalScore === topScore) ?? []
   const leadLabel = leaders.length === 1 ? `${leaders[0].name} leads` : leaders.length === state?.players.length ? 'All tied' : 'Lead tied'
   const progress = state && state.phase !== 'results'
-  return <article className={`library-room-card ${feature ? 'featured' : ''} ${state?.phase === 'results' ? 'complete' : ''}`}>
-    <div className="room-card-top"><span className={`room-badge ${progress ? 'live' : state ? 'done' : 'ready'}`}>{state && state.phase === 'results' ? <Check size={12} /> : !state ? <Flag size={12} /> : null}{roomStatus(room)}</span><button type="button" className={`room-pin ${room.pinned ? 'pinned' : ''}`} aria-label={`${room.pinned ? 'Unpin' : 'Pin'} ${room.name}`} aria-pressed={room.pinned} onClick={() => { try { saveRoom({ ...room, pinned: !room.pinned }) } catch (error) { window.alert((error as Error).message) } }}><Pin size={17} fill={room.pinned ? 'currentColor' : 'none'} /></button></div>
-    <button type="button" className="room-card-title" onClick={() => navigate(`/room?id=${room.id}`)}><h3>{room.name}</h3><ChevronRight size={20} /></button>
-    <p className="room-card-meta">{room.roster.length} players <span>·</span> {state ? `${state.history.length} round${state.history.length === 1 ? '' : 's'} played` : `First to ${room.targetScore}`} <span>·</span> <time dateTime={new Date(room.createdAt).toISOString()} title={`Created ${new Date(room.createdAt).toLocaleString()}`}>Created {relativeTime(room.createdAt)}</time></p>
-    <div className="room-card-bottom"><div className="room-avatar-stack">{room.roster.slice(0, room.roster.length <= 5 ? 5 : 4).map(p => <Avatar key={p.id} player={p} small />)}{room.roster.length > 5 && <span className="room-avatar more">+{room.roster.length - 4}</span>}</div>{progress ? <button className="room-resume" onClick={() => navigate(`/banker?room=${room.id}`)}>Resume <Play size={13} fill="currentColor" /></button> : state ? <span className="room-winner"><Trophy size={14} /> {state.winnerIds.map(id => state.players.find(p => p.id === id)?.name).join(' & ')}</span> : <button className="room-open" onClick={() => navigate(`/room?id=${room.id}`)}>Open room <ArrowRight size={15} /></button>}</div>
-    {feature && progress && <div className="room-progress-strip"><span>Round {state.roundNumber}<b>{leadLabel} · {topScore} pts</b></span><div className="room-progress-track"><i style={{ width: `${Math.min(100, topScore / room.targetScore * 100)}%` }} /></div></div>}
+  const isJoined = Boolean(joinedUrl)
+
+  const handleOpen = () => {
+    if (isJoined && joinedUrl) {
+      navigate(`/join?url=${encodeURIComponent(joinedUrl)}`)
+    } else {
+      navigate(`/room?id=${room.id}`)
+    }
+  }
+
+  return <article className={`library-room-card ${feature ? 'featured' : ''} ${state?.phase === 'results' ? 'complete' : ''} ${isJoined ? 'is-joined' : ''}`}>
+    <div className="room-card-top">
+      <div className="room-badge-group">
+        {isJoined && <span className="room-badge joined"><QrCode size={11} />Joined</span>}
+        <span className={`room-badge ${progress ? 'live' : state ? 'done' : 'ready'}`}>
+          {state && state.phase === 'results' ? <Check size={12} /> : !state ? <Flag size={12} /> : null}
+          {isJoined ? (state?.phase === 'results' ? 'Completed' : progress ? `Round ${state.roundNumber}` : 'Ready') : roomStatus(room)}
+        </span>
+      </div>
+      {isJoined ? (
+        onForget && <button type="button" className="room-pin" aria-label={`Forget ${room.name}`} title="Forget joined table" onClick={onForget}><Trash2 size={16} /></button>
+      ) : (
+        <button type="button" className={`room-pin ${room.pinned ? 'pinned' : ''}`} aria-label={`${room.pinned ? 'Unpin' : 'Pin'} ${room.name}`} aria-pressed={room.pinned} onClick={() => { try { saveRoom({ ...room, pinned: !room.pinned }) } catch (error) { window.alert((error as Error).message) } }}><Pin size={17} fill={room.pinned ? 'currentColor' : 'none'} /></button>
+      )}
+    </div>
+    <button type="button" className="room-card-title" onClick={handleOpen}>
+      <h3>{room.name}</h3>
+      <ChevronRight size={20} />
+    </button>
+    <p className="room-card-meta">
+      {room.roster.length} {room.roster.length === 1 ? 'player' : 'players'} <span>·</span> {state ? `${state.history.length} round${state.history.length === 1 ? '' : 's'} played` : `First to ${room.targetScore}`} <span>·</span> <time dateTime={new Date(room.createdAt).toISOString()} title={`Created ${new Date(room.createdAt).toLocaleString()}`}>{isJoined ? 'Joined ' : 'Created '}{relativeTime(room.createdAt || room.updatedAt)}</time>
+    </p>
+    <div className="room-card-bottom">
+      <div className="room-avatar-stack">
+        {room.roster.slice(0, room.roster.length <= 5 ? 5 : 4).map(p => <Avatar key={p.id} player={p} small />)}
+        {room.roster.length > 5 && <span className="room-avatar more">+{room.roster.length - 4}</span>}
+      </div>
+      {isJoined ? (
+        <button className="room-resume" onClick={handleOpen}>
+          Rejoin table <ArrowRight size={14} />
+        </button>
+      ) : progress ? (
+        <button className="room-resume" onClick={() => navigate(`/banker?room=${room.id}`)}>
+          Resume <Play size={13} fill="currentColor" />
+        </button>
+      ) : state ? (
+        <span className="room-winner">
+          <Trophy size={14} /> {state.winnerIds.map(id => state.players.find(p => p.id === id)?.name).join(' & ')}
+        </span>
+      ) : (
+        <button className="room-open" onClick={handleOpen}>
+          Open room <ArrowRight size={15} />
+        </button>
+      )}
+    </div>
+    {feature && progress && (
+      <div className="room-progress-strip">
+        <span>Round {state.roundNumber}<b>{leadLabel} · {topScore} pts</b></span>
+        <div className="room-progress-track"><i style={{ width: `${Math.min(100, topScore / room.targetScore * 100)}%` }} /></div>
+      </div>
+    )}
   </article>
 }
 
 function HomeScreen() {
-  const library = useLibrary(); const navigate = useAppNavigation()
+  const library = useLibrary()
+  const navigate = useAppNavigation()
   const joined = useJoinedRooms()
-  const [filter, setFilter] = useState('all'); const [query, setQuery] = useState('')
-  const active = library.rooms.filter(r => r.state && r.state.phase === 'round')
-  const sorted = [...library.rooms].sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.updatedAt - a.updatedAt)
-  const visible = sorted.filter(r => (filter === 'all' || (filter === 'active' ? r.state?.phase === 'round' : !r.state)) && r.name.toLowerCase().includes(query.toLowerCase()))
-  return <><div className="room-home-hero">
-    <header className="room-home-header"><img src="/assets/flip7-title-logo.webp" alt="Flip7 Companion" /></header>
-    <section className="room-welcome"><h1>Your table.<br /><em>Your game night.</em></h1><p>Resume a match or start a new room.</p></section>
-  </div>
+  const [filter, setFilter] = useState<'all' | 'hosted' | 'joined' | 'active'>('all')
+  const [query, setQuery] = useState('')
+
+  const hostedItems = library.rooms.map(room => ({
+    kind: 'hosted' as const,
+    id: `hosted-${room.id}`,
+    room,
+    pinned: room.pinned,
+    updatedAt: room.updatedAt,
+    inProgress: Boolean(room.state && room.state.phase === 'round'),
+  }))
+
+  const joinedItems = joined.map(item => ({
+    kind: 'joined' as const,
+    id: `joined-${item.room.id}`,
+    room: item.room,
+    joinedUrl: item.url,
+    pinned: false,
+    updatedAt: item.savedAt,
+    inProgress: Boolean(item.room.state && item.room.state.phase === 'round'),
+  }))
+
+  const allItems = [...hostedItems, ...joinedItems].sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.updatedAt - a.updatedAt)
+  const totalInProg = allItems.filter(item => item.inProgress).length
+
+  const filterTabs: Array<{ value: 'all' | 'hosted' | 'joined' | 'active'; label: string }> = [
+    { value: 'all', label: 'All rooms' },
+    { value: 'hosted', label: `Hosted (${hostedItems.length})` },
+    ...(joined.length > 0 ? [{ value: 'joined' as const, label: `Joined (${joined.length})` }] : []),
+    { value: 'active', label: `In progress (${totalInProg})` },
+  ]
+
+  const visible = allItems.filter(item => {
+    if (filter === 'hosted' && item.kind !== 'hosted') return false
+    if (filter === 'joined' && item.kind !== 'joined') return false
+    if (filter === 'active' && !item.inProgress) return false
+    return item.room.name.toLowerCase().includes(query.toLowerCase())
+  })
+
+  return <>
+    <div className="room-home-hero">
+      <header className="room-home-header"><img src="/assets/flip7-title-logo.webp" alt="Flip7 Companion" /></header>
+      <section className="room-welcome"><h1>Your table.<br /><em>Your game night.</em></h1><p>Resume a match or start a new room.</p></section>
+    </div>
     <HomePromoCarousel />
     <button type="button" className="room-dashed-action" onClick={() => navigate('/join')}><QrCode size={18} /> Join a nearby room</button>
-    {joined.length > 0 && <section className="room-library"><div className="room-section-heading"><h2>Rooms you joined <span>{joined.length}</span></h2></div><div className="room-list">{joined.map(item => <button type="button" className="local-joined-card" key={item.room.id} onClick={() => navigate(`/join?url=${encodeURIComponent(item.url)}`)}><b>{item.room.name}</b><small>{item.room.state?.phase === 'results' ? 'Completed' : `Round ${item.room.state?.roundNumber ?? 1}`} · Last saved on this phone</small><ArrowRight size={17} /></button>)}</div></section>}
-    <div className="room-home-stats"><span><b>{library.rooms.length}</b> {library.rooms.length === 1 ? 'room' : 'rooms'}</span><span><b>{library.players.length}</b> {library.players.length === 1 ? 'player' : 'players'}</span><span><b>{library.rooms.filter(r => r.state?.phase === 'results').length}</b> completed</span></div>
-    <section className="room-library"><div className="room-section-heading"><h2>Your rooms <span>{library.rooms.length}</span></h2>{active.length > 0 && <span className="room-section-note">{active.length} in progress</span>}</div>
-      {library.rooms.length > 0 && <><div className="room-filter-tabs">{[['all', 'All rooms'], ['active', 'In progress'], ['ready', 'Ready to play']].map(([value, label]) => <button key={value} aria-pressed={filter === value} className={filter === value ? 'selected' : ''} onClick={() => setFilter(value)}>{label}</button>)}</div><label className="room-search"><Search size={18} /><input placeholder="Find a room…" aria-label="Search rooms" value={query} onChange={e => setQuery(e.target.value)} /></label></>}
-      <div className="room-list">{visible.map((r, i) => <RoomCard key={r.id} room={r} feature={i === 0 && r.state?.phase === 'round'} />)}</div>
-      {!library.rooms.length ? <EmptyState icon={<FolderOpen size={30} />} title="Your next game starts here">Create your first room, bring your favorite people, and keep every flip.</EmptyState> : !visible.length && <EmptyState icon={<Search size={28} />} title="No rooms found">Try a different name or filter.</EmptyState>}
-    </section></>
+    <section className="room-library">
+      <div className="room-section-heading">
+        <h2>Your rooms <span>{allItems.length}</span></h2>
+        {totalInProg > 0 && <span className="room-section-note">{totalInProg} in progress</span>}
+      </div>
+      {allItems.length > 0 && <>
+        <div className="room-filter-tabs">
+          {filterTabs.map(tab => (
+            <button key={tab.value} aria-pressed={filter === tab.value} className={filter === tab.value ? 'selected' : ''} onClick={() => setFilter(tab.value)}>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <label className="room-search">
+          <Search size={18} />
+          <input placeholder="Find a room…" aria-label="Search rooms" value={query} onChange={e => setQuery(e.target.value)} />
+        </label>
+      </>}
+      <div className="room-list">
+        {visible.map((item, i) => (
+          <RoomCard
+            key={item.id}
+            room={item.room}
+            joinedUrl={item.kind === 'joined' ? item.joinedUrl : undefined}
+            onForget={item.kind === 'joined' ? () => forgetJoinedRoom(item.joinedUrl) : undefined}
+            feature={i === 0 && item.inProgress}
+          />
+        ))}
+      </div>
+      {!allItems.length ? (
+        <EmptyState icon={<FolderOpen size={30} />} title="Your next game starts here">
+          Create your first room or join a nearby table to keep every flip together.
+        </EmptyState>
+      ) : !visible.length && (
+        <EmptyState icon={<Search size={28} />} title="No rooms found">
+          Try a different name or filter.
+        </EmptyState>
+      )}
+    </section>
+  </>
 }
 
 function PageHeading({ kicker, title, copy, action }: { kicker: string; title: string; copy: string; action?: ReactNode }) { return <header className="room-page-heading"><span className="room-kicker">{kicker}</span><div><h1>{title.replaceAll('\\n', '\n')}</h1>{action}</div><p>{copy}</p></header> }
@@ -166,36 +292,37 @@ function RoomForm({ room, onDone }: { room?: Room; onDone?: () => void }) {
   }
   const save = (begin: boolean) => {
     if (!name.trim()) return setError('Give your room a name.')
-    if (roster.length < 2) return setError('Add at least 2 players to start your room.')
+    if ((room?.state || begin) && roster.length < 2) return setError('Add at least 2 players before starting the game.')
     if (!Number.isInteger(target) || target < 50 || target > 500) return setError('Choose a target between 50 and 500 points.')
     try {
       if (room) { editRoom(room, name, target, roster); if (onDone) onDone(); else navigate(`/room?id=${room.id}`); return }
       const created = createRoom(name, target, roster)
-      if (begin) { startRoom(created); navigate(`/banker?room=${created.id}`) } else navigate(`/room?id=${created.id}`)
+      if (begin) { startRoom(created); navigate(`/banker?room=${created.id}`) } else navigate(`/room?id=${created.id}&invite=1`)
     } catch (e) { setError((e as Error).message) }
   }
-  return <><div className="room-back-row"><button onClick={() => { if (room && onDone) onDone(); else navigate(room ? `/room?id=${room.id}` : '/landing') }}><ArrowLeft size={19} /> {room ? 'Back to room' : 'Your rooms'}</button></div><PageHeading kicker="SET UP YOUR TABLE" title={room ? 'Edit room' : 'New room'} copy={room ? 'Update players before the first card of the round.' : 'Name your room and add your players.'} />
+  return <><div className="room-back-row"><button onClick={() => { if (room && onDone) onDone(); else navigate(room ? `/room?id=${room.id}` : '/landing') }}><ArrowLeft size={19} /> {room ? 'Back to room' : 'Your rooms'}</button></div><PageHeading kicker="SET UP YOUR TABLE" title={room ? 'Edit room' : 'New room'} copy={room ? 'Update players before the first card of the round.' : 'Name your room, then invite phones or add players yourself.'} />
     <section className="room-form-panel"><div className="room-form-section-title"><span>01</span><h2>Make it yours</h2><Flag size={21} /></div><label className="room-field">ROOM NAME<input placeholder="Friday night flips" maxLength={40} value={name} onChange={e => setName(e.target.value)} /></label><div className="room-field">TARGET SCORE<div className="room-target-options">{targetScorePresets.map(({ value, label }) => <button key={value} className={target === value ? 'selected' : ''} aria-pressed={target === value} onClick={() => setTarget(value)}>{value}<small>PTS</small><span>{label}</span></button>)}</div><label className="room-custom-target">Custom target<input type="number" min={50} max={500} aria-label="Custom target score" value={target || ''} onChange={e => setTarget(Number(e.target.value))} /></label></div></section>
-    <section className="room-form-panel"><div className="room-form-section-title"><span>02</span><h2>Who’s at the table?</h2><b>{roster.length}/18</b></div><p className="room-muted">2–18 players. Arrange your crew in turn order.{room?.state && ' New players join with zero points.'}</p><div className="room-roster">{roster.map((p, i) => <div className="room-roster-row" key={p.id}><span className="room-seat">{String(i + 1).padStart(2, '0')}</span><button type="button" className="room-roster-avatar-edit" aria-label={`Edit ${p.name}'s character`} title={`Edit ${p.name}'s character`} onClick={() => setEditingCharacter(p)}><Avatar player={p} small /><Pencil size={13} /></button><b>{p.name}</b><div className="room-roster-controls"><button type="button" aria-label={`Move ${p.name} up`} disabled={i === 0} onClick={() => move(i, -1)}><ArrowUp size={14} /></button><button type="button" aria-label={`Move ${p.name} down`} disabled={i === roster.length - 1} onClick={() => move(i, 1)}><ArrowDown size={14} /></button><button type="button" className="room-roster-remove" aria-label={`Remove ${p.name} from room`} title={`Remove ${p.name} from room`} onClick={() => removePlayer(p)}><X size={16} /></button></div></div>)}</div>
+    <section className="room-form-panel"><div className="room-form-section-title"><span>02</span><h2>Who’s at the table?</h2><b>{roster.length}/18</b></div><p className="room-muted">Add players without a phone here, or invite everyone after creating the room. You need at least 2 to start.{room?.state && ' New players join with zero points.'}</p><div className="room-roster">{roster.map((p, i) => <div className="room-roster-row" key={p.id}><span className="room-seat">{String(i + 1).padStart(2, '0')}</span><button type="button" className="room-roster-avatar-edit" aria-label={`Edit ${p.name}'s character`} title={`Edit ${p.name}'s character`} onClick={() => setEditingCharacter(p)}><Avatar player={p} small /><Pencil size={13} /></button><b>{p.name}</b><div className="room-roster-controls"><button type="button" aria-label={`Move ${p.name} up`} disabled={i === 0} onClick={() => move(i, -1)}><ArrowUp size={14} /></button><button type="button" aria-label={`Move ${p.name} down`} disabled={i === roster.length - 1} onClick={() => move(i, 1)}><ArrowDown size={14} /></button><button type="button" className="room-roster-remove" aria-label={`Remove ${p.name} from room`} title={`Remove ${p.name} from room`} onClick={() => removePlayer(p)}><X size={16} /></button></div></div>)}</div>
       <div className="room-add-player"><input aria-label="New player name" maxLength={24} placeholder="Add a player’s name" value={playerName} onChange={e => setPlayerName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPlayer() } }} /><button aria-label="Add named player" disabled={roster.length >= 18} onClick={() => addPlayer()}><Plus size={20} /></button></div>
       {!roster.some(player => player.id === mine.id) && <button type="button" className="room-pick-crew" onClick={() => mine.name ? addPlayer(mine) : setEditingMine(true)}><PlayerAvatar player={{ ...mine, name: mine.name || 'My character' }} className="mini-avatar" /> {mine.name ? `Add me (${mine.name})` : 'Set up my character'}</button>}
       {library.players.length > 0 && <><button className="room-pick-crew" aria-expanded={showPicker} onClick={() => setShowPicker(!showPicker)}><Users size={16} /> Choose saved players <ChevronDown size={15} /></button>{showPicker && <div className="room-saved-player-picker">{library.players.filter(p => !roster.some(r => r.id === p.id || r.name.toLowerCase() === p.name.toLowerCase())).map(p => <button key={p.id} onClick={() => addPlayer(p)}><Avatar player={p} small />{p.name}<Plus size={14} /></button>)}{library.players.every(p => roster.some(r => r.id === p.id)) && <p>Everyone’s at the table!</p>}</div>}</>}
-    </section>{error && <p className="room-error" role="alert">{error}</p>}<div className="room-form-actions"><ActionButton onClick={() => save(!room)}><Play size={17} fill="currentColor" /> {room ? 'Save room changes' : 'Create & start playing'}</ActionButton>{!room && <ActionButton secondary onClick={() => save(false)}><FolderOpen size={17} /> Save room for later</ActionButton>}</div>{editingMine && <MyProfileEditor onClose={() => setEditingMine(false)} />}{editingCharacter && <RoomCharacterDialog player={editingCharacter} onClose={() => setEditingCharacter(null)} onSave={(avatar, color) => saveCharacter(editingCharacter, avatar, color)} />}{removingPlayer && <ConfirmationModal variant="floating" eyebrow="REMOVE PLAYER" title={`Remove ${removingPlayer.name}?`} message="Saving this change removes their total from the current match. Completed round cards and scores stay in room history, and their saved player profile stays available." cancelLabel="Keep player" confirmLabel="Remove player" onCancel={() => setRemovingPlayer(null)} onConfirm={() => { setRoster(current => current.filter(player => player.id !== removingPlayer.id)); setRemovingPlayer(null); setError('') }} />}</>
+    </section>{error && <p className="room-error" role="alert">{error}</p>}<div className="room-form-actions"><ActionButton onClick={() => save(false)}><QrCode size={17} /> {room ? 'Save room changes' : 'Create room & invite'}</ActionButton>{!room && roster.length >= 2 && <ActionButton secondary onClick={() => save(true)}><Play size={17} fill="currentColor" /> Start without invites</ActionButton>}</div>{editingMine && <MyProfileEditor onClose={() => setEditingMine(false)} />}{editingCharacter && <RoomCharacterDialog player={editingCharacter} onClose={() => setEditingCharacter(null)} onSave={(avatar, color) => saveCharacter(editingCharacter, avatar, color)} />}{removingPlayer && <ConfirmationModal variant="floating" eyebrow="REMOVE PLAYER" title={`Remove ${removingPlayer.name}?`} message="Saving this change removes their total from the current match. Completed round cards and scores stay in room history, and their saved player profile stays available." cancelLabel="Keep player" confirmLabel="Remove player" onCancel={() => setRemovingPlayer(null)} onConfirm={() => { setRoster(current => current.filter(player => player.id !== removingPlayer.id)); setRemovingPlayer(null); setError('') }} />}</>
 }
 
 function RoomDetail({ room }: { room: Room }) {
-  const navigate = useAppNavigation(); const [editing, setEditing] = useState(false); const [menu, setMenu] = useState(false); const [deletePrompt, setDeletePrompt] = useState(false); const [tvShareOpen, setTvShareOpen] = useState(false); const [localShareOpen, setLocalShareOpen] = useState(false); const [error, setError] = useState(''); const [tab, setTab] = useState('scores')
+  const navigate = useAppNavigation(); const localSession = useLocalRoomSession(); const [editing, setEditing] = useState(false); const [menu, setMenu] = useState(false); const [deletePrompt, setDeletePrompt] = useState(false); const [tvShareOpen, setTvShareOpen] = useState(false); const [autoInvite, setAutoInvite] = useState(() => new URLSearchParams(window.location.search).get('invite') === '1'); const [localShareOpen, setLocalShareOpen] = useState(autoInvite); const [error, setError] = useState(''); const [tab, setTab] = useState('scores')
   const state = room.state; const editable = canEditRoster(room)
   if (editing && editable) return <RoomForm room={room} onDone={() => { setEditing(false); window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' })) }} />
   const play = () => { try { if (!state) startRoom(room); navigate(`/banker?room=${room.id}`) } catch (e) { setError((e as Error).message) } }
   const rematch = () => { try { const next = createRoom(`${room.name.slice(0, 30)} · Rematch`, room.targetScore, room.roster); navigate(`/room?id=${next.id}`) } catch (e) { setError((e as Error).message) } }
   const ordered = state ? [...state.players].sort((a, b) => b.totalScore - a.totalScore) : room.roster.map(p => ({ ...p, totalScore: 0 }))
   return <><div className="room-back-row"><button className="room-back-link" onClick={() => navigate('/landing')}><ArrowLeft size={19} /> Your rooms</button><div className="room-menu-wrapper"><button className="room-menu-trigger" aria-label="Room options" aria-expanded={menu} onClick={() => setMenu(!menu)}><MoreHorizontal size={19} /></button>{menu && <><div className="room-menu-backdrop" onClick={() => setMenu(false)} /><div className="room-options-popover" role="menu"><button className="room-delete-button" role="menuitem" onClick={() => { setMenu(false); setDeletePrompt(true) }}><Trash2 size={14} /> Delete room</button></div></>}</div></div>
-    <section className="room-detail-hero"><span className={`room-badge ${state?.phase === 'results' ? 'done' : state ? 'live' : 'ready'}`}>{roomStatus(room)}</span><h1>{room.name}</h1><p>{room.roster.length} players <span>·</span> First to {room.targetScore} <span>·</span> {dateLabel(room.createdAt)}</p><div className="room-avatar-stack">{room.roster.slice(0, 8).map(p => <Avatar key={p.id} player={p} small />)}{room.roster.length > 8 && <span className="room-avatar more" aria-label={`${room.roster.length - 8} more players`}>+{room.roster.length - 8}</span>}</div>{state?.phase === 'results' ? <><button type="button" className="room-button room-view-results" onClick={() => navigate(`/banker?room=${room.id}`)}><Trophy size={18} /> View game results</button><ActionButton secondary onClick={rematch}><Plus size={18} /> Same crew, new match</ActionButton></> : <ActionButton onClick={play}><Play size={17} fill="currentColor" /> {state ? `Resume round ${state.roundNumber}` : 'Start this game'}</ActionButton>}</section>
-    {error && <p className="room-error" role="alert">{error}</p>}{tvSharingAvailable() && <><button className="room-dashed-action" onClick={() => setLocalShareOpen(true)}><QrCode size={16} /> Invite players to join</button><button className="room-dashed-action" onClick={() => setTvShareOpen(true)}><Monitor size={16} /> Show live scores on TV</button></>}{editable && <button className="room-dashed-action" onClick={() => setEditing(true)}><Pencil size={16} /> Edit room & players</button>}
-    <div className="room-filter-tabs detail-tabs"><button className={tab === 'scores' ? 'selected' : ''} onClick={() => setTab('scores')} aria-pressed={tab === 'scores'}><Trophy size={15} /> Standings</button><button className={tab === 'rounds' ? 'selected' : ''} onClick={() => setTab('rounds')} aria-pressed={tab === 'rounds'}><History size={15} /> Round history</button></div>
-    {tab === 'scores' ? <><div className="room-section-heading"><h2>{state?.phase === 'results' ? 'Final standings' : 'The race so far'}</h2><span className="room-section-note">{state?.history.length ?? 0} ROUNDS</span></div><div className="room-standings">{ordered.map((p, i) => <div className={`room-standing ${state?.winnerIds.includes(p.id) ? 'winner' : ''}`} key={p.id}><span className="standing-rank">{state?.winnerIds.includes(p.id) ? <Trophy size={18} /> : String(i + 1).padStart(2, '0')}</span><Avatar player={p} small /><b>{p.name}</b><strong>{p.totalScore}<small>PTS</small></strong></div>)}</div>{state && <p className="room-local-note">Totals include completed rounds.</p>}</> : <><div className="room-section-heading"><h2>Every round. Every card.</h2></div>{state?.history.length ? [...state.history].reverse().map(round => <details className="room-round-detail" key={round.round}><summary><span className="round-number">{String(round.round).padStart(2, '0')}</span><div><b>Round {round.round}</b><small>{Object.keys(round.scores).length} players · scores & cards</small></div><ChevronDown size={19} /></summary><div className="room-round-hands">{Object.entries(round.scores).map(([id, score]) => { const hand = round.hands?.[id]; const player = hand ? { id, name: hand.name, color: hand.color, avatar: hand.avatar ?? room.roster.find(p => p.id === id)?.avatar } : room.roster.find(p => p.id === id); return <article className="room-history-hand" key={id}><header>{player && <Avatar player={player} small />}<b>{player?.name ?? 'Player'}</b><span className={`${hand?.status ?? 'stayed'}-label`}>{hand?.status === 'busted' ? 'BUST' : hand?.status === 'flip-seven' ? 'FLIP 7!' : hand?.status === 'frozen' ? 'FROZEN' : 'BANKED'}</span><strong>{score}<small>pts</small></strong></header><div className="room-history-cards">{hand?.entries.map(entry => <div className={entry.voided ? 'voided' : ''} key={entry.instanceId} title={entry.voided ? `${entry.card.label} · discarded` : entry.card.label}><CardArtwork card={entry.card} lazy />{entry.voided && <span>DISCARD</span>}</div>)}{!hand?.entries.length && <p>No cards recorded.</p>}</div></article> })}</div></details>) : <EmptyState icon={<History size={29} />} title="Your story starts on round one">Finish a round to save each player’s score and cards here.</EmptyState>}{state?.phase === 'round' && <div className="room-current-note"><Play size={16} /><p>Round {state.roundNumber} is saved and waiting.<button onClick={play}>Back to the table <ArrowRight size={13} /></button></p></div>}</>}
-    {tvShareOpen && <TvShareDialog roomId={room.id} onClose={() => setTvShareOpen(false)} />}{localShareOpen && <LocalRoomDialog roomId={room.id} onClose={() => setLocalShareOpen(false)} />}{deletePrompt && <ConfirmationModal variant="floating" eyebrow="DELETE ROOM" title={`Delete ${room.name}?`} message="This removes this room and its detailed match history. Saved player profiles and lifetime matches, wins, and best scores stay. Export a backup first if you want to keep the details." cancelLabel="Keep room" confirmLabel="Delete room" onCancel={() => setDeletePrompt(false)} onConfirm={() => { try { updateLibrary(current => ({ ...current, rooms: current.rooms.filter(r => r.id !== room.id) })); navigate('/landing') } catch (e) { setError((e as Error).message); setDeletePrompt(false) } }} />}</>
+    <section className="room-detail-hero"><span className={`room-badge ${state?.phase === 'results' ? 'done' : state ? 'live' : 'ready'}`}>{roomStatus(room)}</span><h1>{room.name}</h1><p>{room.roster.length} {room.roster.length === 1 ? 'player' : 'players'} <span>·</span> First to {room.targetScore} <span>·</span> {dateLabel(room.createdAt)}</p><div className="room-avatar-stack">{room.roster.slice(0, 8).map(p => <Avatar key={p.id} player={p} small />)}{room.roster.length > 8 && <span className="room-avatar more" aria-label={`${room.roster.length - 8} more players`}>+{room.roster.length - 8}</span>}</div>{state?.phase === 'results' ? <><button type="button" className="room-button room-view-results" onClick={() => navigate(`/banker?room=${room.id}`)}><Trophy size={18} /> View game results</button><ActionButton secondary onClick={rematch}><Plus size={18} /> Same crew, new match</ActionButton></> : !state && room.roster.length < 2 ? <div className="room-start-hint"><Users size={17} /> Waiting for {2 - room.roster.length} more {room.roster.length === 1 ? 'player' : 'players'} to start</div> : <ActionButton onClick={play}><Play size={17} fill="currentColor" /> {state ? 'Resume round ' + state.roundNumber : 'Start this game'}</ActionButton>}</section>
+    {!state && <section className="room-lobby-panel"><span className="room-kicker">BEFORE THE FIRST FLIP</span><h2>Gather your crew</h2><p>Invite phones now. Each player joins with their own name and character, and you approve them here. You can also add players who do not have a phone.</p>{localRoomAvailable() && <button type="button" className="room-button" onClick={() => setLocalShareOpen(true)}><QrCode size={17} /> {localSession?.roomId === room.id ? 'Show invite & requests' : 'Show invite QR code'}{localSession?.roomId === room.id && localSession.requests.length > 0 && <span className="room-lobby-request-count">{localSession.requests.length}</span>}</button>}<button type="button" className="room-lobby-manual" onClick={() => setEditing(true)}><Plus size={16} /> Add a player without a phone</button><div className="room-lobby-roster"><strong>At the table · {room.roster.length}/18</strong>{room.roster.length ? room.roster.map(player => <div key={player.id}><Avatar player={player} small /><span>{player.name}</span>{localSession?.roomId === room.id && localSession.claimedSeats.includes(player.id) && <small>ON THEIR PHONE</small>}</div>) : <p>No players yet. Invite someone or add a player yourself.</p>}</div></section>}
+    {error && <p className="room-error" role="alert">{error}</p>}{state && tvSharingAvailable() && <><button className="room-dashed-action" onClick={() => setLocalShareOpen(true)}><QrCode size={16} /> Invite players to join</button><button className="room-dashed-action" onClick={() => setTvShareOpen(true)}><Monitor size={16} /> Show live scores on TV</button></>}{state && editable && <button className="room-dashed-action" onClick={() => setEditing(true)}><Pencil size={16} /> Edit room & players</button>}
+    {state && <div className="room-filter-tabs detail-tabs"><button className={tab === 'scores' ? 'selected' : ''} onClick={() => setTab('scores')} aria-pressed={tab === 'scores'}><Trophy size={15} /> Standings</button><button className={tab === 'rounds' ? 'selected' : ''} onClick={() => setTab('rounds')} aria-pressed={tab === 'rounds'}><History size={15} /> Round history</button></div>}
+    {state && (tab === 'scores' ? <><div className="room-section-heading"><h2>{state?.phase === 'results' ? 'Final standings' : 'The race so far'}</h2><span className="room-section-note">{state?.history.length ?? 0} ROUNDS</span></div><div className="room-standings">{ordered.map((p, i) => <div className={`room-standing ${state?.winnerIds.includes(p.id) ? 'winner' : ''}`} key={p.id}><span className="standing-rank">{state?.winnerIds.includes(p.id) ? <Trophy size={18} /> : String(i + 1).padStart(2, '0')}</span><Avatar player={p} small /><b>{p.name}</b><strong>{p.totalScore}<small>PTS</small></strong></div>)}</div>{state && <p className="room-local-note">Totals include completed rounds.</p>}</> : <><div className="room-section-heading"><h2>Every round. Every card.</h2></div>{state?.history.length ? [...state.history].reverse().map(round => <details className="room-round-detail" key={round.round}><summary><span className="round-number">{String(round.round).padStart(2, '0')}</span><div><b>Round {round.round}</b><small>{Object.keys(round.scores).length} players · scores & cards</small></div><ChevronDown size={19} /></summary><div className="room-round-hands">{Object.entries(round.scores).map(([id, score]) => { const hand = round.hands?.[id]; const player = hand ? { id, name: hand.name, color: hand.color, avatar: hand.avatar ?? room.roster.find(p => p.id === id)?.avatar } : room.roster.find(p => p.id === id); return <article className="room-history-hand" key={id}><header>{player && <Avatar player={player} small />}<b>{player?.name ?? 'Player'}</b><span className={`${hand?.status ?? 'stayed'}-label`}>{hand?.status === 'busted' ? 'BUST' : hand?.status === 'flip-seven' ? 'FLIP 7!' : hand?.status === 'frozen' ? 'FROZEN' : 'BANKED'}</span><strong>{score}<small>pts</small></strong></header><div className="room-history-cards">{hand?.entries.map(entry => <div className={entry.voided ? 'voided' : ''} key={entry.instanceId} title={entry.voided ? `${entry.card.label} · discarded` : entry.card.label}><CardArtwork card={entry.card} lazy />{entry.voided && <span>DISCARD</span>}</div>)}{!hand?.entries.length && <p>No cards recorded.</p>}</div></article> })}</div></details>) : <EmptyState icon={<History size={29} />} title="Your story starts on round one">Finish a round to save each player’s score and cards here.</EmptyState>}{state?.phase === 'round' && <div className="room-current-note"><Play size={16} /><p>Round {state.roundNumber} is saved and waiting.<button onClick={play}>Back to the table <ArrowRight size={13} /></button></p></div>}</>)}
+    {tvShareOpen && <TvShareDialog roomId={room.id} onClose={() => setTvShareOpen(false)} />}{localShareOpen && <LocalRoomDialog roomId={room.id} autoStart={autoInvite} onClose={() => { setLocalShareOpen(false); setAutoInvite(false) }} />}{deletePrompt && <ConfirmationModal variant="floating" eyebrow="DELETE ROOM" title={`Delete ${room.name}?`} message="This removes this room and its detailed match history. Saved player profiles and lifetime matches, wins, and best scores stay. Export a backup first if you want to keep the details." cancelLabel="Keep room" confirmLabel="Delete room" onCancel={() => setDeletePrompt(false)} onConfirm={() => { try { updateLibrary(current => ({ ...current, rooms: current.rooms.filter(r => r.id !== room.id) })); navigate('/landing') } catch (e) { setError((e as Error).message); setDeletePrompt(false) } }} />}</>
 }
 
 function SettingsScreen() {
