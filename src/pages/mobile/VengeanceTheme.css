@@ -1,33 +1,220 @@
-.edition-fab { position: fixed; z-index: 21; right: max(16px, calc(50vw - 246px)); bottom: calc(96px + env(safe-area-inset-bottom, 0px)); display: grid; place-items: center; width: 80px; height: 80px; padding: 0; border: 0; border-radius: 50%; background: transparent; touch-action: manipulation; filter: drop-shadow(2px 4px 2px #132d6740); transition: transform 160ms ease; }
-.edition-fab img { display: block; width: 100%; height: 100%; object-fit: contain; }
-.edition-fab:active { transform: scale(.93); }
-.edition-fab-cue { position: absolute; right: -7px; bottom: -4px; display: grid; place-items: center; width: 25px; height: 25px; border: 2px solid #132d67; border-radius: 50%; background: #fff8e7; color: #132d67; }
-.edition-vengeance { --ink: #132d67; --cream: #fff8e7; --yellow: #e83239; --pink: #e83239; --cyan: #d5e4ff; background: #efe1ca; }
-.edition-vengeance .room-app-main { background-color: #efe1ca; background-image: radial-gradient(#132d6718 1px, transparent 1px); background-size: 12px 12px; }
-.edition-vengeance .room-home-header img { width: 210px; height: 86px; }
-.edition-vengeance .room-welcome em { color: #e83239; }
-.edition-vengeance .room-home-stats, .edition-vengeance .room-history-banner { background: #132d67; color: #fff9e7; }
-.edition-vengeance .library-room-card.featured { box-shadow: 3px 4px 0 #132d67, 5px 6px 0 #e83239; }
-.edition-vengeance .room-bottom-nav { box-shadow: 0 5px 0 #b52b35; }
-.edition-vengeance .room-page-heading .room-kicker, .edition-vengeance .room-section-heading .room-section-note { color: #b92530; }
-.edition-vengeance .room-create-banner.vengeance-home-promo { color: #fff9e7; background: #132d67; min-height: 178px; }
-.edition-vengeance .vengeance-home-promo .room-kicker, .edition-vengeance .vengeance-home-promo .room-promo-copy p { color: #fff5d8; }
-.edition-vengeance .vengeance-home-promo h2 { font-size: 21px; }
-.edition-vengeance .vengeance-home-promo button { background: #e83239; }
-.edition-vengeance .vengeance-home-promo > img { position: relative; z-index: 1; width: 110px; max-height: 120px; object-fit: contain; }
-.vengeance-history-cards { display: flex; gap: 5px; flex-wrap: wrap; padding: 10px; }
-.vengeance-history-cards span { position: relative; display: flex; justify-content: center; align-items: center; width: 44px; height: 62px; padding: 3px; overflow: hidden; border: 1px solid #132d67; border-radius: 5px; background: #fff3d6; font-size: 9px; font-weight: 850; text-align: center; }
-.vengeance-history-cards span img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
-.vengeance-history-events { margin: 0 12px 15px; padding-left: 22px; color: #4a5876; font-size: 11px; line-height: 1.6; }
-.vengeance-faq-logo { max-width: 135px; max-height: 100px; object-fit: contain; }
-.vengeance-dealer-select { width: 100%; min-height: 45px; padding: 8px; border: 2px solid #132d67; border-radius: 8px; color: #132d67; background: #fffdf4; font-weight: 850; }
-.edition-vengeance .room-home-stats * { color: #fff9e7; }
-.edition-vengeance .guide-card { border-top: 5px solid #e83239; }
-.vengeance-rule-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(57px, 1fr)); gap: 8px; margin-top: 15px; }
-.vengeance-rule-cards figure { min-width: 0; margin: 0; text-align: center; }
-.vengeance-rule-cards img { display: block; width: min(100%, 75px); height: 105px; margin: auto; object-fit: contain; }
-.vengeance-rule-cards figcaption { margin-top: 3px; color: #132d67; font-size: 10px; font-weight: 850; }
-@media (min-width: 600px) { .edition-fab { right: max(14px, calc(50vw - 320px)); } }
-@media (max-width: 390px) { .edition-vengeance .vengeance-home-promo > img { width: 85px; } }
-@media (max-width: 360px) { .edition-fab { right: 14px; bottom: calc(92px + env(safe-area-inset-bottom, 0px)); width: 70px; height: 70px; } }
-@media (prefers-reduced-motion: reduce) { .edition-fab { transition: none; } }
+.edition-fab {
+    position: fixed;
+    z-index: 21;
+    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    display: grid;
+    place-items: center;
+    width: 80px;
+    height: 80px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    touch-action: none;
+    cursor: grab;
+    user-select: none;
+    filter: drop-shadow(2px 4px 2px #132d6740);
+    transition: left 240ms cubic-bezier(.22, .61, .36, 1), transform 160ms ease;
+}
+
+.edition-fab.is-dragging {
+    cursor: grabbing;
+    transition: none;
+}
+
+.edition-fab img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.edition-fab:active {
+    transform: scale(.96);
+}
+
+.edition-vengeance {
+    --ink: #132d67;
+    --cream: #fff8e7;
+    --yellow: #e83239;
+    --pink: #e83239;
+    --cyan: #d5e4ff;
+    background: #efe1ca;
+}
+
+.edition-vengeance .room-app-main {
+    background-color: #efe1ca;
+    background-image: radial-gradient(#132d6718 1px, transparent 1px);
+    background-size: 12px 12px;
+}
+
+.edition-vengeance .room-page-art--vengeance .room-home-promo {
+    top: calc(5px + env(safe-area-inset-top, 0px));
+    right: -10px;
+    width: clamp(170px, 46vw, 220px);
+    max-height: none;
+    opacity: .18;
+    transform: rotate(-1deg);
+}
+
+.edition-vengeance .room-welcome em {
+    color: #e83239;
+}
+
+.edition-vengeance .room-home-stats,
+.edition-vengeance .room-history-banner {
+    background: #132d67;
+    color: #fff9e7;
+}
+
+.edition-vengeance .library-room-card.featured {
+    box-shadow: 3px 4px 0 #132d67, 5px 6px 0 #e83239;
+}
+
+.edition-vengeance .room-bottom-nav {
+    box-shadow: 0 5px 0 #b52b35;
+}
+
+.edition-vengeance .room-page-heading .room-kicker,
+.edition-vengeance .room-section-heading .room-section-note {
+    color: #b92530;
+}
+
+.edition-vengeance .room-create-banner.vengeance-home-promo {
+    color: #fff9e7;
+    background: #132d67;
+    min-height: 178px;
+}
+
+.edition-vengeance .vengeance-home-promo .room-kicker,
+.edition-vengeance .vengeance-home-promo .room-promo-copy p {
+    color: #fff5d8;
+}
+
+.edition-vengeance .vengeance-home-promo h2 {
+    font-size: 21px;
+}
+
+.edition-vengeance .vengeance-home-promo button {
+    background: #e83239;
+}
+
+.edition-vengeance .vengeance-home-promo>img {
+    position: relative;
+    z-index: 1;
+    width: 110px;
+    max-height: 120px;
+    object-fit: contain;
+}
+
+.vengeance-history-cards {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    padding: 10px;
+}
+
+.vengeance-history-cards span {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 44px;
+    height: 62px;
+    padding: 3px;
+    overflow: hidden;
+    border: 1px solid #132d67;
+    border-radius: 5px;
+    background: #fff3d6;
+    font-size: 9px;
+    font-weight: 850;
+    text-align: center;
+}
+
+.vengeance-history-cards span img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.vengeance-history-events {
+    margin: 0 12px 15px;
+    padding-left: 22px;
+    color: #4a5876;
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+.vengeance-faq-logo {
+    max-width: 135px;
+    max-height: 100px;
+    object-fit: contain;
+}
+
+.vengeance-dealer-select {
+    width: 100%;
+    min-height: 45px;
+    padding: 8px;
+    border: 2px solid #132d67;
+    border-radius: 8px;
+    color: #132d67;
+    background: #fffdf4;
+    font-weight: 850;
+}
+
+.edition-vengeance .room-home-stats * {
+    color: #fff9e7;
+}
+
+.edition-vengeance .guide-card {
+    border-top: 5px solid #e83239;
+}
+
+.vengeance-rule-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(57px, 1fr));
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.vengeance-rule-cards figure {
+    min-width: 0;
+    margin: 0;
+    text-align: center;
+}
+
+.vengeance-rule-cards img {
+    display: block;
+    width: min(100%, 75px);
+    height: 105px;
+    margin: auto;
+    object-fit: contain;
+}
+
+.vengeance-rule-cards figcaption {
+    margin-top: 3px;
+    color: #132d67;
+    font-size: 10px;
+    font-weight: 850;
+}
+
+@media (max-width: 390px) {
+    .edition-vengeance .vengeance-home-promo>img {
+        width: 85px;
+    }
+}
+
+@media (max-width: 360px) {
+    .edition-fab {
+        width: 70px;
+        height: 70px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .edition-fab {
+        transition: none;
+    }
+}

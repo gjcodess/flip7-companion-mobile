@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowRightLeft, ArrowUp, Check, ChevronDown, ChevronRight, CircleHelp, Download, Flag, FolderOpen, History, Home, Medal, Monitor, MoreHorizontal, Pencil, Pin, Play, Plus, Search, Settings, ShieldCheck, Sparkles, Trash2, Trophy, Upload, Users, X } from 'lucide-react'
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, ChevronDown, ChevronRight, CircleHelp, Download, Flag, FolderOpen, History, Home, Medal, Monitor, MoreHorizontal, Pencil, Pin, Play, Plus, Search, Settings, ShieldCheck, Sparkles, Trash2, Trophy, Upload, Users, X } from 'lucide-react'
 import { useAppNavigation } from '../../lib/navigation'
 import { useScrollNav } from '../../lib/use-scroll-nav'
 import { useKeyboardVisible } from '../../lib/use-keyboard-visible'
@@ -15,6 +15,7 @@ import { HomePromoCarousel } from './HomePromoCarousel'
 import { tvSharingAvailable } from '../../lib/tv-share'
 import { TvShareDialog } from './TvShareDialog'
 import { PlayerAvatar } from '../../components/PlayerAvatar'
+import { EditionFab } from './EditionFab'
 import { defaultPlayerAvatarFor, playerAvatars, type PlayerAvatarId } from '../../lib/player-avatars'
 
 type MobilePage = 'home' | 'players' | 'history' | 'settings' | 'new' | 'room'
@@ -62,7 +63,7 @@ function HomeScreen() {
   const sorted = [...rooms].sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.updatedAt - a.updatedAt)
   const visible = sorted.filter(r => (filter === 'all' || (filter === 'active' ? roomState(r) && roomState(r)?.phase !== 'results' : !roomState(r))) && r.name.toLowerCase().includes(query.toLowerCase()))
   return <><div className="room-home-hero">
-    <header className="room-home-header"><img src={edition === 'vengeance' ? '/assets/flip7-vengeance-logo.webp' : '/assets/flip7-title-logo.webp'} alt={edition === 'vengeance' ? 'Flip 7 With a Vengeance' : 'Flip7 Companion'} /></header>
+    <header className="room-home-header"><img src="/assets/flip7-title-logo.webp" alt="Flip7 Companion" /></header>
     <section className="room-welcome"><h1>{edition === 'vengeance' ? <>No one’s safe.<br /><em>Keep every card in play.</em></> : <>Your table.<br /><em>Your game night.</em></>}</h1><p>Resume a match or start a new room.</p></section>
   </div>
     {edition === 'classic' ? <HomePromoCarousel /> : <section className="room-create-banner vengeance-home-promo"><div className="room-promo-copy"><span className="room-kicker">THE PHYSICAL DECK LEADS</span><h2>Flip. Move.<br />Remember.</h2><p>Record the cards on your real table and let the app track the consequences.</p><button onClick={() => navigate('/vengeance-demo')}>Try practice <Play size={16} /></button></div><img src="/assets/flip7-vengeance-logo.webp" alt="" /></section>}
@@ -244,5 +245,5 @@ export function MobileApp({ page, roomId }: { page: MobilePage; roomId?: string 
     try { updateLibrary(current => ({ ...current, settings: { ...current.settings, edition: next } })) }
     catch (cause) { window.alert((cause as Error).message) }
   }
-  return <div className={`room-app-shell edition-${edition}`}><main className={`room-app-main page-${page}`}>{page !== 'room' && edition === 'classic' && <PageArtwork />}{error && <p className="room-error" role="alert">{error}</p>}{page === 'home' ? <HomeScreen /> : page === 'players' ? <PlayersScreen /> : page === 'history' ? <HistoryScreen /> : page === 'settings' ? <SettingsScreen /> : page === 'new' ? <RoomForm /> : room ? room.edition === 'vengeance' ? <VengeanceRoomDetail key={room.id} room={room} /> : <RoomDetail key={room.id} room={room} /> : <EmptyState icon={<FolderOpen size={30} />} title="This room isn’t here">It may have been removed or restored from a different backup.<ActionButton onClick={() => navigate('/landing')}>Back to your rooms</ActionButton></EmptyState>}</main>{showEditionFab && !keyboardVisible && <button type="button" className={`edition-fab edition-fab--${nextEdition}`} aria-label={`Switch to ${nextEdition === 'classic' ? 'Classic Flip 7' : 'Flip 7 With a Vengeance'}`} title={`Switch to ${nextEdition === 'classic' ? 'Classic Flip 7' : 'Flip 7 With a Vengeance'}`} onClick={() => switchEdition(nextEdition)}><img src={nextEdition === 'classic' ? '/assets/flip7-classic-game-badge.webp' : '/assets/flip7-vengeance-game-badge.webp'} alt="" aria-hidden="true" /><span className="edition-fab-cue" aria-hidden="true"><ArrowRightLeft size={14} strokeWidth={2.7} /></span></button>}<BottomNav page={page} /></div>
+  return <div className={`room-app-shell edition-${edition}`}><main className={`room-app-main page-${page}`}>{page !== 'room' && (edition === 'classic' || page === 'home') && <PageArtwork edition={edition} />}{error && <p className="room-error" role="alert">{error}</p>}{page === 'home' ? <HomeScreen /> : page === 'players' ? <PlayersScreen /> : page === 'history' ? <HistoryScreen /> : page === 'settings' ? <SettingsScreen /> : page === 'new' ? <RoomForm /> : room ? room.edition === 'vengeance' ? <VengeanceRoomDetail key={room.id} room={room} /> : <RoomDetail key={room.id} room={room} /> : <EmptyState icon={<FolderOpen size={30} />} title="This room isn’t here">It may have been removed or restored from a different backup.<ActionButton onClick={() => navigate('/landing')}>Back to your rooms</ActionButton></EmptyState>}</main>{showEditionFab && !keyboardVisible && <EditionFab target={nextEdition} onSwitch={() => switchEdition(nextEdition)} />}<BottomNav page={page} /></div>
 }
