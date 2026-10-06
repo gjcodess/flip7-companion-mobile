@@ -61,7 +61,6 @@
     color: #e83239;
 }
 
-.edition-vengeance .room-home-stats,
 .edition-vengeance .room-history-banner {
     background: #132d67;
     color: #fff9e7;
@@ -80,31 +79,51 @@
     color: #b92530;
 }
 
-.edition-vengeance .room-create-banner.vengeance-home-promo {
-    color: #fff9e7;
-    background: #132d67;
-    min-height: 178px;
+/* Vengeance Promo Carousel */
+.edition-vengeance .room-promo-slide-0 {
+    background: #f07167;
 }
 
-.edition-vengeance .vengeance-home-promo .room-kicker,
-.edition-vengeance .vengeance-home-promo .room-promo-copy p {
-    color: #fff5d8;
+.edition-vengeance .room-promo-slide-1 {
+    background: #bcdbf8;
 }
 
-.edition-vengeance .vengeance-home-promo h2 {
-    font-size: 21px;
+.edition-vengeance .room-promo-slide-2 {
+    background: #fadb9e;
 }
 
-.edition-vengeance .vengeance-home-promo button {
+.edition-vengeance .room-promo-slide-3 {
+    background: #fae69e;
+}
+
+.edition-vengeance .room-promo-slide-3 h2 {
+    font-size: 20px;
+}
+
+.edition-vengeance .room-promo-arrow,
+.edition-vengeance .room-promo-dots button {
+    background: #fff8e7;
+    border: 1.5px solid #132d67;
+    color: #132d67;
+    box-shadow: 2px 2px 0 #132d67;
+}
+
+.edition-vengeance .room-promo-dots button.active {
     background: #e83239;
 }
 
-.edition-vengeance .vengeance-home-promo>img {
-    position: relative;
-    z-index: 1;
-    width: 110px;
-    max-height: 120px;
-    object-fit: contain;
+/* Home Stats in Vengeance */
+.edition-vengeance .room-home-stats {
+    background: transparent;
+    color: #5c6370;
+}
+
+.edition-vengeance .room-home-stats b {
+    color: #132d67;
+}
+
+.edition-vengeance .room-home-stats>span+span {
+    border-left: 1px solid #dcd1ba;
 }
 
 .vengeance-history-cards {
@@ -164,9 +183,6 @@
     font-weight: 850;
 }
 
-.edition-vengeance .room-home-stats * {
-    color: #fff9e7;
-}
 
 .edition-vengeance .guide-card {
     border-top: 5px solid #e83239;
@@ -200,11 +216,6 @@
     font-weight: 850;
 }
 
-@media (max-width: 390px) {
-    .edition-vengeance .vengeance-home-promo>img {
-        width: 85px;
-    }
-}
 
 @media (max-width: 360px) {
     .edition-fab {

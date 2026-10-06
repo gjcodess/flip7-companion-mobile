@@ -21,7 +21,7 @@ export function InfoPage({ kind, kicker, title, accent, intro, children }: { kin
   }, [])
   const links = [{ kind: 'rules', label: 'How to play', href: '/rules' }, { kind: 'faq', label: 'FAQs', href: '/faq' }, { kind: 'privacy', label: 'Privacy', href: '/privacy' }, { kind: 'terms', label: 'Terms', href: '/terms' }]
   return <div className={`room-app-shell info-app-shell edition-${edition}`}><main className={`room-app-main info-page info-${kind}`}>
-    {edition === 'classic' && <PageArtwork />}
+    <PageArtwork edition={edition} />
     <div className="info-top-row"><button type="button" onClick={() => navigate('/settings')}><ArrowLeft size={18} /> Settings</button></div>
     <header className="info-heading"><span className="room-kicker">{kicker}</span><h1>{title}{accent && <><br /><em>{accent}</em></>}</h1><p>{intro}</p></header>
     <nav className="info-page-tabs" aria-label="Help and app information">{links.map(link => <a key={link.kind} href={link.href} aria-current={kind === link.kind ? 'page' : undefined}>{link.label}</a>)}</nav>
