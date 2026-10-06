@@ -4,6 +4,7 @@ import { useAppNavigation } from '../../lib/navigation'
 import { BottomNav } from './MobileApp'
 import { PageArtwork } from './PageArtwork'
 import { AppFooter } from './AppFooter'
+import { useLibrary } from '../../lib/room-store'
 
 export type InfoPageKind = 'rules' | 'faq' | 'privacy' | 'terms' | 'contact'
 
@@ -13,13 +14,14 @@ export function AssetCardFan({ cards }: { cards: string[] }) {
 
 export function InfoPage({ kind, kicker, title, accent, intro, children }: { kind: InfoPageKind; kicker: string; title: string; accent: string; intro: string; children: ReactNode }) {
   const navigate = useAppNavigation()
+  const edition = useLibrary().settings.edition
   useEffect(() => {
     document.documentElement.classList.add('room-app-active')
     return () => document.documentElement.classList.remove('room-app-active')
   }, [])
   const links = [{ kind: 'rules', label: 'How to play', href: '/rules' }, { kind: 'faq', label: 'FAQs', href: '/faq' }, { kind: 'privacy', label: 'Privacy', href: '/privacy' }, { kind: 'terms', label: 'Terms', href: '/terms' }]
-  return <div className="room-app-shell info-app-shell"><main className={`room-app-main info-page info-${kind}`}>
-    <PageArtwork />
+  return <div className={`room-app-shell info-app-shell edition-${edition}`}><main className={`room-app-main info-page info-${kind}`}>
+    {edition === 'classic' && <PageArtwork />}
     <div className="info-top-row"><button type="button" onClick={() => navigate('/settings')}><ArrowLeft size={18} /> Settings</button></div>
     <header className="info-heading"><span className="room-kicker">{kicker}</span><h1>{title}{accent && <><br /><em>{accent}</em></>}</h1><p>{intro}</p></header>
     <nav className="info-page-tabs" aria-label="Help and app information">{links.map(link => <a key={link.kind} href={link.href} aria-current={kind === link.kind ? 'page' : undefined}>{link.label}</a>)}</nav>

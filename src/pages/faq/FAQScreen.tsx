@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Search, ChevronDown, CircleHelp } from 'lucide-react'
 import { AssetCardFan, InfoPage, InfoPlayCallout } from '../mobile/InfoPage'
+import { useLibrary } from '../../lib/room-store'
 
 const faqGroups = [
   {
@@ -129,18 +130,40 @@ const faqGroups = [
   }
 ]
 
+const vengeanceFaqGroups = [
+  { id: 'start', title: 'Choose your table.', label: 'Getting started', items: [
+    { question: 'Do I need the Vengeance deck?', answer: 'Yes. Reveal and move the physical cards. The app records your real table; it never draws cards.' },
+    { question: 'Are my Classic games affected?', answer: 'No. Each room keeps its edition. Vengeance has separate players, matches, history, and stats.' },
+    { question: 'Can I play with two people?', answer: 'The app allows a two-person saved match; the printed game is marked for three or more players and also mentions a challenge for two or fewer.' },
+  ] },
+  { id: 'cards', title: 'The cards fight back.', label: 'Cards & actions', items: [
+    { question: 'Can I affect someone who stayed?', answer: 'Yes. Players who stayed can receive Actions and Modifiers and can lose or exchange face-up cards. Their score remains provisional until the round ends.' },
+    { question: 'Must I use an Action card?', answer: 'Yes, when a valid target exists. If a Swap, Steal, or Discard has no valid card to target, discard that Action.' },
+    { question: 'Can Swap bust players?', answer: 'Yes. Recheck both hands after the exchange; it can bust both players.' },
+    { question: 'How does Flip Four resolve?', answer: 'Reveal up to four physical cards one at a time. Stop at a bust or Flip 7. If all four finish without a bust, resolve queued Actions and Modifiers in reveal order. A later Just One More bust does not cancel the remaining queued Actions.' },
+    { question: 'What if I receive Unlucky 7 while holding a 7?', answer: 'Discard your previous Number and Modifier cards first. Keep Unlucky 7 without immediately busting. A later 7 can bust you.' },
+  ] },
+  { id: 'score', title: 'Count what remains.', label: 'Scoring', items: [
+    { question: 'What is the scoring order?', answer: 'Add Number cards, apply ÷2 and round down, subtract the negative Modifiers with a floor of zero, then add 15 for Flip 7.' },
+    { question: 'What does The Zero do?', answer: 'It makes the hand score zero unless its holder reaches Flip 7. It counts as one Number card, and its holder must keep hitting on their turn.' },
+    { question: 'What does Lucky 13 do?', answer: 'It allows one other 13 without busting. Both count toward Flip 7, but a third 13 busts.' },
+  ] },
+]
+
 export function FAQScreen() {
+  const edition = useLibrary().settings.edition
+  const groups = edition === 'vengeance' ? vengeanceFaqGroups : faqGroups
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('all')
   const normalized = query.trim().toLowerCase()
-  const visible = faqGroups.filter(group => category === 'all' || category === group.id).map(group => ({ ...group, items: group.items.filter(item => !normalized || `${item.question} ${item.answer}`.toLowerCase().includes(normalized)) })).filter(group => group.items.length > 0)
+  const visible = groups.filter(group => category === 'all' || category === group.id).map(group => ({ ...group, items: group.items.filter(item => !normalized || `${item.question} ${item.answer}`.toLowerCase().includes(normalized)) })).filter(group => group.items.length > 0)
   const count = visible.reduce((sum, group) => sum + group.items.length, 0)
   return <InfoPage kind="faq" kicker="A LITTLE HELP FOR GAME NIGHT" title="Questions & answers" accent="" intro="Find a quick answer and get back to the table.">
-    <section className="info-art-banner cyan"><div><h2>We’ve got<br />your back.</h2></div><AssetCardFan cards={['5', 'SECOND CHANCE', 'FREEZE']} /></section>
+    <section className="info-art-banner cyan"><div><h2>We’ve got<br />your back.</h2></div>{edition === 'classic' ? <AssetCardFan cards={['5', 'SECOND CHANCE', 'FREEZE']} /> : <img className="vengeance-faq-logo" src="/assets/flip7-vengeance-logo.webp" alt="" />}</section>
     <label className="room-search info-faq-search"><Search size={18} /><input aria-label="Search questions and answers" type="search" placeholder="Search cards, rooms, scoring…" value={query} onChange={event => setQuery(event.target.value)} /></label>
-    <div className="info-category-chips" role="group" aria-label="Question categories"><button type="button" aria-pressed={category === 'all'} onClick={() => setCategory('all')}>All questions</button>{faqGroups.map(group => <button type="button" key={group.id} aria-pressed={category === group.id} onClick={() => setCategory(group.id)}>{group.label}</button>)}</div>
+    <div className="info-category-chips" role="group" aria-label="Question categories"><button type="button" aria-pressed={category === 'all'} onClick={() => setCategory('all')}>All questions</button>{groups.map(group => <button type="button" key={group.id} aria-pressed={category === group.id} onClick={() => setCategory(group.id)}>{group.label}</button>)}</div>
     <p className="info-result-count" role="status">{count} {count === 1 ? 'answer' : 'answers'}{normalized ? ` for “${query.trim()}”` : ''}</p>
-    <div className="info-faq-groups">{visible.map(group => <section key={group.id} className={`info-faq-group group-${group.id}`}><div className="info-section-top"><span className="room-kicker">{group.label}</span><b>{String(faqGroups.findIndex(g => g.id === group.id) + 1).padStart(2, '0')}</b></div><h2>{group.title}</h2>{group.items.map(item => <details className="info-faq-item" key={item.question}><summary><span>{item.question}</span><ChevronDown size={17} /></summary><p>{item.answer}</p></details>)}</section>)}</div>
+    <div className="info-faq-groups">{visible.map(group => <section key={group.id} className={`info-faq-group group-${group.id}`}><div className="info-section-top"><span className="room-kicker">{group.label}</span><b>{String(groups.findIndex(g => g.id === group.id) + 1).padStart(2, '0')}</b></div><h2>{group.title}</h2>{group.items.map(item => <details className="info-faq-item" key={item.question}><summary><span>{item.question}</span><ChevronDown size={17} /></summary><p>{item.answer}</p></details>)}</section>)}</div>
     {!count && <section className="room-empty"><div className="room-empty-icon"><CircleHelp size={28} /></div><h2>No answers found yet.</h2><p>Try “Freeze”, “scores”, or “room”, or choose a different category.</p><button className="room-button secondary" onClick={() => { setQuery(''); setCategory('all') }}>Show all questions</button></section>}
     <div className="info-related-links"><a href="/rules">Read the full game rules</a><a href="/privacy">Privacy & local data</a></div>
     <InfoPlayCallout />

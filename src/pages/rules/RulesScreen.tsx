@@ -1,5 +1,26 @@
 import { Fragment } from 'react'
 import { AssetCardFan, InfoPage, InfoPlayCallout } from '../mobile/InfoPage'
+import { useLibrary } from '../../lib/room-store'
+import { vengeanceCard } from '../../game/vengeanceCards'
+import { cardThumbnailUrl } from '../../game/cardThumbnailUrl'
+
+function VengeanceRuleCards({ ids }: { ids: string[] }) {
+  return <div className="vengeance-rule-cards">{ids.map(id => {
+    const card = vengeanceCard(id)
+    return card && <figure key={id}><img src={cardThumbnailUrl(card.image ?? '')} alt={`${card.label} card`} /><figcaption>{card.label}</figcaption></figure>
+  })}</div>
+}
+
+function VengeanceRules() {
+  return <InfoPage kind="rules" kicker="WITH A VENGEANCE" title="How to play" accent="" intro="Use the physical Vengeance deck. The app records your cards, moves, and scores.">
+    <section className="guide-card"><h2>The round</h2><p>Choose a dealer. Starting to their left, reveal one physical card to each player, resolving Actions and Modifiers. Then each active player chooses Hit or Stay. Stayed hands remain on the table and can change until the round ends. A duplicate Number busts; Flip 7 ends the round for everyone.</p></section>
+    <section className="guide-card"><h2>Special Numbers</h2><p><b>The Zero</b> scores zero unless its holder reaches Flip 7, and its holder must continue hitting on their turn. <b>Unlucky 7</b> discards that player’s other Number and Modifier cards when received, then stays as their 7. <b>Lucky 13</b> permits one other 13; both count toward Flip 7, but a third 13 busts.</p><VengeanceRuleCards ids={['v-number-zero', 'v-number-unlucky-7', 'v-number-lucky-13']} /></section>
+    <section className="guide-card"><h2>Actions</h2><p>Actions must be played if there is a valid target. You can give one to any player who has not busted, including yourself or someone who stayed. Steal takes a face-up card into the actor’s hand. Swap exchanges two face-up cards between different hands. Discard removes one chosen face-up card. Just One More forces one reveal and then Stay. Flip Four forces up to four reveals, stopping on a bust or Flip 7; resolve its queued Actions and Modifiers afterward in reveal order.</p><VengeanceRuleCards ids={['v-action-steal', 'v-action-swap', 'v-action-discard', 'v-action-just-one-more', 'v-action-flip-four']} /></section>
+    <section className="guide-card"><h2>Modifiers and scoring</h2><p>Give a Modifier to any player who has not busted, including someone who stayed. At round end, add Number cards, divide by two and round down if holding ÷2, then subtract −2 through −10. The standard score cannot go below zero. Add 15 for Flip 7. Action cards are discarded after use.</p><VengeanceRuleCards ids={['v-modifier-half', 'v-modifier-minus-2', 'v-modifier-minus-10']} /></section>
+    <section className="guide-card"><h2>Companion controls</h2><p>Reveal the real card, then record it in the app. Tap the players and face-up cards affected by an action; review and confirm the physical move. Undo corrects a recording mistake. The app does not shuffle or deal.</p><p><a href="https://theop.games/pages/flip-7-wav-faqs" target="_blank" rel="noreferrer">Official Vengeance FAQs</a></p></section>
+    <InfoPlayCallout practice />
+  </InfoPage>
+}
 
 function RulesCardStrip({ cards, className = '' }: { cards: string[]; className?: string }) {
   return <div className={`guide-card-strip ${className}`}>{cards.map((card) => <img key={card} src={`/cards/${card}.webp`} alt={`${card} card`} />)}</div>
@@ -18,6 +39,8 @@ function RulesScoreExample({ label, cards, modifier, result, bonus }: { label: s
 }
 
 export function RulesScreen() {
+  const edition = useLibrary().settings.edition
+  if (edition === 'vengeance') return <VengeanceRules />
   return <InfoPage kind="rules" kicker="THE GAME NIGHT FIELD GUIDE" title="How to play" accent="" intro="The cards, the choices, and how to score.">
     <section className="info-art-banner yellow"><div><span className="room-kicker">ONE MORE FLIP?</span><h2>Unique numbers.<br />Bigger rewards.</h2><p>Seven unique numbers earn +15.<br />A duplicate can end your round.</p></div><AssetCardFan cards={['12', '+10', 'x2']} /></section>
     <div className="info-quick-facts"><span><b>200</b> classic target</span><span><b>7</b> unique cards</span><span><b>+15</b> bonus points</span></div>
