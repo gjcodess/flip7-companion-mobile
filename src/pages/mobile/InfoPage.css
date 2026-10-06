@@ -42,6 +42,10 @@
   -webkit-mask-image: radial-gradient(ellipse 140px 95px at top left, #000, transparent), radial-gradient(ellipse 140px 95px at bottom right, #000, transparent);
   mask-image: radial-gradient(ellipse 140px 95px at top left, #000, transparent), radial-gradient(ellipse 140px 95px at bottom right, #000, transparent);
 }
+.room-create-banner::before {
+  -webkit-mask-image: linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.35) 45%, rgba(0, 0, 0, 0.85) 100%);
+  mask-image: linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.35) 45%, rgba(0, 0, 0, 0.85) 100%);
+}
 .room-form-panel :is(.room-field input, .room-add-player input) {
   border-color: #929bb0;
   box-shadow: 2px 3px 0 #c0b699;

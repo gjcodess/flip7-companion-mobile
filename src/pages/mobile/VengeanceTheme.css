@@ -43,9 +43,12 @@
 }
 
 .edition-vengeance .room-app-main {
-    background-color: #efe1ca;
-    background-image: radial-gradient(#132d6718 1px, transparent 1px);
-    background-size: 12px 12px;
+    background-color: #ebd7be;
+    background-image:
+        radial-gradient(circle, #132d6724 1px, transparent 1.1px),
+        radial-gradient(ellipse at 50% 35%, #fffdf5 0%, #f4e2c8 50%, #dac09d 100%);
+    background-size: 12px 12px, 100% 115dvh;
+    background-repeat: repeat, repeat-y;
 }
 
 .edition-vengeance .room-page-art--vengeance .room-home-promo {
@@ -81,7 +84,7 @@
 
 /* Vengeance Promo Carousel */
 .edition-vengeance .room-promo-slide-0 {
-    background: #f07167;
+    background: #f7c244;
 }
 
 .edition-vengeance .room-promo-slide-1 {
