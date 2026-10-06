@@ -8,7 +8,6 @@
   background-size: 12px 12px, 100% 115dvh;
   background-repeat: repeat, repeat-y;
 }
-.room-bottom-nav { box-shadow: 0 5px 0 #d4bd72; }
 .room-create-banner, .room-detail-hero, .room-history-banner, .room-storage-panel { box-shadow: 5px 6px 0 #132d67; }
 .library-room-card, .room-profile-card, .room-form-panel { box-shadow: 3px 4px 0 #132d67; }
 .library-room-card.featured { box-shadow: 3px 4px 0 #132d67, 5px 6px 0 #ffe05c; }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, ChevronDown, ChevronRight, CircleHelp, Download, Flag, FolderOpen, History, Home, Medal, Monitor, MoreHorizontal, Pencil, Pin, Play, Plus, Search, Settings, ShieldCheck, Sparkles, Trash2, Trophy, Upload, Users, X } from 'lucide-react'
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowRightLeft, ArrowUp, Check, ChevronDown, ChevronRight, CircleHelp, Download, Flag, FolderOpen, History, Home, Medal, Monitor, MoreHorizontal, Pencil, Pin, Play, Plus, Search, Settings, ShieldCheck, Sparkles, Trash2, Trophy, Upload, Users, X } from 'lucide-react'
 import { useAppNavigation } from '../../lib/navigation'
 import { useScrollNav } from '../../lib/use-scroll-nav'
 import { useKeyboardVisible } from '../../lib/use-keyboard-visible'
@@ -227,8 +227,11 @@ function SettingsScreen() {
 
 export function MobileApp({ page, roomId }: { page: MobilePage; roomId?: string }) {
   const library = useLibrary(); const error = getStorageError(); const navigate = useAppNavigation()
+  const keyboardVisible = useKeyboardVisible()
   const room = library.rooms.find(r => r.id === roomId)
   const edition = room?.edition ?? library.settings.edition
+  const nextEdition: Edition = edition === 'classic' ? 'vengeance' : 'classic'
+  const showEditionFab = page === 'home' || page === 'players' || page === 'history' || page === 'settings'
   useEffect(() => {
     if (page === 'room' && room && room.edition !== library.settings.edition) {
       try { updateLibrary(current => ({ ...current, settings: { ...current.settings, edition: room.edition ?? 'classic' } })) }
@@ -237,9 +240,9 @@ export function MobileApp({ page, roomId }: { page: MobilePage; roomId?: string 
   }, [page, room?.id, room?.edition, library.settings.edition])
   useEffect(() => { document.documentElement.classList.add('room-app-active'); return () => { document.documentElement.classList.remove('room-app-active') } }, [])
   const switchEdition = (next: Edition) => {
-    if (next === library.settings.edition && page !== 'room') return
-    try { updateLibrary(current => ({ ...current, settings: { ...current.settings, edition: next } })); if (page === 'room' || page === 'new') navigate('/landing') }
+    if (next === library.settings.edition) return
+    try { updateLibrary(current => ({ ...current, settings: { ...current.settings, edition: next } })) }
     catch (cause) { window.alert((cause as Error).message) }
   }
-  return <div className={`room-app-shell edition-${edition}`}><main className={`room-app-main page-${page}`}><div className="edition-switch" role="group" aria-label="Game edition"><button aria-pressed={edition === 'classic'} onClick={() => switchEdition('classic')}>Classic</button><button aria-pressed={edition === 'vengeance'} onClick={() => switchEdition('vengeance')}>With a Vengeance</button></div>{page !== 'room' && edition === 'classic' && <PageArtwork />}{error && <p className="room-error" role="alert">{error}</p>}{page === 'home' ? <HomeScreen /> : page === 'players' ? <PlayersScreen /> : page === 'history' ? <HistoryScreen /> : page === 'settings' ? <SettingsScreen /> : page === 'new' ? <RoomForm /> : room ? room.edition === 'vengeance' ? <VengeanceRoomDetail key={room.id} room={room} /> : <RoomDetail key={room.id} room={room} /> : <EmptyState icon={<FolderOpen size={30} />} title="This room isn’t here">It may have been removed or restored from a different backup.<ActionButton onClick={() => navigate('/landing')}>Back to your rooms</ActionButton></EmptyState>}</main><BottomNav page={page} /></div>
+  return <div className={`room-app-shell edition-${edition}`}><main className={`room-app-main page-${page}`}>{page !== 'room' && edition === 'classic' && <PageArtwork />}{error && <p className="room-error" role="alert">{error}</p>}{page === 'home' ? <HomeScreen /> : page === 'players' ? <PlayersScreen /> : page === 'history' ? <HistoryScreen /> : page === 'settings' ? <SettingsScreen /> : page === 'new' ? <RoomForm /> : room ? room.edition === 'vengeance' ? <VengeanceRoomDetail key={room.id} room={room} /> : <RoomDetail key={room.id} room={room} /> : <EmptyState icon={<FolderOpen size={30} />} title="This room isn’t here">It may have been removed or restored from a different backup.<ActionButton onClick={() => navigate('/landing')}>Back to your rooms</ActionButton></EmptyState>}</main>{showEditionFab && !keyboardVisible && <button type="button" className={`edition-fab edition-fab--${nextEdition}`} aria-label={`Switch to ${nextEdition === 'classic' ? 'Classic Flip 7' : 'Flip 7 With a Vengeance'}`} title={`Switch to ${nextEdition === 'classic' ? 'Classic Flip 7' : 'Flip 7 With a Vengeance'}`} onClick={() => switchEdition(nextEdition)}><img src={nextEdition === 'classic' ? '/assets/flip7-classic-game-badge.webp' : '/assets/flip7-vengeance-game-badge.webp'} alt="" aria-hidden="true" /><span className="edition-fab-cue" aria-hidden="true"><ArrowRightLeft size={14} strokeWidth={2.7} /></span></button>}<BottomNav page={page} /></div>
 }

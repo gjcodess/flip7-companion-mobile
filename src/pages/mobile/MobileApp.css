@@ -733,7 +733,7 @@
   background: var(--ink);
   border: 2px solid var(--ink);
   border-radius: 20px;
-  box-shadow: 0 5px 0 #d4bd72;
+  box-shadow: 0 5px 0 var(--pink);
 }
 
 .room-bottom-nav::before {
@@ -796,7 +796,7 @@
 }
 
 .nav-item.active {
-  color: var(--yellow) !important;
+  color: var(--pink) !important;
 }
 
 .nav-item .nav-icon {
@@ -821,12 +821,12 @@
 }
 
 .nav-create.active .nav-icon {
-  border-color: var(--yellow);
-  color: var(--yellow);
+  border-color: var(--cream);
+  color: #fff;
 }
 
 .nav-create.active .nav-label {
-  color: var(--yellow);
+  color: var(--pink);
 }
 
 .nav-create:hover .nav-icon {

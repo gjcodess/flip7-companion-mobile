@@ -1,9 +1,9 @@
-.edition-switch { position: relative; z-index: 4; display: grid; grid-template-columns: 1fr 1fr; gap: 3px; margin: 0 0 14px; padding: 4px; border: 2px solid #132d67; border-radius: 12px; background: #e8dcbf; }
-.edition-switch button { min-height: 38px; border: 0; border-radius: 8px; background: transparent; color: #132d67; font-size: 11px; font-weight: 950; }
-.edition-switch button[aria-pressed=true] { background: #fffaf0; box-shadow: 2px 2px 0 #132d67; }
+.edition-fab { position: fixed; z-index: 21; right: max(16px, calc(50vw - 246px)); bottom: calc(96px + env(safe-area-inset-bottom, 0px)); display: grid; place-items: center; width: 80px; height: 80px; padding: 0; border: 0; border-radius: 50%; background: transparent; touch-action: manipulation; filter: drop-shadow(2px 4px 2px #132d6740); transition: transform 160ms ease; }
+.edition-fab img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.edition-fab:active { transform: scale(.93); }
+.edition-fab-cue { position: absolute; right: -7px; bottom: -4px; display: grid; place-items: center; width: 25px; height: 25px; border: 2px solid #132d67; border-radius: 50%; background: #fff8e7; color: #132d67; }
 .edition-vengeance { --ink: #132d67; --cream: #fff8e7; --yellow: #e83239; --pink: #e83239; --cyan: #d5e4ff; background: #efe1ca; }
 .edition-vengeance .room-app-main { background-color: #efe1ca; background-image: radial-gradient(#132d6718 1px, transparent 1px); background-size: 12px 12px; }
-.edition-vengeance .edition-switch button[aria-pressed=true] { background: #e83239; color: #fff9e7; }
 .edition-vengeance .room-home-header img { width: 210px; height: 86px; }
 .edition-vengeance .room-welcome em { color: #e83239; }
 .edition-vengeance .room-home-stats, .edition-vengeance .room-history-banner { background: #132d67; color: #fff9e7; }
@@ -27,4 +27,7 @@
 .vengeance-rule-cards figure { min-width: 0; margin: 0; text-align: center; }
 .vengeance-rule-cards img { display: block; width: min(100%, 75px); height: 105px; margin: auto; object-fit: contain; }
 .vengeance-rule-cards figcaption { margin-top: 3px; color: #132d67; font-size: 10px; font-weight: 850; }
+@media (min-width: 600px) { .edition-fab { right: max(14px, calc(50vw - 320px)); } }
 @media (max-width: 390px) { .edition-vengeance .vengeance-home-promo > img { width: 85px; } }
+@media (max-width: 360px) { .edition-fab { right: 14px; bottom: calc(92px + env(safe-area-inset-bottom, 0px)); width: 70px; height: 70px; } }
+@media (prefers-reduced-motion: reduce) { .edition-fab { transition: none; } }
