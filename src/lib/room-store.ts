@@ -193,7 +193,7 @@ export function editRoom(room: Room, name: string, targetScore: number, roster: 
   if (room.edition === 'vengeance') {
     const previous = room.vengeanceState
     if (previous && targetScore <= Math.max(...previous.players.map(player => player.totalScore))) throw new Error('The new target must be higher than the current leading score.')
-    const selectedDealer = roster.some(player => player.id === vengeanceDealerId) ? vengeanceDealerId! : roster.some(player => player.id === previous?.dealerId) ? previous!.dealerId : roster[0].id
+    const selectedDealer = roster.some(player => player.id === vengeanceDealerId) ? vengeanceDealerId! : roster.some(player => player.id === previous?.dealerId) ? previous!.dealerId : roster[roster.length - 1].id
     const fresh = previous && vengeanceInitialState(roster, targetScore, selectedDealer)
     const vengeanceState = fresh && { ...fresh, roundNumber: previous!.roundNumber, history: previous!.history, players: fresh.players.map(player => ({ ...player, totalScore: previous!.players.find(old => old.id === player.id)?.totalScore ?? 0 })) }
     updateLibrary(current => ({ ...current, rooms: current.rooms.map(item => item.id === room.id ? { ...room, name: name.trim(), targetScore, roster, vengeanceDealerId: selectedDealer, vengeanceState, updatedAt: Date.now() } : item), vengeancePlayers: [...current.vengeancePlayers, ...roster.filter(player => !current.vengeancePlayers.some(existing => existing.id === player.id))] }))

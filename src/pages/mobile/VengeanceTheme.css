@@ -36,9 +36,9 @@
 .edition-vengeance {
     --ink: #132d67;
     --cream: #fff8e7;
-    --yellow: #e83239;
+    --yellow: #f7c244;
     --pink: #e83239;
-    --cyan: #d5e4ff;
+    --cyan: #bcdbf8;
     background: #efe1ca;
 }
 
@@ -46,9 +46,9 @@
     background-color: #ebd7be;
     background-image:
         radial-gradient(circle, #132d6724 1px, transparent 1.1px),
-        radial-gradient(ellipse at 50% 35%, #fffdf5 0%, #f4e2c8 50%, #dac09d 100%);
-    background-size: 12px 12px, 100% 115dvh;
-    background-repeat: repeat, repeat-y;
+        radial-gradient(ellipse 120% 100% at 50% 0%, #fffdf5 0%, #f4e2c8 45%, #ebd7be 100%);
+    background-size: 12px 12px, 100% 100%;
+    background-repeat: repeat, no-repeat;
 }
 
 .edition-vengeance .room-page-art--vengeance .room-home-promo {

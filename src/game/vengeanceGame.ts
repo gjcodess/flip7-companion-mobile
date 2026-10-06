@@ -39,7 +39,7 @@ export type VAction =
   | { type: 'undo' }
   | { type: 'redo' }
 
-export function vengeanceInitialState(roster: Pick<VPlayer, 'id' | 'name' | 'color' | 'avatar'>[], targetScore = 200, dealerId = roster[0]?.id): VState {
+export function vengeanceInitialState(roster: Pick<VPlayer, 'id' | 'name' | 'color' | 'avatar'>[], targetScore = 200, dealerId = roster[roster.length - 1]?.id): VState {
   const dealerIndex = Math.max(0, roster.findIndex(player => player.id === dealerId))
   const first = roster[(dealerIndex + 1) % roster.length]
   return { phase: 'deal', targetScore, roundNumber: 1, dealerId: roster[dealerIndex]?.id ?? '', dealIndex: 0,
