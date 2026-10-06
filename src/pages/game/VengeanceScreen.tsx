@@ -1,93 +1,1220 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { ArrowLeft, Cast, Check, CircleHelp, Eye, Redo2, RotateCcw, Undo2, X } from 'lucide-react'
-import { useAppNavigation, useNavigationGuard } from '../../lib/navigation'
-import { getLibrary, saveVengeanceState, updateLibrary, type PlayerProfile } from '../../lib/room-store'
+import {
+  ArrowLeft,
+  Cast,
+  Check,
+  ChevronRight,
+  CircleHelp,
+  ClipboardList,
+  Eye,
+  LogOut,
+  Menu,
+  Monitor,
+  Redo2,
+  RotateCcw,
+  Share2,
+  Undo2,
+  Users,
+  X,
+} from 'lucide-react'
+import type { Card } from '../../game/cards'
 import { vengeanceCards, type VengeanceCard } from '../../game/vengeanceCards'
-import { vengeanceEligibleActors, vengeanceEligibleCards, vengeanceInitialState, vengeanceReducer, vengeanceScore, type VAction, type VPlayer, type VState } from '../../game/vengeanceGame'
-import { TvShareDialog } from '../mobile/TvShareDialog'
-import { tvSharingAvailable } from '../../lib/tv-share'
+import {
+  vengeanceEligibleActors,
+  vengeanceEligibleCards,
+  vengeanceInitialState,
+  vengeanceReducer,
+  vengeanceScore,
+  type VAction,
+  type VEntry,
+  type VPlayer,
+  type VState,
+} from '../../game/vengeanceGame'
+import { getLibrary, saveVengeanceState, updateLibrary, type PlayerProfile } from '../../lib/room-store'
+import { useAppNavigation, useNavigationGuard } from '../../lib/navigation'
+import { ConfirmationModal } from '../../components/ConfirmationModal'
+import { CardArtwork } from '../../components/CardArtwork'
+import { PickerCardArtwork } from '../../components/PickerCardArtwork'
 import { PlayerAvatar } from '../../components/PlayerAvatar'
-import { cardThumbnailUrl } from '../../game/cardThumbnailUrl'
+import { TvShareDialog } from '../mobile/TvShareDialog'
+import { tvSharingAvailable, useTvSession } from '../../lib/tv-share'
+import { GameTable } from './GameTable'
 import './VengeanceScreen.css'
 
 const demoColors = ['#e93234', '#193c89', '#da8736', '#257878', '#802e80']
 
-function VCardFace({ card, small = false }: { card: VengeanceCard; small?: boolean }) {
-  const [artReady, setArtReady] = useState(false)
-  return <span className={`v-card-face ${card.kind} ${small ? 'small' : ''}`}>
-    <span className="v-card-type">{card.id.includes('unlucky') || card.id.includes('lucky') || card.id.includes('zero') ? 'SPECIAL NUMBER' : card.kind.toUpperCase()}</span>
-    <strong>{card.label}</strong>
-    {card.image && <img src={small ? cardThumbnailUrl(card.image) : card.image} alt="" aria-hidden="true" onLoad={() => setArtReady(true)} onError={() => setArtReady(false)} style={{ display: artReady ? 'block' : 'none' }} />}
-  </span>
+function statusClass(player: VPlayer) {
+  return player.status === 'flip-seven' ? 'flip-seven' : player.status
+}
+
+function statusBadgeLabel(player: VPlayer) {
+  if (player.status === 'busted') return 'Busted'
+  if (player.status === 'stayed') return 'Stayed'
+  if (player.status === 'flip-seven') return 'Flip 7!'
+  return 'Active'
+}
+
+function playerTabSummary(player: VPlayer) {
+  const score = vengeanceScore(player)
+  const numberCount = player.entries.filter((entry) => entry.card.kind === 'number').length
+  if (player.status === 'busted') return 'Busted'
+  if (player.status === 'stayed') return `Stayed · ${score} pts`
+  if (player.status === 'flip-seven') return `Flip 7 · ${score} pts`
+  return `${numberCount} cards · ${score} pts`
+}
+
+function organizeVengeanceEntries(entries: VEntry[]): VEntry[] {
+  return [...entries].sort((a, b) => {
+    if (a.card.kind === 'number' && b.card.kind === 'number') {
+      const valA = a.card.value ?? a.card.points ?? 0
+      const valB = b.card.value ?? b.card.points ?? 0
+      return valA - valB
+    }
+    if (a.card.kind === 'number') return -1
+    if (b.card.kind === 'number') return 1
+    if (a.card.kind === 'modifier' && b.card.kind === 'modifier') {
+      return (a.card.points ?? 0) - (b.card.points ?? 0)
+    }
+    if (a.card.kind === 'modifier') return -1
+    if (b.card.kind === 'modifier') return 1
+    return a.card.label.localeCompare(b.card.label)
+  })
+}
+
+function VengeanceResults({
+  roomName,
+  players,
+  history,
+  targetScore,
+  onNewGame,
+  onExit,
+}: {
+  roomName: string
+  players: VPlayer[]
+  history: VState['history']
+  targetScore: number
+  onNewGame: () => void
+  onExit: () => void
+}) {
+  const ordered = [...players].sort((a, b) => b.totalScore - a.totalScore)
+  const winnerScore = ordered[0]?.totalScore ?? 0
+  const winners = ordered.filter((p) => p.totalScore === winnerScore)
+  const [shareNotice, setShareNotice] = useState('')
+
+  const share = async () => {
+    const text = `Flip 7: With a Vengeance · ${roomName}\n${ordered
+      .map((p, i) => `${i + 1}. ${p.name} — ${p.totalScore} pts`)
+      .join('\n')}`
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Vengeance Results', text })
+      } else {
+        await navigator.clipboard.writeText(text)
+        setShareNotice('Results copied to clipboard.')
+      }
+    } catch (e) {
+      if ((e as Error).name !== 'AbortError') setShareNotice('Sharing is unavailable on this device.')
+    }
+  }
+
+  return (
+    <div className="banker-results">
+      <section className="results-hero">
+        <span className="eyebrow">VENGEANCE MATCH COMPLETE</span>
+        <h1>Match complete!</h1>
+        <p>
+          {winners.map((p) => p.name).join(' and ')} won with {winnerScore} points. Target: {targetScore}.
+        </p>
+      </section>
+      <section className="results-card">
+        <div className="results-heading">
+          <div>
+            <span className="eyebrow">FINAL SCORES</span>
+            <h2>Game results</h2>
+          </div>
+          <span className="results-heading-icon" aria-hidden="true">
+            <ClipboardList size={21} />
+          </span>
+        </div>
+        <div className="results-list">
+          {ordered.map((player) => {
+            const rank = ordered.findIndex((p) => p.totalScore === player.totalScore) + 1
+            return (
+              <article
+                className={`results-player ${player.totalScore === winnerScore ? 'winner' : ''}`}
+                key={player.id}
+              >
+                <span className="results-rank" aria-label={`Rank ${rank}`}>
+                  {rank}
+                </span>
+                <PlayerAvatar player={player} className="mini-avatar" />
+                <div className="results-player-copy">
+                  <div className="results-player-name">
+                    <b>{player.name}</b>
+                  </div>
+                  <div className="results-rounds">
+                    {history.map((round) => (
+                      <span className="round-score" key={`${player.id}-${round.round}`}>
+                        R{round.round}: {round.scores[player.id] ?? 0}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="results-total">
+                  <small>Total pts</small>
+                  <strong>{player.totalScore}</strong>
+                </div>
+              </article>
+            )
+          })}
+        </div>
+      </section>
+      <section className="results-actions">
+        <p>Your final scores and round cards are saved in this room on your device.</p>
+        {shareNotice && <p className="results-share-status" role="status">{shareNotice}</p>}
+        <div className="banker-results-actions">
+          <button className="secondary-action" onClick={() => void share()}>
+            <Share2 size={16} /> Share results
+          </button>
+          <button className="primary-wide" onClick={onExit}>
+            <ArrowLeft size={16} /> View room
+          </button>
+        </div>
+        <div style={{ marginTop: '8px' }}>
+          <button className="secondary-action" style={{ width: '100%' }} onClick={onNewGame}>
+            <RotateCcw size={16} /> Start new game
+          </button>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+function VengeanceMenuDialog({
+  onClose,
+  onOpenPlayers,
+  onOpenRules,
+  onOpenTvShare,
+  onExit,
+}: {
+  onClose: () => void
+  onOpenPlayers: () => void
+  onOpenRules: () => void
+  onOpenTvShare: () => void
+  onExit: () => void
+}) {
+  const dialog = useRef<HTMLDialogElement>(null)
+  useEffect(() => {
+    dialog.current?.showModal()
+  }, [])
+
+  return (
+    <dialog
+      ref={dialog}
+      className="room-dialog banker-menu-dialog tv-share-dialog edition-vengeance"
+      onCancel={onClose}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose()
+      }}
+    >
+      <div className="room-dialog-heading">
+        <div>
+          <span className="room-kicker">WITH A VENGEANCE</span>
+          <h2>Game menu</h2>
+        </div>
+        <button className="room-icon-button" aria-label="Close menu" onClick={onClose}>
+          <X size={20} />
+        </button>
+      </div>
+      <p>Manage tables, view game rules, cast to TV, or exit this session.</p>
+      <div className="banker-menu-list">
+        <button
+          type="button"
+          className="banker-menu-item"
+          onClick={() => {
+            onClose()
+            onOpenPlayers()
+          }}
+        >
+          <div className="banker-menu-item-icon">
+            <Users size={20} />
+          </div>
+          <div className="banker-menu-item-text">
+            <strong>Players & Hands</strong>
+            <span>View current scores, active cards, and table standings</span>
+          </div>
+          <ChevronRight size={18} className="banker-menu-item-chevron" />
+        </button>
+        <button
+          type="button"
+          className="banker-menu-item"
+          onClick={() => {
+            onClose()
+            onOpenRules()
+          }}
+        >
+          <div className="banker-menu-item-icon">
+            <CircleHelp size={20} />
+          </div>
+          <div className="banker-menu-item-text">
+            <strong>Rules & Guide</strong>
+            <span>Vengeance special cards, modifiers, and action abilities</span>
+          </div>
+          <ChevronRight size={18} className="banker-menu-item-chevron" />
+        </button>
+        {tvSharingAvailable() && (
+          <button
+            type="button"
+            className="banker-menu-item"
+            onClick={() => {
+              onClose()
+              onOpenTvShare()
+            }}
+          >
+            <div className="banker-menu-item-icon">
+              <Monitor size={20} />
+            </div>
+            <div className="banker-menu-item-text">
+              <strong>TV Scoreboard</strong>
+              <span>Cast live scores to a TV or web browser</span>
+            </div>
+            <ChevronRight size={18} className="banker-menu-item-chevron" />
+          </button>
+        )}
+        <button
+          type="button"
+          className="banker-menu-item banker-menu-item-danger"
+          onClick={() => {
+            onClose()
+            onExit()
+          }}
+        >
+          <div className="banker-menu-item-icon">
+            <LogOut size={20} />
+          </div>
+          <div className="banker-menu-item-text">
+            <strong>Exit game</strong>
+            <span>Return to room details (game stays saved)</span>
+          </div>
+          <ChevronRight size={18} className="banker-menu-item-chevron" />
+        </button>
+      </div>
+    </dialog>
+  )
+}
+
+function VengeanceCardPickerPanel({
+  submitting,
+  onClose,
+  onSelect,
+}: {
+  submitting: boolean
+  onClose: () => void
+  onSelect: (card: VengeanceCard) => void
+}) {
+  return (
+    <motion.section
+      className="card-picker physical-card-picker"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="vengeance-card-picker-title"
+      initial={{ y: 80 }}
+      animate={{ y: 0 }}
+      exit={{ y: 80 }}
+      transition={{ type: 'spring', damping: 26 }}
+      onClick={(event) => event.stopPropagation()}
+    >
+      <div className="physical-picker-header">
+        <div className="picker-heading">
+          <div>
+            <span>PHYSICAL CARD</span>
+            <h2 id="vengeance-card-picker-title">What did you flip?</h2>
+          </div>
+          <button className="close-button" aria-label="Close card picker" title="Close" onClick={onClose}>
+            <X size={19} />
+          </button>
+        </div>
+        <p>Select the card in front of you. The app never draws a card for you.</p>
+      </div>
+      <div className="physical-picker-scroll">
+        <div className="picker-grid">
+          {vengeanceCards.map((card) => (
+            <button
+              key={card.id}
+              disabled={submitting}
+              onClick={() => onSelect(card)}
+              aria-label={`Record ${card.label}`}
+            >
+              <PickerCardArtwork card={card} />
+            </button>
+          ))}
+        </div>
+      </div>
+    </motion.section>
+  )
 }
 
 function DemoSetup({ onStart, onExit }: { onStart: (players: PlayerProfile[]) => void; onExit: () => void }) {
   const [names, setNames] = useState(['Player 1', 'Player 2', 'Player 3'])
   const [name, setName] = useState('')
-  return <div className="v-app"><main className="v-shell"><button className="v-back" onClick={onExit}><ArrowLeft size={17} /> Back to Vengeance</button><img className="v-logo" src="/assets/flip7-vengeance-logo.webp" alt="Flip 7 With a Vengeance" /><h1>Practice table</h1><p>Set up temporary hands. You can enter physical cards or try example reveals; the app never draws from a deck.</p><div className="v-demo-names">{names.map((item, index) => <label key={index}>Player {index + 1}<input aria-label={`Player ${index + 1} name`} value={item} maxLength={24} onChange={event => setNames(current => current.map((entry, i) => i === index ? event.target.value : entry))} /></label>)}</div><div className="v-demo-add"><input aria-label="Additional player name" value={name} maxLength={24} placeholder="Another player" onChange={event => setName(event.target.value)} /><button disabled={!name.trim() || names.length >= 18} onClick={() => { setNames([...names, name.trim()]); setName('') }}>Add</button></div><button className="v-primary" disabled={names.length < 2 || names.some(item => !item.trim())} onClick={() => onStart(names.map((item, index) => ({ id: `demo-${index}`, name: item.trim(), color: demoColors[index % demoColors.length] })))}>Start practice</button><small>Practice resets when you leave. It does not affect saved players or stats.</small></main></div>
+  return (
+    <div className="app-shell banker-shell saved-room-game edition-vengeance">
+      <aside className="desktop-marquee left">
+        <div>WITH A<br />VENGEANCE</div>
+      </aside>
+      <main className="game-shell">
+        <header className="topbar banker-topbar">
+          <button className="v-back" onClick={onExit}>
+            <ArrowLeft size={17} /> Back to Vengeance
+          </button>
+          <span className="game-topbar-brand">
+            <img src="/assets/flip7-vengeance-logo.webp" alt="Flip 7 With a Vengeance" />
+          </span>
+        </header>
+        <div style={{ padding: '20px 18px' }}>
+          <span className="eyebrow" style={{ color: '#e83239', fontWeight: 950, fontSize: '10px' }}>
+            PRACTICE SESSION
+          </span>
+          <h1 style={{ margin: '6px 0 8px', fontSize: '30px', color: '#132d67' }}>Practice table</h1>
+          <p style={{ fontSize: '12px', color: '#53607a', lineHeight: 1.5, marginBottom: '18px' }}>
+            Set up temporary hands to explore cards and action abilities without affecting saved room history.
+          </p>
+          <div className="v-demo-names">
+            {names.map((item, index) => (
+              <label key={index}>
+                Player {index + 1}
+                <input
+                  aria-label={`Player ${index + 1} name`}
+                  value={item}
+                  maxLength={24}
+                  onChange={(e) =>
+                    setNames((curr) => curr.map((entry, i) => (i === index ? e.target.value : entry)))
+                  }
+                />
+              </label>
+            ))}
+          </div>
+          <div className="v-demo-add">
+            <input
+              aria-label="Additional player name"
+              value={name}
+              maxLength={24}
+              placeholder="Another player"
+              onChange={(e) => setName(e.target.value)}
+            />
+            <button
+              disabled={!name.trim() || names.length >= 18}
+              onClick={() => {
+                setNames([...names, name.trim()])
+                setName('')
+              }}
+            >
+              Add
+            </button>
+          </div>
+          <button
+            className="next-round-button"
+            style={{ width: '100%', marginTop: '16px' }}
+            disabled={names.length < 2 || names.some((item) => !item.trim())}
+            onClick={() =>
+              onStart(
+                names.map((item, index) => ({
+                  id: `demo-${index}`,
+                  name: item.trim(),
+                  color: demoColors[index % demoColors.length],
+                }))
+              )
+            }
+          >
+            Start practice match
+          </button>
+        </div>
+      </main>
+      <aside className="desktop-marquee right">
+        <div>NO ONE'S<br />SAFE!</div>
+      </aside>
+    </div>
+  )
 }
-
-function scoreLabel(player: VPlayer) { return player.status === 'busted' ? 'BUSTED · 0' : `${player.status === 'stayed' ? 'STAYED · SCORE PENDING' : player.status === 'flip-seven' ? 'FLIP 7' : 'ACTIVE'} · ${vengeanceScore(player)} PTS` }
 
 export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; demo?: boolean }) {
   const navigate = useAppNavigation()
+
   useEffect(() => {
     if (getLibrary().settings.edition !== 'vengeance') {
-      try { updateLibrary(current => ({ ...current, settings: { ...current.settings, edition: 'vengeance' } })) }
-      catch { /* The table still works; the save error appears when recording. */ }
+      try {
+        updateLibrary((curr) => ({ ...curr, settings: { ...curr.settings, edition: 'vengeance' } }))
+      } catch {
+        /* silent */
+      }
     }
   }, [])
-  const room = roomId ? getLibrary().rooms.find(item => item.id === roomId && item.edition === 'vengeance') : undefined
+
+  const room = roomId ? getLibrary().rooms.find((r) => r.id === roomId && r.edition === 'vengeance') : undefined
   const [state, setState] = useState<VState | null>(() => room?.vengeanceState ?? null)
   const stateRef = useRef<VState | null>(state)
   const pendingSaveRef = useRef<VState | null>(null)
   const [saveError, setSaveError] = useState('')
-  const [pickerOpen, setPickerOpen] = useState(false)
-  const [tvOpen, setTvOpen] = useState(false)
-  const [shareNotice, setShareNotice] = useState('')
-  const exit = () => navigate(roomId ? `/room?id=${roomId}` : '/landing', { replace: true })
-  useNavigationGuard(demo && state || saveError ? { title: demo ? 'Leave practice table?' : 'Leave with an unsaved action?', message: demo ? 'Temporary hands and scores will be cleared.' : 'Retry saving the last action before leaving if you want to keep it.', shouldBlock: () => true, confirmLabel: 'Leave table' } : null)
-  const persist = useCallback((next: VState) => {
-    if (demo) { stateRef.current = next; setState(next); return }
-    if (!roomId) return
-    try { saveVengeanceState(roomId, next); stateRef.current = next; pendingSaveRef.current = null; setState(next); setSaveError('') }
-    catch (error) { pendingSaveRef.current = next; setSaveError(`${(error as Error).message} Retry before continuing.`) }
-  }, [demo, roomId])
-  const dispatch = (action: VAction) => {
-    if (!stateRef.current || pendingSaveRef.current) return
-    const next = vengeanceReducer(stateRef.current, action)
-    if (next !== stateRef.current) persist(next)
-  }
-  if (!state) return demo ? <DemoSetup onExit={exit} onStart={players => { const next = vengeanceInitialState(players); stateRef.current = next; setState(next) }} /> : <div className="v-app"><main className="v-shell"><h1>Room unavailable</h1><button onClick={exit}>Back to rooms</button></main></div>
 
-  const selected = state.players.find(player => player.id === state.selectedPlayerId) ?? state.players[0]
-  const drawing = state.players.find(player => player.id === (state.forced[0]?.targetId ?? state.turnPlayerId))
-  const dealer = state.players.find(player => player.id === state.dealerId)
-  const pending = state.pending
-  const eligibleActors = vengeanceEligibleActors(state)
-  const eligibleCards = vengeanceEligibleCards(state)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(null)
+  const [organized, setOrganized] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
+  const [playersOpen, setPlayersOpen] = useState(false)
+  const [rulesOpen, setRulesOpen] = useState(false)
+  const [roundSummaryOpen, setRoundSummaryOpen] = useState(false)
+  const [newGamePromptOpen, setNewGamePromptOpen] = useState(false)
+  const [tvOpen, setTvOpen] = useState(false)
+
+  const playerTabRefs = useRef<Record<string, HTMLButtonElement | null>>({})
+  const tvSession = useTvSession()
+  const isSharing = tvSession?.roomId === roomId
+
+  const exit = useCallback(() => navigate(roomId ? `/room?id=${roomId}` : '/landing', { replace: true }), [navigate, roomId])
+
+  useNavigationGuard(
+    demo && state || saveError
+      ? {
+        title: demo ? 'Leave practice table?' : 'Leave with an unsaved action?',
+        message: demo ? 'Temporary hands and scores will be cleared.' : 'Retry saving the last action before leaving.',
+        shouldBlock: () => true,
+        confirmLabel: 'Leave table',
+      }
+      : null
+  )
+
+  const persist = useCallback(
+    (next: VState) => {
+      if (demo) {
+        stateRef.current = next
+        setState(next)
+        return
+      }
+      if (!roomId) return
+      try {
+        saveVengeanceState(roomId, next)
+        stateRef.current = next
+        pendingSaveRef.current = null
+        setState(next)
+        setSaveError('')
+      } catch (error) {
+        pendingSaveRef.current = next
+        setSaveError(`${(error as Error).message} Retry before continuing.`)
+      }
+    },
+    [demo, roomId]
+  )
+
+  const dispatch = useCallback(
+    (action: VAction) => {
+      if (!stateRef.current || pendingSaveRef.current) return
+      const next = vengeanceReducer(stateRef.current, action)
+      if (next !== stateRef.current) persist(next)
+    },
+    [persist]
+  )
+
+  const selected = state ? state.players.find((p) => p.id === state.selectedPlayerId) ?? state.players[0] : null
+  const forcedTurn = state?.forced[0] ?? null
+  const turnPlayerId = forcedTurn?.targetId ?? (state?.phase === 'deal' || state?.phase === 'turn' ? state.turnPlayerId : null)
+  const drawing = state ? state.players.find((p) => p.id === turnPlayerId) : null
+  const dealer = state ? state.players.find((p) => p.id === state.dealerId) : null
+  const pending = state?.pending ?? null
+  const eligibleActors = state ? vengeanceEligibleActors(state) : []
+  const eligibleCards = state ? vengeanceEligibleCards(state) : []
+
   const needsCards = pending?.card.id === 'v-action-steal' || pending?.card.id === 'v-action-swap' || pending?.card.id === 'v-action-discard'
   const selectedCount = pending?.card.id === 'v-action-swap' ? 2 : 1
-  const ready = pending && (pending.card.kind === 'modifier' ? !!pending.targetId : !!pending.actorId && (!needsCards || pending.selectedCards.length === selectedCount))
-  const canRecord = (state.phase === 'deal' || state.phase === 'turn') && !pending && !!drawing && !saveError
-  const share = async () => {
-    const sorted = [...state.players].sort((a, b) => b.totalScore - a.totalScore)
-    const message = `Flip 7: With a Vengeance · ${room?.name ?? 'Practice'}\n${sorted.map((player, index) => `${index + 1}. ${player.name} — ${player.totalScore} pts`).join('\n')}`
-    try { if (navigator.share) await navigator.share({ title: 'Vengeance results', text: message }); else { await navigator.clipboard.writeText(message); setShareNotice('Results copied to clipboard.') } }
-    catch (error) { if ((error as Error).name !== 'AbortError') setShareNotice('Sharing is unavailable on this device.') }
+  const readyToConfirm = pending && (pending.card.kind === 'modifier' ? Boolean(pending.targetId) : Boolean(pending.actorId && (!needsCards || pending.selectedCards.length === selectedCount)))
+
+  const canRecord = (state?.phase === 'deal' || state?.phase === 'turn') && !pending && Boolean(drawing) && !saveError
+
+  // Auto-scroll active player tab into view
+  useEffect(() => {
+    if (!turnPlayerId) return
+    playerTabRefs.current[turnPlayerId]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+  }, [turnPlayerId])
+
+  // Open round summary modal automatically upon entering settlement
+  useEffect(() => {
+    if (state?.phase === 'settlement') setRoundSummaryOpen(true)
+    else setRoundSummaryOpen(false)
+  }, [state?.phase])
+
+  if (!state) {
+    return demo ? (
+      <DemoSetup
+        onExit={exit}
+        onStart={(players) => {
+          const next = vengeanceInitialState(players)
+          stateRef.current = next
+          setState(next)
+        }}
+      />
+    ) : (
+      <div className="room-app-shell">
+        <main className="room-app-main">
+          <h1>{room ? 'This room is ready to start.' : 'This room is unavailable.'}</h1>
+          <button className="room-button" onClick={exit}>
+            Back to rooms
+          </button>
+        </main>
+      </div>
+    )
   }
-  return <div className="v-app"><main className="v-shell">
-    <header className="v-top"><button className="v-back" onClick={exit}><ArrowLeft size={17} /> {demo ? 'Exit practice' : 'Room'}</button><img src="/assets/flip7-vengeance-logo.webp" alt="Flip 7 With a Vengeance" />{roomId && tvSharingAvailable() && <button className="v-icon" aria-label="Show TV scoreboard" onClick={() => setTvOpen(true)}><Cast size={21} /></button>}</header>
-    <div className="v-meta"><span>ROUND <b>{state.roundNumber}</b></span><span>FIRST TO <b>{state.targetScore}</b></span><span>DEALER <b>{dealer?.name}</b></span></div>
-    {saveError && <div className="v-save-error" role="alert">{saveError}<button onClick={() => pendingSaveRef.current && persist(pendingSaveRef.current)}>Retry save</button></div>}
-    {state.phase === 'results' ? <section className="v-results"><h1>Match complete!</h1><p>{state.players.filter(player => state.winnerIds.includes(player.id)).map(player => player.name).join(' and ')} won.</p>{[...state.players].sort((a, b) => b.totalScore - a.totalScore).map(player => <div key={player.id}><strong>{player.name}</strong><b>{player.totalScore}</b></div>)}<button className="v-primary" onClick={() => void share()}>Share results</button>{shareNotice && <p role="status">{shareNotice}</p>}<button className="v-secondary" onClick={exit}>View room</button></section> : <>
-      <section className="v-turn" role="status"><span>{state.phase === 'settlement' ? 'ROUND COMPLETE' : state.phase === 'deal' ? 'INITIAL DEAL · REVEAL A PHYSICAL CARD' : state.forced.length ? `${state.forced[0].kind === 'four' ? 'FLIP FOUR' : 'JUST ONE MORE'} · ${state.forced[0].remaining} LEFT` : 'CURRENT TURN'}</span><strong>{state.phase === 'settlement' ? 'Review scores' : drawing?.name ?? '—'}</strong><small>{state.phase === 'turn' && !state.forced.length ? 'Choose Hit or Stay at the physical table.' : 'Enter each card revealed from the real deck.'}</small><img className="v-deck-back" src="/cards/vengeance/back.webp" alt="" aria-hidden="true" /></section>
-      <section className="v-overview" aria-label="All player hands"><h2>Table overview</h2><div className="v-player-grid">{state.players.map(player => <button className={`v-player-tile ${selected.id === player.id ? 'selected' : ''} ${drawing?.id === player.id ? 'drawing' : ''} ${player.status}`} key={player.id} onClick={() => dispatch({ type: 'select-player', playerId: player.id })}><PlayerAvatar player={player} className="v-avatar" /><span><strong>{player.name}</strong><small>{scoreLabel(player)}</small><small>{player.entries.length} cards · {player.totalScore} total</small></span><span className="v-mini-hand">{player.entries.map(entry => <motion.i layoutId={`overview-${entry.instanceId}`} key={entry.instanceId} title={entry.card.label}><span>{entry.card.label}</span><img src={cardThumbnailUrl(entry.card.image ?? '')} alt="" aria-hidden="true" onError={event => { event.currentTarget.style.display = 'none' }} /></motion.i>)}</span></button>)}</div></section>
-      <section className="v-hand"><div className="v-hand-heading"><div><span>SELECTED HAND</span><h2>{selected.name}</h2></div><strong>{vengeanceScore(selected)} <small>ROUND PTS</small></strong></div><p>{selected.status === 'stayed' ? 'Stayed · score is provisional until the round ends.' : selected.status === 'busted' ? 'Busted · these physical cards are out of play.' : selected.status === 'flip-seven' ? 'Flip 7 ends the round.' : 'Cards currently face up in this line.'}</p><div className={`v-hand-cards ${selected.status === 'busted' ? 'busted' : ''}`}>{selected.entries.map(entry => <motion.div layout key={entry.instanceId}><VCardFace card={entry.card} /></motion.div>)}{selected.entries.length === 0 && <span className="v-no-cards">No face-up cards yet</span>}</div></section>
-      {state.phase === 'settlement' ? <section className="v-settlement"><h2>Confirm round scores</h2>{state.players.map(player => <div key={player.id}><span>{player.name}</span><strong>{vengeanceScore(player)}</strong></div>)}<button className="v-primary" disabled={!!saveError} onClick={() => dispatch({ type: 'advance-round' })}><Check size={17} /> Confirm scores</button></section> : pending ? <section className="v-action" aria-label="Resolve revealed card"><span>ACTION TO RESOLVE</span><h2>{pending.card.label}</h2><p>{pending.card.kind === 'modifier' ? 'Choose a player who has not busted, including someone who stayed.' : !pending.actorId ? 'Choose who receives and performs this action. Stayed players are eligible.' : needsCards ? `Tap ${selectedCount === 2 ? 'two cards from different hands' : 'one eligible face-up card'} on the table below.` : `Confirm ${state.players.find(player => player.id === pending.actorId)?.name} as the target.`}</p>{!pending.actorId && pending.card.kind !== 'modifier' || pending.card.kind === 'modifier' && !pending.targetId ? <div className="v-choice-grid">{eligibleActors.map(player => <button key={player.id} onClick={() => dispatch({ type: pending.card.kind === 'modifier' ? 'choose-target' : 'choose-actor', playerId: player.id })}>{player.name}{player.status === 'stayed' ? ' · stayed' : ''}</button>)}</div> : null}{needsCards && pending.actorId && <div className="v-target-hands">{state.players.filter(player => player.status !== 'busted' && player.entries.length).map(player => <div key={player.id}><h3>{player.name}</h3><div>{player.entries.map(entry => <button key={entry.instanceId} className={pending.selectedCards.includes(entry.instanceId) ? 'chosen' : ''} disabled={!eligibleCards.some(face => face.entry.instanceId === entry.instanceId)} onClick={() => dispatch({ type: 'choose-card', instanceId: entry.instanceId })}><VCardFace card={entry.card} small /></button>)}</div></div>)}</div>}{ready && <div className="v-preview"><p><Eye size={16} /> Preview: {pending.card.label} {pending.card.kind === 'modifier' ? `to ${state.players.find(player => player.id === pending.targetId)?.name}` : `played by ${state.players.find(player => player.id === pending.actorId)?.name}`}. {pending.selectedCards.map(id => state.players.flatMap(player => player.entries).find(entry => entry.instanceId === id)?.card.label).join(' ↔ ')}</p><button className="v-primary" onClick={() => dispatch({ type: 'confirm' })}>Confirm physical move</button></div>}</section> : <div className="v-controls"><button className="v-primary" disabled={!canRecord} onClick={() => setPickerOpen(true)}>Record a physical card</button>{state.phase === 'turn' && !state.forced.length && <button className="v-secondary" disabled={!canRecord || !!drawing?.entries.some(entry => entry.card.id === 'v-number-zero')} onClick={() => dispatch({ type: 'stay' })}>Stay</button>}</div>}
-      <div className="v-tools"><button disabled={!state.past.length || !!saveError} onClick={() => dispatch({ type: 'undo' })}><Undo2 size={16} /> Undo</button><button disabled={!state.future.length || !!saveError} onClick={() => dispatch({ type: 'redo' })}><Redo2 size={16} /> Redo</button><button onClick={() => navigate('/rules')}><CircleHelp size={16} /> Rules</button></div>
-      <section className="v-events"><h2>Round actions</h2>{state.events.length ? <ol>{state.events.slice(-8).reverse().map((event, index) => <li key={`${index}-${event}`}>{event}</li>)}</ol> : <p>Physical reveals and card moves will appear here.</p>}</section>
-    </>}
-  </main><AnimatePresence>{pickerOpen && <motion.div className="v-picker-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><section className="v-picker" role="dialog" aria-modal="true" aria-label="Record a physical card"><header><div><span>PHYSICAL DECK</span><h2>What did you reveal?</h2></div><button aria-label="Close card picker" onClick={() => setPickerOpen(false)}><X size={20} /></button></header><p>The app records the real card. It does not draw one.</p><div className="v-picker-grid">{vengeanceCards.map(card => <button key={card.id} onClick={() => { dispatch({ type: 'record', cardId: card.id }); setPickerOpen(false) }}><VCardFace card={card} small /></button>)}</div></section></motion.div>}</AnimatePresence>{tvOpen && roomId && <TvShareDialog roomId={roomId} onClose={() => setTvOpen(false)} />}</div>
+
+  if (state.phase === 'results') {
+    return (
+      <div className="app-shell banker-shell saved-room-game edition-vengeance">
+        <aside className="desktop-marquee left">
+          <div>WITH A<br />VENGEANCE</div>
+        </aside>
+        <main className="game-shell">
+          <header className="topbar banker-topbar banker-results-topbar">
+            <button type="button" className="banker-results-back" onClick={exit}>
+              <ArrowLeft size={18} /> Back to room
+            </button>
+          </header>
+          <VengeanceResults
+            roomName={room?.name ?? 'Practice Match'}
+            players={state.players}
+            history={state.history}
+            targetScore={state.targetScore}
+            onNewGame={() => setNewGamePromptOpen(true)}
+            onExit={exit}
+          />
+          {newGamePromptOpen && (
+            <ConfirmationModal
+              eyebrow="NEW VENGEANCE GAME"
+              title="Start a new game?"
+              message="Your completed match stays saved in room history."
+              cancelLabel="Keep results"
+              confirmLabel="New game"
+              onCancel={() => setNewGamePromptOpen(false)}
+              onConfirm={() => {
+                setNewGamePromptOpen(false)
+                const next = vengeanceInitialState(state.players, state.targetScore)
+                persist(next)
+              }}
+            />
+          )}
+        </main>
+        <aside className="desktop-marquee right">
+          <div>NO ONE'S<br />SAFE!</div>
+        </aside>
+      </div>
+    )
+  }
+
+  const selectCardForTable = (card: VengeanceCard) => {
+    setPickerOpen(false)
+    setSelectedCardIndex(null)
+    setOrganized(false)
+    dispatch({ type: 'record', cardId: card.id })
+  }
+
+  const toggleOrganize = () => {
+    setOrganized(!organized)
+  }
+
+  const displayedEntries = selected
+    ? organized
+      ? organizeVengeanceEntries(selected.entries)
+      : selected.entries
+    : []
+
+  const tableCards: Card[] = displayedEntries.map((e) => e.card)
+  const tableCardIds: string[] = displayedEntries.map((e) => e.instanceId)
+  const selectedScore = selected ? vengeanceScore(selected) : 0
+  const isSelectedTurn = selected?.id === turnPlayerId
+  const interactionLocked = pickerOpen || Boolean(pending) || roundSummaryOpen || Boolean(saveError)
+  const hasZero = Boolean(selected?.entries.some((e) => e.card.id === 'v-number-zero'))
+  const canStay =
+    state.phase === 'turn' &&
+    isSelectedTurn &&
+    !forcedTurn &&
+    !hasZero &&
+    selected?.status === 'active' &&
+    selected.entries.some((e) => e.card.kind === 'number')
+
+  let stayActionLabel = 'STAY'
+  let stayActionClass = ''
+
+  if (selected?.status === 'busted') {
+    stayActionLabel = 'BUST!'
+    stayActionClass = 'confirmed bust-state'
+  } else if (selected?.status === 'flip-seven') {
+    stayActionLabel = 'FLIP 7!'
+    stayActionClass = 'confirmed'
+  } else if (selected?.status === 'stayed') {
+    stayActionLabel = 'STAYED'
+    stayActionClass = 'confirmed'
+  } else if (hasZero) {
+    stayActionLabel = 'HOLDING THE ZERO'
+  } else if (state.phase === 'deal') {
+    stayActionLabel = 'INITIAL DEAL'
+  } else if (forcedTurn) {
+    stayActionLabel = 'FORCED DRAW'
+  }
+
+  return (
+    <div className="app-shell banker-shell saved-room-game edition-vengeance">
+      <aside className="desktop-marquee left">
+        <div>WITH A<br />VENGEANCE</div>
+      </aside>
+      <main className="game-shell">
+        <header className="topbar banker-topbar">
+          <button
+            className={`brand-button cast-button ${isSharing ? 'is-sharing' : ''}`}
+            aria-label="TV scoreboard"
+            title="TV scoreboard"
+            onClick={() => setTvOpen(true)}
+          >
+            <Cast size={20} />
+            {isSharing && <span className="cast-live-dot" />}
+          </button>
+          <span className="game-topbar-brand">
+            <img src="/assets/flip7-vengeance-logo.webp" alt="Flip 7 With a Vengeance" />
+          </span>
+          <button
+            className="brand-button menu-button"
+            aria-label="Open game menu"
+            title="Menu"
+            onClick={() => setShowMenu(true)}
+          >
+            <Menu size={20} />
+          </button>
+        </header>
+
+        {saveError && (
+          <div className="room-game-save-error" role="alert">
+            <span>{saveError}</span>
+            <button onClick={() => pendingSaveRef.current && persist(pendingSaveRef.current)}>
+              Retry save
+            </button>
+          </div>
+        )}
+
+        <section className="match-strip">
+          <div>
+            <span>ROUND</span>
+            <b>{String(state.roundNumber).padStart(2, '0')}</b>
+          </div>
+          <div className="target">
+            <span>FIRST TO</span>
+            <b>{state.targetScore}</b>
+          </div>
+          <div>
+            <span>DEALER</span>
+            <b>{dealer?.name || '—'}</b>
+          </div>
+        </section>
+
+        <div className="banker-turn-callout" role="status">
+          <span>CURRENT TURN</span>
+          <b>{drawing?.name || '—'}</b>
+        </div>
+
+        <section className="banker-player-strip vengeance-player-strip" aria-label="Player tables">
+          {state.players.map((player) => (
+            <button
+              key={player.id}
+              ref={(el) => {
+                playerTabRefs.current[player.id] = el
+              }}
+              className={`banker-player-tab opponent ${player.id === selected?.id ? 'selected' : ''} ${player.id === turnPlayerId ? 'turn' : ''
+                } ${statusClass(player)}`}
+              aria-current={player.id === turnPlayerId ? 'step' : undefined}
+              onClick={() => {
+                dispatch({ type: 'select-player', playerId: player.id })
+                setOrganized(false)
+                setSelectedCardIndex(null)
+              }}
+            >
+              <PlayerAvatar player={player} className="mini-avatar" />
+              <span className="opponent-copy">
+                <b>{player.name}</b>
+                <span>{playerTabSummary(player)}</span>
+              </span>
+              <strong>
+                <small>Total pts:</small> <b>{player.totalScore}</b>
+              </strong>
+            </button>
+          ))}
+        </section>
+
+        <GameTable
+          table={tableCards}
+          tableCardIds={tableCardIds}
+          isVoidedCard={() => false}
+          score={selectedScore}
+          flipSevenBonus={selected?.status === 'flip-seven' ? 15 : 0}
+          busted={selected?.status === 'busted'}
+          frozen={false}
+          submitting={false}
+          interactionLocked={interactionLocked}
+          canEditCards={canRecord}
+          canAddCards={canRecord && isSelectedTurn}
+          confirmedAt={selected?.status === 'stayed' ? 'stayed' : null}
+          isStaying={selected?.status === 'stayed'}
+          isOrganized={organized}
+          playerName={selected?.name ?? 'Player'}
+          isHost={false}
+          onOrganize={toggleOrganize}
+          onOpenPicker={() => {
+            if (!interactionLocked && canRecord) setPickerOpen(true)
+          }}
+          onSelectCard={(index) => {
+            if (!interactionLocked) setSelectedCardIndex(index)
+          }}
+        />
+
+        <section className="actions">
+          {state.phase === 'settlement' && (
+            <button
+              className="next-round-button"
+              disabled={Boolean(saveError)}
+              onClick={() => dispatch({ type: 'advance-round' })}
+            >
+              <Check size={17} /> Confirm round scores
+            </button>
+          )}
+          <button
+            className="secondary-action"
+            disabled={!state.past.length || Boolean(saveError)}
+            onClick={() => dispatch({ type: 'undo' })}
+          >
+            <Undo2 size={19} /> Undo
+          </button>
+          <button
+            className={`stay-action ${stayActionClass}`}
+            disabled={!canStay || Boolean(saveError)}
+            onClick={() => dispatch({ type: 'stay' })}
+          >
+            {stayActionLabel}
+          </button>
+          <button
+            className="secondary-action redo-action"
+            disabled={!state.future.length || Boolean(saveError)}
+            onClick={() => dispatch({ type: 'redo' })}
+          >
+            <Redo2 size={19} /> Redo
+          </button>
+        </section>
+      </main>
+      <aside className="desktop-marquee right">
+        <div>NO ONE'S<br />SAFE!</div>
+      </aside>
+
+      <AnimatePresence>
+        {/* Physical Card Picker Dialog */}
+        {pickerOpen && (
+          <motion.div
+            key="vengeance-picker-backdrop"
+            className="picker-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, pointerEvents: 'none' }}
+            onClick={() => setPickerOpen(false)}
+          >
+            <VengeanceCardPickerPanel
+              submitting={false}
+              onClose={() => setPickerOpen(false)}
+              onSelect={selectCardForTable}
+            />
+          </motion.div>
+        )}
+
+        {/* Card Focus / Action Panel on Card Tap */}
+        {selectedCardIndex !== null && displayedEntries[selectedCardIndex] && (
+          <motion.div
+            key="card-actions-modal"
+            className="picker-backdrop card-focus-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, pointerEvents: 'none' }}
+            onClick={() => setSelectedCardIndex(null)}
+          >
+            <motion.section
+              className="card-picker card-actions-panel card-focus-panel"
+              initial={{ scale: 0.86, y: 40, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: 40, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 330, damping: 25 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="picker-heading">
+                <div>
+                  <span>FACE-UP CARD</span>
+                  <h2>{displayedEntries[selectedCardIndex].card.label}</h2>
+                </div>
+                <button
+                  className="close-button"
+                  aria-label="Close card focus"
+                  title="Close"
+                  onClick={() => setSelectedCardIndex(null)}
+                >
+                  <X size={19} />
+                </button>
+              </div>
+              <motion.div
+                className="card-focus-art"
+                initial={{ scale: 0.45, y: 100, rotate: -8, opacity: 0 }}
+                animate={{ scale: 1, y: 0, rotate: 0, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.04 }}
+              >
+                <CardArtwork card={displayedEntries[selectedCardIndex].card} />
+              </motion.div>
+              <p>
+                {displayedEntries[selectedCardIndex].card.kind === 'number'
+                  ? `Counts toward ${selected?.name}'s round total.`
+                  : displayedEntries[selectedCardIndex].card.kind === 'modifier'
+                    ? `Modifier penalty applied to ${selected?.name}'s round total.`
+                    : `Action ability card.`}
+              </p>
+              <button
+                className="secondary-action"
+                style={{ width: '100%', minHeight: '44px' }}
+                onClick={() => setSelectedCardIndex(null)}
+              >
+                Done
+              </button>
+            </motion.section>
+          </motion.div>
+        )}
+
+        {/* Action Card Resolution Dialog */}
+        {pending && (
+          <motion.div
+            key="action-resolution-backdrop"
+            className="picker-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, pointerEvents: 'none' }}
+            onClick={() => dispatch({ type: 'undo' })}
+          >
+            <motion.section
+              className="card-picker action-target-picker vengeance-action-panel"
+              initial={{ y: 80, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 80, opacity: 0 }}
+              transition={{ type: 'spring', damping: 26 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="picker-heading">
+                <div>
+                  <span>ACTION TARGET</span>
+                  <h2>Who gets {pending.card.label}?</h2>
+                </div>
+                <button
+                  className="close-button"
+                  aria-label="Close action target"
+                  title="Close"
+                  onClick={() => dispatch({ type: 'undo' })}
+                >
+                  <X size={19} />
+                </button>
+              </div>
+              <p>
+                {pending.card.kind === 'modifier'
+                  ? 'Choose who receives this penalty modifier. Can be targeted at active or stayed players.'
+                  : !pending.actorId
+                    ? 'Choose who receives and resolves this action.'
+                    : needsCards
+                      ? `Select ${selectedCount === 2 ? 'two cards from different hands' : 'one eligible card from the table'}.`
+                      : `Confirm ${state.players.find((p) => p.id === pending.actorId)?.name} as the target.`}
+              </p>
+
+              {/* Actor / Target player selection */}
+              {((!pending.actorId && pending.card.kind !== 'modifier') ||
+                (pending.card.kind === 'modifier' && !pending.targetId)) && (
+                  <div className="target-list banker-target-list">
+                    {eligibleActors.map((player) => (
+                      <button
+                        key={player.id}
+                        onClick={() =>
+                          dispatch({
+                            type: pending.card.kind === 'modifier' ? 'choose-target' : 'choose-actor',
+                            playerId: player.id,
+                          })
+                        }
+                      >
+                        {player.name}
+                        {player.id === state.turnPlayerId ? ' (current)' : ''}
+                        {player.status === 'stayed' ? ' · Stayed' : ''}
+                      </button>
+                    ))}
+                    {eligibleActors.length === 0 && (
+                      <p className="banker-muted">There are no eligible player tables available.</p>
+                    )}
+                  </div>
+                )}
+
+              {/* Face-up card selection */}
+              {needsCards && pending.actorId && (
+                <div className="v-target-hands">
+                  {state.players
+                    .filter((player) => player.status !== 'busted' && player.entries.length > 0)
+                    .map((player) => (
+                      <div key={player.id} className="v-target-player-row">
+                        <h3>{player.name}</h3>
+                        <div className="v-target-cards-row">
+                          {player.entries.map((entry) => {
+                            const isChosen = pending.selectedCards.includes(entry.instanceId)
+                            const isEligible = eligibleCards.some((c) => c.entry.instanceId === entry.instanceId)
+                            return (
+                              <button
+                                key={entry.instanceId}
+                                className={`v-target-card-btn ${isChosen ? 'chosen' : ''}`}
+                                disabled={!isEligible}
+                                onClick={() => dispatch({ type: 'choose-card', instanceId: entry.instanceId })}
+                              >
+                                <PickerCardArtwork card={entry.card} />
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+
+              {/* Preview & Confirmation */}
+              {readyToConfirm && (
+                <div className="v-preview">
+                  <p>
+                    <Eye size={16} /> Preview:{' '}
+                    {pending.card.kind === 'modifier'
+                      ? `${pending.card.label} to ${state.players.find((p) => p.id === pending.targetId)?.name}`
+                      : `${pending.card.label} played by ${state.players.find((p) => p.id === pending.actorId)?.name
+                      }`}{' '}
+                    {pending.selectedCards.length > 0 &&
+                      ` · Cards: ${pending.selectedCards
+                        .map((id) => state.players.flatMap((p) => p.entries).find((e) => e.instanceId === id)?.card.label)
+                        .join(' ↔ ')}`}
+                  </p>
+                  <button className="next-round-button" style={{ width: '100%', marginTop: '8px' }} onClick={() => dispatch({ type: 'confirm' })}>
+                    Confirm physical move
+                  </button>
+                </div>
+              )}
+            </motion.section>
+          </motion.div>
+        )}
+
+        {/* Round Summary Settlement Dialog */}
+        {roundSummaryOpen && (
+          <motion.div
+            key="round-summary-backdrop"
+            className="picker-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, pointerEvents: 'none' }}
+          >
+            <motion.section
+              className="card-picker banker-summary"
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="picker-heading">
+                <div>
+                  <span>ROUND {String(state.roundNumber).padStart(2, '0')} COMPLETE</span>
+                  <h2>Everyone is settled.</h2>
+                </div>
+                <button
+                  className="close-button"
+                  aria-label="Close round summary"
+                  onClick={() => setRoundSummaryOpen(false)}
+                >
+                  <X size={19} />
+                </button>
+              </div>
+              <div className="banker-round-summary-list">
+                {state.players.map((player) => (
+                  <div className={`banker-summary-player ${statusClass(player)}`} key={player.id}>
+                    <PlayerAvatar player={player} className="mini-avatar" />
+                    <div className="banker-summary-player-copy">
+                      <b>{player.name}</b>
+                      <span className={`banker-status-pill ${statusClass(player)}`}>
+                        {statusBadgeLabel(player)}
+                      </span>
+                    </div>
+                    <div className="banker-summary-score">
+                      <small>ROUND</small>
+                      <strong>{vengeanceScore(player)}</strong>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p>Confirm these scores to finish the match or start the next round.</p>
+              <div className="banker-results-actions">
+                <button className="secondary-action" onClick={() => setNewGamePromptOpen(true)}>
+                  <RotateCcw size={16} /> New game
+                </button>
+                <button
+                  className="primary-wide"
+                  disabled={Boolean(saveError)}
+                  onClick={() => {
+                    setRoundSummaryOpen(false)
+                    dispatch({ type: 'advance-round' })
+                  }}
+                >
+                  <Check size={16} /> Confirm scores
+                </button>
+              </div>
+            </motion.section>
+          </motion.div>
+        )}
+
+        {/* Players Overview Dialog */}
+        {playersOpen && (
+          <motion.div
+            key="players-dialog-backdrop"
+            className="picker-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, pointerEvents: 'none' }}
+            onClick={() => setPlayersOpen(false)}
+          >
+            <motion.section
+              className="card-picker info-panel"
+              initial={{ y: 80 }}
+              animate={{ y: 0 }}
+              exit={{ y: 80 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="info-panel-header">
+                <div className="picker-heading">
+                  <div>
+                    <span>AT THIS TABLE</span>
+                    <h2>Players</h2>
+                  </div>
+                  <div className="panel-heading-actions">
+                    <b className="panel-count">{state.players.length} players</b>
+                    <button
+                      className="close-button"
+                      aria-label="Close players"
+                      title="Close"
+                      onClick={() => setPlayersOpen(false)}
+                    >
+                      <X size={19} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="info-panel-scroll">
+                <div className="info-list">
+                  {state.players.map((player) => {
+                    const score = vengeanceScore(player)
+                    return (
+                      <div
+                        className={`info-player ${player.id === selected?.id ? 'current-player' : ''}`}
+                        key={player.id}
+                      >
+                        <PlayerAvatar player={player} className="mini-avatar" />
+                        <div>
+                          <b>
+                            {player.name}
+                            {player.id === selected?.id ? ' (current)' : ''}
+                          </b>
+                          <small>{playerTabSummary(player)}</small>
+                        </div>
+                        <span className="info-player-scores">
+                          <span>
+                            <small>ROUND</small>
+                            <strong>{score}</strong>
+                          </span>
+                          <span>
+                            <small>TOTAL</small>
+                            <strong>{player.totalScore}</strong>
+                          </span>
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </motion.section>
+          </motion.div>
+        )}
+
+        {/* Rules & Guide Dialog */}
+        {rulesOpen && (
+          <motion.div
+            key="rules-dialog-backdrop"
+            className="picker-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, pointerEvents: 'none' }}
+            onClick={() => setRulesOpen(false)}
+          >
+            <motion.section
+              className="card-picker info-panel"
+              initial={{ y: 50 }}
+              animate={{ y: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="info-panel-header">
+                <div className="picker-heading">
+                  <div>
+                    <span>VENGEANCE RULES</span>
+                    <h2>How it works</h2>
+                  </div>
+                  <button
+                    className="close-button"
+                    aria-label="Close rules"
+                    onClick={() => setRulesOpen(false)}
+                  >
+                    <X size={19} />
+                  </button>
+                </div>
+              </div>
+              <div className="info-panel-scroll">
+                <div className="rules-copy">
+                  <section>
+                    <h3>Initial Deal & Turns</h3>
+                    <p>
+                      Every player receives 1 face-up card clockwise starting after the dealer. Then players take turns hitting or staying until everyone busts or banks.
+                    </p>
+                  </section>
+                  <section>
+                    <h3>The Zero</h3>
+                    <p>
+                      Holding The Zero resets the round score to 0 and forbids staying until you draw 7 unique numbers or swap/discard it!
+                    </p>
+                  </section>
+                  <section>
+                    <h3>Unlucky 7 & Lucky 13</h3>
+                    <p>
+                      Unlucky 7 discards all previous numbers and modifiers from your hand. Lucky 13 allows holding up to two 13s before busting.
+                    </p>
+                  </section>
+                  <section>
+                    <h3>Action & Modifier Cards</h3>
+                    <p>
+                      Modifiers (÷2, −2, −4, −6, −8, −10) apply penalties to any non-busted player. Action cards (Steal, Swap, Discard, Just One More, Flip Four) let you attack or force flips!
+                    </p>
+                  </section>
+                </div>
+              </div>
+            </motion.section>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {showMenu && (
+        <VengeanceMenuDialog
+          onClose={() => setShowMenu(false)}
+          onOpenPlayers={() => setPlayersOpen(true)}
+          onOpenRules={() => setRulesOpen(true)}
+          onOpenTvShare={() => setTvOpen(true)}
+          onExit={exit}
+        />
+      )}
+
+      {tvOpen && roomId && <TvShareDialog roomId={roomId} onClose={() => setTvOpen(false)} />}
+    </div>
+  )
 }

@@ -3,9 +3,9 @@
   background-color: #f3e5b5;
   background-image:
     radial-gradient(circle, #132d671c .8px, transparent .9px),
-    radial-gradient(ellipse 120% 100% at 50% 0%, #fff9e2 0%, #f9e9bd 50%, #f3e5b5 100%);
-  background-size: 12px 12px, 100% 100%;
-  background-repeat: repeat, no-repeat;
+    radial-gradient(ellipse at center, #fff9e2 0%, #f9e9bd 56%, #e9d29a 100%);
+  background-size: 12px 12px, 100% 115dvh;
+  background-repeat: repeat, repeat-y;
 }
 .room-create-banner, .room-detail-hero, .room-history-banner, .room-storage-panel { box-shadow: 5px 6px 0 #132d67; }
 .library-room-card, .room-profile-card, .room-form-panel { box-shadow: 3px 4px 0 #132d67; }

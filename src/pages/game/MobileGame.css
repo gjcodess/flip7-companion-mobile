@@ -70,7 +70,7 @@
   justify-self: end;
   background: #132d67;
   color: #fff7da;
-  box-shadow: 2px 3px 0 #d4bd72;
+  box-shadow: 2px 3px 0 #ffe05c;
 }
 .banker-shell .banker-topbar > .brand-button.menu-button:hover,
 .banker-shell .banker-topbar > .brand-button.menu-button:active {
@@ -147,6 +147,7 @@
   background-color: #fffdf3;
 }
 .banker-shell .banker-player-tab.selected { background-color: #ffe05c; box-shadow: 3px 4px 0 #132d67; }
+.banker-shell .banker-player-tab.turn:not(.selected) { outline: 3px solid #ed4f7e; outline-offset: -4px; }
 .banker-shell .banker-player-tab.busted { background-color: #ffe4e7; box-shadow: 2px 3px 0 #c32950; }
 .banker-shell .banker-player-tab.frozen { background-color: #dff3f8; box-shadow: 2px 3px 0 #2b7897; }
 .banker-shell .banker-player-tab.stayed { background-color: #eef6d9; box-shadow: 2px 3px 0 #4d8a45; }
@@ -263,6 +264,7 @@
   --pink: #ed4f7e;
   color: var(--ink);
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  box-shadow: 5px 5px 0 #ffe05c;
 }
 .banker-menu-dialog .banker-menu-list {
   display: flex;
@@ -434,10 +436,10 @@ body:has(:is(.banker-shell, .demo-shell)) .confirmation-modal .close-button:hove
 body:has(:is(.banker-shell, .demo-shell)) .confirmation-modal > p { color: #53607a; font-size: 12px; line-height: 1.7; }
 :is(.banker-shell, .demo-shell) .picker-grid button { border-radius: 9px; box-shadow: 2px 3px 0 #132d6733; }
 /* Keep the title/close control outside the only scrollable area. */
-html:has(.physical-card-picker), body:has(.physical-card-picker) { overflow: hidden; }
-:is(.banker-shell, .demo-shell) .physical-card-picker { display: flex; flex-direction: column; padding: 0; overflow: hidden; min-height: 0; }
-.physical-picker-header { position: relative; isolation: isolate; flex: 0 0 auto; padding: 20px 18px 14px; border-bottom: 1px dashed #b9ad88; background: #fff9df; }
-.physical-picker-header::before {
+html:has(:is(.physical-card-picker, .info-panel)), body:has(:is(.physical-card-picker, .info-panel)) { overflow: hidden; }
+:is(.banker-shell, .demo-shell) :is(.physical-card-picker, .info-panel) { display: flex; flex-direction: column; padding: 0; overflow: hidden; min-height: 0; max-height: min(85dvh, calc(100dvh - 48px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))); }
+:is(.physical-picker-header, .info-panel-header) { position: relative; isolation: isolate; flex: 0 0 auto; padding: 20px 18px 14px; border-bottom: 1px dashed #b9ad88; background: #fff9df; }
+:is(.physical-picker-header, .info-panel-header)::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -448,10 +450,12 @@ html:has(.physical-card-picker), body:has(.physical-card-picker) { overflow: hid
   -webkit-mask-image: radial-gradient(ellipse 130px 90px at top left, #000, transparent);
   mask-image: radial-gradient(ellipse 130px 90px at top left, #000, transparent);
 }
-:is(.banker-shell, .demo-shell) .physical-picker-header .picker-heading { position: static; padding-bottom: 0; margin-bottom: 0; border-bottom: 0; background: transparent; }
-.physical-picker-header > p { margin: 10px 0 0; color: #53607a; font-size: 11px; line-height: 1.6; }
-.physical-picker-scroll { min-height: 0; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; -webkit-overflow-scrolling: touch; padding: 16px 18px 20px; scrollbar-width: thin; scrollbar-color: #b8b9ae transparent; }
+:is(.banker-shell, .demo-shell) :is(.physical-picker-header, .info-panel-header) .picker-heading { position: static; padding-bottom: 0; margin-bottom: 0; border-bottom: 0; background: transparent; }
+.physical-picker-header > p, .info-panel-header > p { margin: 10px 0 0; color: #53607a; font-size: 11px; line-height: 1.6; }
+:is(.physical-picker-scroll, .info-panel-scroll) { min-height: 0; flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; -webkit-overflow-scrolling: touch; padding: 16px 18px 20px; scrollbar-width: none !important; -ms-overflow-style: none !important; }
+:is(.physical-picker-scroll, .info-panel-scroll)::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
 .physical-picker-scroll .picker-grid { padding-bottom: 4px; }
+.info-panel-scroll :is(.info-list, .rules-copy) { margin-top: 0; }
 .physical-card-picker .picker-card-art { position: relative; display: block; padding: 0; aspect-ratio: .714; overflow: hidden; }
 .physical-card-picker .picker-card-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; padding: 6px; background: #f8edc7; color: #132d67; }
 .physical-card-picker .picker-card-placeholder.modifier { background: #ffd58b; }
@@ -500,8 +504,8 @@ body:has(:is(.banker-shell, .demo-shell)) .confirmation-modal .home-prompt-actio
   :is(.banker-shell, .demo-shell) .actions button { font-size: 10px; }
   :is(.banker-shell, .demo-shell) .actions .stay-action { font-size: 11px; }
   :is(.banker-shell, .demo-shell) .card-picker { padding-inline: 14px; }
-  :is(.banker-shell, .demo-shell) .physical-card-picker { padding-inline: 0; }
-  .physical-picker-header, .physical-picker-scroll { padding-inline: 14px; }
+  :is(.banker-shell, .demo-shell) :is(.physical-card-picker, .info-panel) { padding-inline: 0; }
+  .physical-picker-header, .physical-picker-scroll, .info-panel-header, .info-panel-scroll { padding-inline: 14px; }
   :is(.banker-shell, .demo-shell) .picker-heading h2 { font-size: 22px; }
   :is(.banker-shell, .demo-shell) .panel-heading-actions { gap: 6px; }
   :is(.banker-shell, .demo-shell) .panel-count { font-size: 9px; padding-inline: 5px; }
