@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { vengeanceCard } from './vengeanceCards'
+import { vengeanceCard, vengeanceCards } from './vengeanceCards'
 import { vengeanceEligibleActors, vengeanceInitialState, vengeanceReducer, vengeanceScore, type VEntry, type VPlayer, type VState } from './vengeanceGame'
 
 const roster = [
@@ -129,16 +129,155 @@ describe('Vengeance rules', () => {
     expect(state.turnPlayerId).toBe('b')
   })
 
-  it('starts the initial deal with player 1 and passes the dealer each round', () => {
+  it('starts the initial deal with player 1 and starts next round with the round finisher', () => {
     let state = vengeanceInitialState(roster)
     expect(state.turnPlayerId).toBe('a')
     for (const cardId of ['v-number-1', 'v-number-2', 'v-number-3']) state = vengeanceReducer(state, { type: 'record', cardId })
     expect(state.phase).toBe('turn')
     expect(state.turnPlayerId).toBe('a')
+
+    // Cannot stay with only 1 number card
+    const cannotStayState = vengeanceReducer(state, { type: 'stay' })
+    expect(cannotStayState.players[0].status).toBe('active')
+    expect(cannotStayState.turnPlayerId).toBe('a')
+
+    // Hit to get second number card for each player
+    for (const cardId of ['v-number-4', 'v-number-5', 'v-number-6']) state = vengeanceReducer(state, { type: 'record', cardId })
+    expect(state.players[0].entries).toHaveLength(2)
+
+    // Now all players have at least 2 number cards and can stay
     for (let i = 0; i < 3; i++) state = vengeanceReducer(state, { type: 'stay' })
     expect(state.phase).toBe('settlement')
+    expect(state.roundFinisherId).toBe('c')
     state = vengeanceReducer(state, { type: 'advance-round' })
-    expect(state.dealerId).toBe('a')
+    expect(state.dealerId).toBe('c')
+    expect(state.turnPlayerId).toBe('c')
+    expect(state.selectedPlayerId).toBe('c')
+  })
+
+  it('supports fluid card selection, toggling, and switching for Steal, Swap, and Discard', () => {
+    let state = round([player('a', ['v-number-1', 'v-number-2']), player('b', ['v-number-3', 'v-number-4']), player('c', ['v-number-5'])])
+    
+    // Test Steal selection & deselect
+    state = vengeanceReducer(state, { type: 'record', cardId: 'v-action-steal' })
+    state = vengeanceReducer(state, { type: 'choose-actor', playerId: 'a' })
+    state = vengeanceReducer(state, { type: 'choose-card', instanceId: 'b-0' })
+    expect(state.pending?.selectedCards).toEqual(['b-0'])
+    // Switch to another card
+    state = vengeanceReducer(state, { type: 'choose-card', instanceId: 'c-0' })
+    expect(state.pending?.selectedCards).toEqual(['c-0'])
+    // Deselect
+    state = vengeanceReducer(state, { type: 'choose-card', instanceId: 'c-0' })
+    expect(state.pending?.selectedCards).toEqual([])
+    
+    // Change actor
+    state = vengeanceReducer(state, { type: 'choose-actor', playerId: '' })
+    expect(state.pending?.actorId).toBeUndefined()
+    state = vengeanceReducer(state, { type: 'choose-actor', playerId: 'b' })
+    expect(state.pending?.actorId).toBe('b')
+
+    // Test Swap multi-slot selection
+    let swapState = round([player('a', ['v-number-1', 'v-number-2']), player('b', ['v-number-3']), player('c', ['v-number-5'])])
+    swapState = vengeanceReducer(swapState, { type: 'record', cardId: 'v-action-swap' })
+    swapState = vengeanceReducer(swapState, { type: 'choose-actor', playerId: 'a' })
+    // Pick 1st card from a
+    swapState = vengeanceReducer(swapState, { type: 'choose-card', instanceId: 'a-0' })
+    expect(swapState.pending?.selectedCards).toEqual(['a-0'])
+    // Switch 1st card from a to another card of a
+    swapState = vengeanceReducer(swapState, { type: 'choose-card', instanceId: 'a-1' })
+    expect(swapState.pending?.selectedCards).toEqual(['a-1'])
+    // Pick 2nd card from b
+    swapState = vengeanceReducer(swapState, { type: 'choose-card', instanceId: 'b-0' })
+    expect(swapState.pending?.selectedCards).toEqual(['a-1', 'b-0'])
+    // Switch 2nd card to c
+    swapState = vengeanceReducer(swapState, { type: 'choose-card', instanceId: 'c-0' })
+    expect(swapState.pending?.selectedCards).toEqual(['a-1', 'c-0'])
+    // Deselect 2nd card
+    swapState = vengeanceReducer(swapState, { type: 'choose-card', instanceId: 'c-0' })
+    expect(swapState.pending?.selectedCards).toEqual(['a-1'])
+
+    // Single click undo immediately closes the modal and cancels the action card
+    const canceled = vengeanceReducer(swapState, { type: 'undo' })
+    expect(canceled.pending).toBeNull()
+    expect(canceled.past.length).toBe(round([]).past.length)
+  })
+
+  it('handles drawing next cards when holding The Zero', () => {
+    // Initial deal with The Zero for player 'a'
+    let state = vengeanceInitialState(roster)
+    state = vengeanceReducer(state, { type: 'record', cardId: 'v-number-zero' })
+    expect(state.players[0].entries[0].card.id).toBe('v-number-zero')
     expect(state.turnPlayerId).toBe('b')
+
+    // Deal to b and c
+    state = vengeanceReducer(state, { type: 'record', cardId: 'v-number-1' })
+    state = vengeanceReducer(state, { type: 'record', cardId: 'v-number-2' })
+    expect(state.phase).toBe('turn')
+    expect(state.turnPlayerId).toBe('a')
+
+    // Now player 'a' holds The Zero and chooses the next card
+    for (const card of vengeanceCards) {
+      const testState = vengeanceReducer(state, { type: 'record', cardId: card.id })
+      expect(testState).toBeDefined()
+    }
+
+    // 2-player flow where player 'b' stays and 'a' keeps hitting with The Zero
+    let twoPlayer = vengeanceInitialState(roster.slice(0, 2))
+    twoPlayer = vengeanceReducer(twoPlayer, { type: 'record', cardId: 'v-number-zero' })
+    twoPlayer = vengeanceReducer(twoPlayer, { type: 'record', cardId: 'v-number-5' })
+    expect(twoPlayer.phase).toBe('turn')
+    expect(twoPlayer.turnPlayerId).toBe('a')
+
+    // Player 'a' hits with card 2
+    twoPlayer = vengeanceReducer(twoPlayer, { type: 'record', cardId: 'v-number-2' })
+    expect(twoPlayer.turnPlayerId).toBe('b')
+
+    // Player 'b' hits with card 7, then on their next turn has 2 cards and stays
+    twoPlayer = vengeanceReducer(twoPlayer, { type: 'record', cardId: 'v-number-7' })
+    expect(twoPlayer.turnPlayerId).toBe('a')
+
+    // Player 'a' hits with card 3
+    twoPlayer = vengeanceReducer(twoPlayer, { type: 'record', cardId: 'v-number-3' })
+    expect(twoPlayer.turnPlayerId).toBe('b')
+
+    // Player 'b' now has 2 number cards (5, 7) and stays
+    twoPlayer = vengeanceReducer(twoPlayer, { type: 'stay' })
+    expect(twoPlayer.players[1].status).toBe('stayed')
+    expect(twoPlayer.turnPlayerId).toBe('a')
+
+    // Player 'a' draws cards continuously until Flip 7
+    for (const id of ['v-number-4', 'v-number-6', 'v-number-8', 'v-number-9']) {
+      expect(twoPlayer.turnPlayerId).toBe('a')
+      twoPlayer = vengeanceReducer(twoPlayer, { type: 'record', cardId: id })
+    }
+    expect(twoPlayer.players[0].status).toBe('flip-seven')
+    expect(twoPlayer.phase).toBe('settlement')
+    expect(vengeanceScore(twoPlayer.players[0])).toBe(0 + 2 + 3 + 4 + 6 + 8 + 9 + 15)
+  })
+
+  it('immediately applies modifiers upon choose-target without needing confirm', () => {
+    let state = round([player('a', ['v-number-5']), player('b', ['v-number-8']), player('c', [])])
+    state = vengeanceReducer(state, { type: 'record', cardId: 'v-modifier-minus-4' })
+    expect(state.pending?.card.id).toBe('v-modifier-minus-4')
+    state = vengeanceReducer(state, { type: 'choose-target', playerId: 'b' })
+    expect(state.pending).toBeNull()
+    expect(state.players[1].entries.map(e => e.card.id)).toContain('v-modifier-minus-4')
+  })
+
+  it('immediately applies forced action upon choose-actor without needing confirm', () => {
+    let state = round([player('a', ['v-number-5']), player('b', ['v-number-8']), player('c', [])])
+    state = vengeanceReducer(state, { type: 'record', cardId: 'v-action-just-one-more' })
+    expect(state.pending?.card.id).toBe('v-action-just-one-more')
+    state = vengeanceReducer(state, { type: 'choose-actor', playerId: 'b' })
+    expect(state.pending).toBeNull()
+    expect(state.forced[0]).toEqual({
+      kind: 'one',
+      targetId: 'b',
+      remaining: 1,
+      deferred: []
+    })
   })
 })
+
+
+

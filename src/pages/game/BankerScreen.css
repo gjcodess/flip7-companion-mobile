@@ -79,7 +79,94 @@
 .banker-status-pill.frozen { border-color: #2b7897; background: #dff3f8; }
 .banker-status-pill.stayed { border-color: #4d8a45; background: #eef6d9; color: #24703c; }
 .banker-summary > p { margin: 0 0 15px; font-size: 12px; line-height: 1.4; }
-.banker-target-list button { text-align: left; }
+
+/* Action Target Dialog (Flip Three, Freeze, Second Chance) */
+.action-target-picker {
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: min(88dvh, calc(100dvh - 40px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))) !important;
+  width: min(100%, 480px) !important;
+}
+
+.action-target-scroll {
+  min-height: 0 !important;
+  flex: 0 1 auto !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  touch-action: pan-y !important;
+  -webkit-overflow-scrolling: touch !important;
+  padding: 14px 16px 16px !important;
+  background: #fff9df !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+.banker-shell .target-list.banker-target-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  width: 100% !important;
+}
+
+.banker-actor-select-btn {
+  width: 100% !important;
+  min-height: 52px !important;
+  background: #fffdf3 !important;
+  border: 2px solid #132d67 !important;
+  border-radius: 12px !important;
+  box-shadow: 2px 3px 0 #132d67 !important;
+  color: #132d67 !important;
+  padding: 10px 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  text-align: left !important;
+  cursor: pointer !important;
+  transition: transform 0.1s ease, background-color 0.12s ease, box-shadow 0.1s ease !important;
+  box-sizing: border-box !important;
+}
+
+.banker-actor-select-btn:hover,
+.banker-actor-select-btn:active {
+  background: #ffe05c !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 3px 4px 0 #132d67 !important;
+}
+
+.banker-actor-btn-name {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  flex-wrap: wrap !important;
+  font-size: 14px !important;
+  color: #132d67 !important;
+}
+
+.banker-actor-btn-name b {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+}
+
+.banker-current-tag {
+  font-size: 9px !important;
+  font-weight: 900 !important;
+  background: #bcdbf8 !important;
+  color: #132d67 !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  border: 1px solid #132d67 !important;
+}
+
 .banker-results-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
 .banker-results-actions button { min-height: 45px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding-inline: 8px; border: 3px solid #132d67; box-shadow: 3px 3px 0 #132d67; font-size: 11px; font-weight: 1000; cursor: pointer; }
 .banker-results-actions .secondary-action { background: #fffdf5; color: #132d67; }

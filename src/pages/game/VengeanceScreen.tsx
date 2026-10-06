@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import {
   ArrowLeft,
+  ArrowRightLeft,
   Cast,
   Check,
   ChevronRight,
@@ -14,6 +15,7 @@ import {
   Redo2,
   RotateCcw,
   Share2,
+  Sparkles,
   Undo2,
   Users,
   X,
@@ -458,6 +460,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
   const [saveError, setSaveError] = useState('')
 
   const [pickerOpen, setPickerOpen] = useState(false)
+  const pickerSessionRef = useRef(0)
   const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(null)
   const [organized, setOrganized] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
@@ -470,6 +473,16 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
   const playerTabRefs = useRef<Record<string, HTMLButtonElement | null>>({})
   const tvSession = useTvSession()
   const isSharing = tvSession?.roomId === roomId
+
+  useEffect(() => {
+    stateRef.current = state
+  }, [state])
+
+  const openPicker = () => {
+    pickerSessionRef.current += 1
+    setSelectedCardIndex(null)
+    setPickerOpen(true)
+  }
 
   const exit = useCallback(() => navigate(roomId ? `/room?id=${roomId}` : '/landing', { replace: true }), [navigate, roomId])
 
@@ -519,7 +532,6 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
   const forcedTurn = state?.forced[0] ?? null
   const turnPlayerId = forcedTurn?.targetId ?? (state?.phase === 'deal' || state?.phase === 'turn' ? state.turnPlayerId : null)
   const drawing = state ? state.players.find((p) => p.id === turnPlayerId) : null
-  const dealer = state ? state.players.find((p) => p.id === state.dealerId) : null
   const pending = state?.pending ?? null
   const eligibleActors = state ? vengeanceEligibleActors(state) : []
   const eligibleCards = state ? vengeanceEligibleCards(state) : []
@@ -629,6 +641,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
   const selectedScore = selected ? vengeanceScore(selected) : 0
   const isSelectedTurn = selected?.id === turnPlayerId
   const interactionLocked = pickerOpen || Boolean(pending) || roundSummaryOpen || Boolean(saveError)
+  const numberCount = selected?.entries.filter((e) => e.card.kind === 'number').length ?? 0
   const hasZero = Boolean(selected?.entries.some((e) => e.card.id === 'v-number-zero'))
   const canStay =
     state.phase === 'turn' &&
@@ -636,9 +649,9 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
     !forcedTurn &&
     !hasZero &&
     selected?.status === 'active' &&
-    selected.entries.some((e) => e.card.kind === 'number')
+    numberCount >= 2
 
-  let stayActionLabel = 'STAY'
+  let stayActionLabel = 'STAY / BANK'
   let stayActionClass = ''
 
   if (selected?.status === 'busted') {
@@ -650,12 +663,6 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
   } else if (selected?.status === 'stayed') {
     stayActionLabel = 'STAYED'
     stayActionClass = 'confirmed'
-  } else if (hasZero) {
-    stayActionLabel = 'HOLDING THE ZERO'
-  } else if (state.phase === 'deal') {
-    stayActionLabel = 'INITIAL DEAL'
-  } else if (forcedTurn) {
-    stayActionLabel = 'FORCED DRAW'
   }
 
   return (
@@ -706,8 +713,8 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
             <b>{state.targetScore}</b>
           </div>
           <div>
-            <span>DEALER</span>
-            <b>{dealer?.name || '—'}</b>
+            <span>VIEWING</span>
+            <b>{selected?.name || '—'}</b>
           </div>
         </section>
 
@@ -763,7 +770,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
           isHost={false}
           onOrganize={toggleOrganize}
           onOpenPicker={() => {
-            if (!interactionLocked && canRecord) setPickerOpen(true)
+            if (!interactionLocked && canRecord) openPicker()
           }}
           onSelectCard={(index) => {
             if (!interactionLocked) setSelectedCardIndex(index)
@@ -811,7 +818,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
         {/* Physical Card Picker Dialog */}
         {pickerOpen && (
           <motion.div
-            key="vengeance-picker-backdrop"
+            key={`vengeance-picker-${pickerSessionRef.current}`}
             className="picker-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -895,110 +902,263 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
             onClick={() => dispatch({ type: 'undo' })}
           >
             <motion.section
-              className="card-picker action-target-picker vengeance-action-panel"
-              initial={{ y: 80, opacity: 0 }}
+              className="card-picker physical-card-picker vengeance-action-modal"
+              role="dialog"
+              aria-modal="true"
+              initial={{ y: 50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 80, opacity: 0 }}
-              transition={{ type: 'spring', damping: 26 }}
+              exit={{ y: 50, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 450, damping: 32 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="picker-heading">
-                <div>
-                  <span>ACTION TARGET</span>
-                  <h2>Who gets {pending.card.label}?</h2>
-                </div>
-                <button
-                  className="close-button"
-                  aria-label="Close action target"
-                  title="Close"
-                  onClick={() => dispatch({ type: 'undo' })}
-                >
-                  <X size={19} />
-                </button>
-              </div>
-              <p>
-                {pending.card.kind === 'modifier'
-                  ? 'Choose who receives this penalty modifier. Can be targeted at active or stayed players.'
-                  : !pending.actorId
-                    ? 'Choose who receives and resolves this action.'
-                    : needsCards
-                      ? `Select ${selectedCount === 2 ? 'two cards from different hands' : 'one eligible card from the table'}.`
-                      : `Confirm ${state.players.find((p) => p.id === pending.actorId)?.name} as the target.`}
-              </p>
+              {(() => {
+                const isSwap = pending.card.id === 'v-action-swap'
+                const isSteal = pending.card.id === 'v-action-steal'
+                const isDiscard = pending.card.id === 'v-action-discard'
+                const isModifier = pending.card.kind === 'modifier'
+                const isForced = pending.card.id === 'v-action-just-one-more' || pending.card.id === 'v-action-flip-four'
+                const actor = state.players.find((p) => p.id === pending.actorId)
+                const target = state.players.find((p) => p.id === pending.targetId)
 
-              {/* Actor / Target player selection */}
-              {((!pending.actorId && pending.card.kind !== 'modifier') ||
-                (pending.card.kind === 'modifier' && !pending.targetId)) && (
-                  <div className="target-list banker-target-list">
-                    {eligibleActors.map((player) => (
-                      <button
-                        key={player.id}
-                        onClick={() =>
-                          dispatch({
-                            type: pending.card.kind === 'modifier' ? 'choose-target' : 'choose-actor',
-                            playerId: player.id,
-                          })
-                        }
-                      >
-                        {player.name}
-                        {player.id === state.turnPlayerId ? ' (current)' : ''}
-                        {player.status === 'stayed' ? ' · Stayed' : ''}
-                      </button>
-                    ))}
-                    {eligibleActors.length === 0 && (
-                      <p className="banker-muted">There are no eligible player tables available.</p>
-                    )}
-                  </div>
-                )}
+                const selectedFaces = pending.selectedCards
+                  .map((id) => {
+                    for (const p of state.players) {
+                      const entry = p.entries.find((e) => e.instanceId === id)
+                      if (entry) return { player: p, entry }
+                    }
+                    return null
+                  })
+                  .filter(Boolean) as { player: VPlayer; entry: VEntry }[]
 
-              {/* Face-up card selection */}
-              {needsCards && pending.actorId && (
-                <div className="v-target-hands">
-                  {state.players
-                    .filter((player) => player.status !== 'busted' && player.entries.length > 0)
-                    .map((player) => (
-                      <div key={player.id} className="v-target-player-row">
-                        <h3>{player.name}</h3>
-                        <div className="v-target-cards-row">
-                          {player.entries.map((entry) => {
-                            const isChosen = pending.selectedCards.includes(entry.instanceId)
-                            const isEligible = eligibleCards.some((c) => c.entry.instanceId === entry.instanceId)
-                            return (
-                              <button
-                                key={entry.instanceId}
-                                className={`v-target-card-btn ${isChosen ? 'chosen' : ''}`}
-                                disabled={!isEligible}
-                                onClick={() => dispatch({ type: 'choose-card', instanceId: entry.instanceId })}
-                              >
-                                <PickerCardArtwork card={entry.card} />
-                              </button>
-                            )
-                          })}
+                let eyebrow = 'ACTION CARD'
+                if (isModifier) eyebrow = 'PENALTY MODIFIER'
+                else if (isSteal) eyebrow = 'ACTION · STEAL'
+                else if (isSwap) eyebrow = 'ACTION · SWAP'
+                else if (isDiscard) eyebrow = 'ACTION · DISCARD'
+                else if (isForced) eyebrow = `ACTION · ${pending.card.label.toUpperCase()}`
+
+                let title = `Who gets ${pending.card.label}?`
+                if (isModifier) {
+                  title = `Who gets ${pending.card.label}?`
+                } else if (!pending.actorId) {
+                  title = isForced
+                    ? (pending.card.id === 'v-action-flip-four' ? 'Who flips four cards?' : 'Who flips just one more?')
+                    : `Who is playing ${pending.card.label}?`
+                } else if (isSteal) {
+                  title = `Steal a card into ${actor?.name}'s hand`
+                } else if (isSwap) {
+                  title = `Swap 2 cards between tables`
+                } else if (isDiscard) {
+                  title = `Discard a card from table`
+                } else if (isForced) {
+                  title = `${actor?.name} flips ${pending.card.id === 'v-action-flip-four' ? 'four cards' : 'one card'}`
+                }
+
+                let subtitle = 'Choose who receives and resolves this action.'
+                if (isModifier) {
+                  subtitle = 'Choose who receives this penalty modifier. Non-busted players (active or stayed) are eligible.'
+                } else if (!pending.actorId) {
+                  subtitle = `Choose which player resolves this ${pending.card.label} action.`
+                } else if (isSteal) {
+                  subtitle = `Select 1 card from an opponent's table to steal into ${actor?.name}'s hand.`
+                } else if (isSwap) {
+                  subtitle = 'Select 1 card from each of 2 different players to swap between them.'
+                } else if (isDiscard) {
+                  subtitle = 'Select 1 card from any player table to discard from the round.'
+                } else if (isForced) {
+                  subtitle = `${actor?.name} must flip cards, then immediately stay unless they bust or reach Flip 7.`
+                }
+
+                return (
+                  <>
+                    <div className="physical-picker-header">
+                      <div className="picker-heading">
+                        <div>
+                          <span>{eyebrow}</span>
+                          <h2>{title}</h2>
                         </div>
+                        <button
+                          className="close-button"
+                          aria-label="Cancel action"
+                          title="Cancel"
+                          onClick={() => dispatch({ type: 'undo' })}
+                        >
+                          <X size={19} />
+                        </button>
                       </div>
-                    ))}
-                </div>
-              )}
+                      <p>{subtitle}</p>
 
-              {/* Preview & Confirmation */}
-              {readyToConfirm && (
-                <div className="v-preview">
-                  <p>
-                    <Eye size={16} /> Preview:{' '}
-                    {pending.card.kind === 'modifier'
-                      ? `${pending.card.label} to ${state.players.find((p) => p.id === pending.targetId)?.name}`
-                      : `${pending.card.label} played by ${state.players.find((p) => p.id === pending.actorId)?.name
-                      }`}{' '}
-                    {pending.selectedCards.length > 0 &&
-                      ` · Cards: ${pending.selectedCards
-                        .map((id) => state.players.flatMap((p) => p.entries).find((e) => e.instanceId === id)?.card.label)
-                        .join(' ↔ ')}`}
-                  </p>
-                  <button className="next-round-button" style={{ width: '100%', marginTop: '8px' }} onClick={() => dispatch({ type: 'confirm' })}>
-                    Confirm physical move
-                  </button>
-                </div>
-              )}
+                      {/* Swap Stepper Status Tracker inside Header */}
+                      {isSwap && (
+                        <div className="v-swap-stepper">
+                          <div className={`v-swap-slot ${selectedFaces[0] ? 'filled' : 'empty'}`}>
+                            <span className="v-swap-slot-label">Card 1</span>
+                            <b>{selectedFaces[0] ? `${selectedFaces[0].entry.card.label} (${selectedFaces[0].player.name})` : 'Tap 1st card'}</b>
+                          </div>
+                          <ArrowRightLeft size={16} className="v-swap-icon" />
+                          <div className={`v-swap-slot ${selectedFaces[1] ? 'filled' : 'empty'}`}>
+                            <span className="v-swap-slot-label">Card 2</span>
+                            <b>{selectedFaces[1] ? `${selectedFaces[1].entry.card.label} (${selectedFaces[1].player.name})` : 'Tap 2nd card'}</b>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className={`physical-picker-scroll v-action-scroll ${needsCards ? 'has-floating-btn' : ''}`}>
+                      {/* Step 1: Choose Actor (for actions) or Target (for modifiers) */}
+                      {((!pending.actorId && !isModifier) || (isModifier && !pending.targetId)) && (
+                        <div className="target-list banker-target-list v-action-actor-list">
+                          {eligibleActors.map((player) => (
+                            <button
+                              key={player.id}
+                              type="button"
+                              className="v-actor-select-btn"
+                              onClick={() =>
+                                dispatch({
+                                  type: isModifier ? 'choose-target' : 'choose-actor',
+                                  playerId: player.id,
+                                })
+                              }
+                            >
+                              <PlayerAvatar player={player} className="mini-avatar" />
+                              <span className="v-actor-btn-name">
+                                <b>{player.name}</b>
+                                {player.id === state.turnPlayerId && <span className="v-current-tag">Current Turn</span>}
+                                {player.status === 'stayed' && <span className="v-stayed-tag">Stayed</span>}
+                              </span>
+                            </button>
+                          ))}
+                          {eligibleActors.length === 0 && (
+                            <p className="banker-muted">There are no eligible player tables available.</p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Face-up Cards per Player Table in Fan-Style Stacking */}
+                      {needsCards && pending.actorId && (
+                        <div className="v-fan-players-list">
+                          {state.players
+                            .filter((player) => player.status !== 'busted')
+                            .map((player) => {
+                              const isActorHand = player.id === pending.actorId
+                              const cannotStealHere = isSteal && isActorHand
+                              const cardRows = Array.from(
+                                { length: Math.ceil(player.entries.length / 5) },
+                                (_, rowIndex) => player.entries.slice(rowIndex * 5, rowIndex * 5 + 5)
+                              )
+
+                              return (
+                                <div
+                                  key={player.id}
+                                  className={`v-fan-player-section ${cannotStealHere ? 'actor-hand' : ''}`}
+                                >
+                                  <div className="v-player-header">
+                                    <div className="v-player-meta">
+                                      <PlayerAvatar player={player} className="mini-avatar" />
+                                      <h4>{player.name}</h4>
+                                    </div>
+                                    <div className="v-player-tags">
+                                      {cannotStealHere && (
+                                        <span className="v-role-badge actor">Recipient Table</span>
+                                      )}
+                                      {player.status === 'stayed' && (
+                                        <span className="v-role-badge stayed">Stayed</span>
+                                      )}
+                                      <span className="v-role-badge count">
+                                        {player.entries.length} card{player.entries.length === 1 ? '' : 's'}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {player.entries.length === 0 ? (
+                                    <div className="v-empty-hand">No cards on table</div>
+                                  ) : cannotStealHere ? (
+                                    <div className="v-actor-hand-note">
+                                      Stolen cards will go into this hand (cannot steal from yourself)
+                                    </div>
+                                  ) : (
+                                    <div className="v-card-fan-container">
+                                      {cardRows.map((row, rowIndex) => (
+                                        <div
+                                          key={`fan-row-${rowIndex}`}
+                                          className={`v-card-fan-row cards-${row.length}`}
+                                        >
+                                          {row.map((entry) => {
+                                            const isChosen = pending.selectedCards.includes(entry.instanceId)
+                                            const chosenIndex = pending.selectedCards.indexOf(entry.instanceId)
+                                            const isEligible = eligibleCards.some(
+                                              (c) => c.entry.instanceId === entry.instanceId
+                                            )
+                                            return (
+                                              <button
+                                                key={entry.instanceId}
+                                                type="button"
+                                                className={`v-fan-card ${isChosen ? 'chosen' : ''} ${!isEligible ? 'ineligible' : ''}`}
+                                                disabled={!isEligible}
+                                                onClick={() =>
+                                                  dispatch({ type: 'choose-card', instanceId: entry.instanceId })
+                                                }
+                                                aria-label={`${entry.card.label} from ${player.name}`}
+                                              >
+                                                <PickerCardArtwork card={entry.card} />
+                                                {isChosen && (
+                                                  <span className="v-chosen-badge">
+                                                    {isSwap ? `CARD ${chosenIndex + 1}` : isSteal ? 'STEAL' : 'DISCARD'}
+                                                  </span>
+                                                )}
+                                              </button>
+                                            )
+                                          })}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Floating Confirmation Buttons for Steal, Swap, Discard */}
+                    {isSteal && pending.actorId && selectedFaces[0] && (
+                      <div className="v-floating-confirm">
+                        <button
+                          type="button"
+                          className="v-confirm-btn steal"
+                          onClick={() => dispatch({ type: 'confirm' })}
+                        >
+                          Confirm Steal
+                        </button>
+                      </div>
+                    )}
+
+                    {isSwap && pending.actorId && selectedFaces.length === 2 && (
+                      <div className="v-floating-confirm">
+                        <button
+                          type="button"
+                          className="v-confirm-btn swap"
+                          onClick={() => dispatch({ type: 'confirm' })}
+                        >
+                          Confirm Swap
+                        </button>
+                      </div>
+                    )}
+
+                    {isDiscard && pending.actorId && selectedFaces[0] && (
+                      <div className="v-floating-confirm">
+                        <button
+                          type="button"
+                          className="v-confirm-btn discard"
+                          onClick={() => dispatch({ type: 'confirm' })}
+                        >
+                          Confirm Discard
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
             </motion.section>
           </motion.div>
         )}

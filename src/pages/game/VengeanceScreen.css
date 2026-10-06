@@ -284,6 +284,26 @@
   color: #fffdf5 !important;
 }
 
+.edition-vengeance .stay-action.hit-mode {
+  background: linear-gradient(145deg, #fae69e, #f7c244) !important;
+  color: #132d67 !important;
+  border: 2.5px solid #132d67 !important;
+  box-shadow: 2px 3px 0 #132d67 !important;
+  cursor: pointer !important;
+  opacity: 1 !important;
+  font-weight: 950 !important;
+}
+
+.edition-vengeance .stay-action.hit-mode:hover:not(:disabled) {
+  background: #fbd672 !important;
+  transform: translateY(-1px) !important;
+}
+
+.edition-vengeance .stay-action.hit-mode:active:not(:disabled) {
+  transform: translate(1px, 2px) !important;
+  box-shadow: 1px 1px 0 #132d67 !important;
+}
+
 .edition-vengeance .next-round-button {
   background: #e83239 !important;
   color: #fffdf5 !important;
@@ -549,102 +569,504 @@
   background: #fff1c4 !important;
 }
 
-/* Action Target / Resolution Panel */
-.edition-vengeance .action-target-picker .target-list {
+/* ==========================================================================
+   Action Card Resolution Modal (Swap, Steal, Discard, Modifiers, Forced)
+   ========================================================================== */
+
+.edition-vengeance .vengeance-action-modal {
   display: flex !important;
   flex-direction: column !important;
-  gap: 8px !important;
-  margin-top: 14px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: min(88dvh, calc(100dvh - 40px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))) !important;
 }
 
-.edition-vengeance .action-target-picker .target-list button {
+.edition-vengeance .v-action-scroll {
+  min-height: 0 !important;
+  flex: 0 1 auto !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  touch-action: pan-y !important;
+  -webkit-overflow-scrolling: touch !important;
+  padding: 14px 16px 16px !important;
+  background: #fff7da !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+/* Actor Selection List */
+.edition-vengeance .v-action-actor-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  margin: 4px 0 !important;
   width: 100% !important;
-  min-height: 48px !important;
-  background: #bcdbf8 !important;
-  border: 1.5px solid #132d67 !important;
+}
+
+.edition-vengeance .v-actor-select-btn {
+  width: 100% !important;
+  min-height: 52px !important;
+  background: #fffdf3 !important;
+  border: 2px solid #132d67 !important;
   border-radius: 12px !important;
   box-shadow: 2px 3px 0 #132d67 !important;
   color: #132d67 !important;
-  font-size: 13px !important;
-  font-weight: 850 !important;
-  padding: 12px 16px !important;
+  padding: 10px 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
   text-align: left !important;
   cursor: pointer !important;
   transition: transform 0.1s ease, background-color 0.12s ease, box-shadow 0.1s ease !important;
+  box-sizing: border-box !important;
 }
 
-.edition-vengeance .action-target-picker .target-list button:hover,
-.edition-vengeance .action-target-picker .target-list button:active {
+.edition-vengeance .v-actor-select-btn:hover,
+.edition-vengeance .v-actor-select-btn:active {
   background: #f7c244 !important;
   transform: translateY(-1px) !important;
   box-shadow: 3px 4px 0 #132d67 !important;
 }
 
-.v-target-hands {
-  display: grid !important;
-  gap: 10px !important;
-  margin: 12px 0 !important;
-  max-height: 230px !important;
-  overflow-y: auto !important;
-}
-
-.v-target-player-row {
-  padding: 8px 10px !important;
-  border: 1.5px solid #132d67 !important;
-  border-radius: 10px !important;
-  background: #fffdf3 !important;
-  box-shadow: 2px 2px 0 rgba(19, 45, 103, 0.12) !important;
-}
-
-.v-target-player-row h3 {
-  margin: 0 0 6px !important;
-  font-size: 12px !important;
-  color: #132d67 !important;
-}
-
-.v-target-cards-row {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  gap: 6px !important;
-}
-
-.v-target-card-btn {
-  padding: 0 !important;
-  border: 2px solid transparent !important;
-  border-radius: 7px !important;
-  background: transparent !important;
-  cursor: pointer !important;
-}
-
-.v-target-card-btn .picker-card-art {
-  width: 54px !important;
-  height: 76px !important;
-}
-
-.v-target-card-btn.chosen {
-  border-color: #e83239 !important;
-  outline: 2px solid #e83239 !important;
-  border-radius: 8px !important;
-  transform: scale(1.05) !important;
-}
-
-.v-preview {
-  margin-top: 14px !important;
-  padding: 12px !important;
-  border: 2px solid #132d67 !important;
-  border-radius: 10px !important;
-  background: #fef0f2 !important;
-  box-shadow: 2px 3px 0 #132d67 !important;
-}
-
-.v-preview p {
-  margin: 0 !important;
+.edition-vengeance .v-actor-btn-name {
   display: flex !important;
   align-items: center !important;
-  gap: 6px !important;
-  font-size: 12px !important;
-  font-weight: 800 !important;
+  gap: 8px !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  flex-wrap: wrap !important;
+  font-size: 14px !important;
   color: #132d67 !important;
+}
+
+.edition-vengeance .v-actor-btn-name b {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+}
+
+.edition-vengeance .v-action-scroll.has-floating-btn {
+  padding-bottom: 84px !important;
+}
+
+.edition-vengeance .v-current-tag {
+  font-size: 9px !important;
+  font-weight: 900 !important;
+  background: #bcdbf8 !important;
+  color: #132d67 !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  border: 1px solid #132d67 !important;
+}
+
+.edition-vengeance .v-stayed-tag {
+  font-size: 9px !important;
+  font-weight: 900 !important;
+  background: #eef6d9 !important;
+  color: #4d8a45 !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  border: 1px solid #4d8a45 !important;
+}
+
+/* Swap Stepper Indicator inside Header */
+.edition-vengeance .v-swap-stepper {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin-top: 12px !important;
+  margin-bottom: 2px !important;
+  padding: 8px 10px !important;
+  background: #fffdf3 !important;
+  border: 1.5px solid #132d67 !important;
+  border-radius: 11px !important;
+  box-shadow: 2px 2px 0 rgba(19, 45, 103, 0.15) !important;
+}
+
+.edition-vengeance .v-swap-slot {
+  flex: 1 !important;
+  min-width: 0 !important;
+  padding: 6px 8px !important;
+  border-radius: 8px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 2px !important;
+  border: 1.5px dashed #132d67 !important;
+}
+
+.edition-vengeance .v-swap-slot.filled {
+  background: #f7c244 !important;
+  border-style: solid !important;
+  box-shadow: 1px 2px 0 #132d67 !important;
+}
+
+.edition-vengeance .v-swap-slot.empty {
+  background: #f1ebd8 !important;
+  opacity: 0.85 !important;
+}
+
+.edition-vengeance .v-swap-slot-label {
+  font-size: 8px !important;
+  font-weight: 1000 !important;
+  letter-spacing: 0.08em !important;
+  color: #e83239 !important;
+  text-transform: uppercase !important;
+}
+
+.edition-vengeance .v-swap-slot b {
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  color: #132d67 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+}
+
+.edition-vengeance .v-swap-icon {
+  color: #e83239 !important;
+  flex: 0 0 auto !important;
+}
+
+/* Target Hands Fan-Style Stacking */
+.edition-vengeance .v-fan-players-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+  margin: 0 !important;
+}
+
+.edition-vengeance .v-fan-player-section {
+  padding-bottom: 14px !important;
+  border-bottom: 1.5px dashed #b9ad88 !important;
+}
+
+.edition-vengeance .v-fan-player-section:last-child {
+  border-bottom: 0 !important;
+  padding-bottom: 4px !important;
+}
+
+.edition-vengeance .v-fan-player-section.actor-hand {
+  opacity: 0.85 !important;
+}
+
+.edition-vengeance .v-player-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  margin-bottom: 4px !important;
+}
+
+.edition-vengeance .v-player-meta {
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  min-width: 0 !important;
+}
+
+.edition-vengeance .v-player-meta h4 {
+  margin: 0 !important;
+  font-size: 14px !important;
+  font-weight: 950 !important;
+  color: #132d67 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.edition-vengeance .v-player-tags {
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  flex: 0 0 auto !important;
+}
+
+.edition-vengeance .v-role-badge {
+  font-size: 8.5px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.04em !important;
+  padding: 2px 6px !important;
+  border-radius: 5px !important;
+  border: 1px solid #132d67 !important;
+}
+
+.edition-vengeance .v-role-badge.actor {
+  background: #e83239 !important;
+  color: #fffdf5 !important;
+  border-color: #132d67 !important;
+}
+
+.edition-vengeance .v-role-badge.stayed {
+  background: #eef6d9 !important;
+  color: #4d8a45 !important;
+  border-color: #4d8a45 !important;
+}
+
+.edition-vengeance .v-role-badge.count {
+  background: #bcdbf8 !important;
+  color: #132d67 !important;
+}
+
+.edition-vengeance .v-empty-hand,
+.edition-vengeance .v-actor-hand-note {
+  font-size: 11px !important;
+  color: #707b92 !important;
+  font-style: italic !important;
+  padding: 8px 4px !important;
+  text-align: center !important;
+}
+
+/* Fan Stacking Container */
+.edition-vengeance .v-card-fan-container {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  overflow: visible !important;
+  padding: 14px 0 8px !important;
+}
+
+.edition-vengeance .v-card-fan-row {
+  width: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: flex-end !important;
+  min-height: 100px !important;
+  overflow: visible !important;
+}
+
+.edition-vengeance .v-card-fan-row + .v-card-fan-row {
+  margin-top: -30px !important;
+}
+
+.edition-vengeance .v-fan-card {
+  flex: 0 0 66px !important;
+  width: 66px !important;
+  height: 92px !important;
+  aspect-ratio: 0.714 !important;
+  margin-inline: -6px !important;
+  position: relative !important;
+  padding: 0 !important;
+  border: 2px solid #132d67 !important;
+  border-radius: 9px !important;
+  background: #fff !important;
+  box-shadow: 2px 3px 0 rgba(19, 45, 103, 0.25) !important;
+  cursor: pointer !important;
+  transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s ease, z-index 0.1s ease !important;
+  z-index: 1 !important;
+  overflow: visible !important;
+}
+
+/* Fan Stacking Rotations */
+.edition-vengeance .v-card-fan-row.cards-1 .v-fan-card {
+  transform: rotate(0deg);
+}
+
+.edition-vengeance .v-card-fan-row.cards-2 .v-fan-card:nth-child(1) {
+  transform: rotate(-3.5deg);
+}
+.edition-vengeance .v-card-fan-row.cards-2 .v-fan-card:nth-child(2) {
+  transform: rotate(3.5deg);
+}
+
+.edition-vengeance .v-card-fan-row.cards-3 .v-fan-card:nth-child(1) {
+  transform: rotate(-6deg);
+}
+.edition-vengeance .v-card-fan-row.cards-3 .v-fan-card:nth-child(2) {
+  transform: rotate(0deg);
+}
+.edition-vengeance .v-card-fan-row.cards-3 .v-fan-card:nth-child(3) {
+  transform: rotate(6deg);
+}
+
+.edition-vengeance .v-card-fan-row.cards-4 .v-fan-card:nth-child(1) {
+  transform: rotate(-7deg);
+}
+.edition-vengeance .v-card-fan-row.cards-4 .v-fan-card:nth-child(2) {
+  transform: rotate(-2.5deg);
+}
+.edition-vengeance .v-card-fan-row.cards-4 .v-fan-card:nth-child(3) {
+  transform: rotate(2.5deg);
+}
+.edition-vengeance .v-card-fan-row.cards-4 .v-fan-card:nth-child(4) {
+  transform: rotate(7deg);
+}
+
+.edition-vengeance .v-card-fan-row.cards-5 .v-fan-card:nth-child(1) {
+  transform: rotate(-8deg);
+}
+.edition-vengeance .v-card-fan-row.cards-5 .v-fan-card:nth-child(2) {
+  transform: rotate(-4deg);
+}
+.edition-vengeance .v-card-fan-row.cards-5 .v-fan-card:nth-child(3) {
+  transform: rotate(0deg);
+}
+.edition-vengeance .v-card-fan-row.cards-5 .v-fan-card:nth-child(4) {
+  transform: rotate(4deg);
+}
+.edition-vengeance .v-card-fan-row.cards-5 .v-fan-card:nth-child(5) {
+  transform: rotate(8deg);
+}
+
+.edition-vengeance .v-fan-card .picker-card-art {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 7px !important;
+  overflow: hidden !important;
+  display: block !important;
+}
+
+.edition-vengeance .v-fan-card .picker-card-art img {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  opacity: 0 !important;
+}
+
+.edition-vengeance .v-fan-card .picker-card-art.is-ready img {
+  opacity: 1 !important;
+}
+
+.edition-vengeance .v-fan-card .picker-card-art.is-ready .picker-card-placeholder {
+  visibility: hidden !important;
+}
+
+.edition-vengeance .v-fan-card .picker-card-placeholder {
+  position: absolute !important;
+  inset: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  padding: 4px !important;
+  background: #f8edc7 !important;
+  color: #132d67 !important;
+}
+
+.edition-vengeance .v-fan-card .picker-card-placeholder small {
+  font-size: 6px !important;
+  letter-spacing: 0.04em !important;
+}
+
+.edition-vengeance .v-fan-card .picker-card-placeholder b {
+  font-size: 16px !important;
+  line-height: 1.1 !important;
+}
+
+.edition-vengeance .v-fan-card:hover:not(:disabled):not(.chosen) {
+  transform: translateY(-8px) scale(1.06) rotate(0deg) !important;
+  box-shadow: 2px 6px 0 #132d67 !important;
+  z-index: 10 !important;
+}
+
+.edition-vengeance .v-fan-card:active:not(:disabled):not(.chosen) {
+  transform: translateY(-4px) scale(1.03) rotate(0deg) !important;
+  box-shadow: 1px 3px 0 #132d67 !important;
+  z-index: 10 !important;
+}
+
+.edition-vengeance .v-fan-card.chosen {
+  border: 2.5px solid #e83239 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3.5px #f7c244, 3px 6px 0 #132d67 !important;
+  transform: translateY(-16px) scale(1.1) rotate(0deg) !important;
+  z-index: 20 !important;
+}
+
+.edition-vengeance .v-chosen-badge {
+  position: absolute !important;
+  bottom: -9px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  background: #e83239 !important;
+  color: #fffdf5 !important;
+  font-size: 7.5px !important;
+  font-weight: 1000 !important;
+  letter-spacing: 0.06em !important;
+  padding: 1.5px 5px !important;
+  border-radius: 4px !important;
+  border: 1px solid #132d67 !important;
+  box-shadow: 1px 1px 0 #132d67 !important;
+  white-space: nowrap !important;
+  z-index: 25 !important;
+  pointer-events: none !important;
+}
+
+.edition-vengeance .v-fan-card.ineligible,
+.edition-vengeance .v-fan-card:disabled {
+  opacity: 0.35 !important;
+  filter: grayscale(0.65) !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Floating Confirmation Button */
+.edition-vengeance .v-floating-confirm {
+  position: absolute !important;
+  bottom: max(16px, env(safe-area-inset-bottom, 0px)) !important;
+  left: 16px !important;
+  right: 16px !important;
+  z-index: 40 !important;
+  pointer-events: auto !important;
+  animation: floatUp 0.16s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+@keyframes floatUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.edition-vengeance .v-confirm-btn {
+  width: 100% !important;
+  min-height: 50px !important;
+  border: 2px solid #132d67 !important;
+  border-radius: 12px !important;
+  font-size: 14px !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.2px !important;
+  cursor: pointer !important;
+  transition: transform 0.1s ease, box-shadow 0.1s ease !important;
+  box-shadow: 3px 4px 0 #132d67 !important;
+}
+
+.edition-vengeance .v-confirm-btn.steal,
+.edition-vengeance .v-confirm-btn.discard,
+.edition-vengeance .v-confirm-btn.modifier {
+  background: #e83239 !important;
+  color: #fffdf5 !important;
+}
+
+.edition-vengeance .v-confirm-btn.swap,
+.edition-vengeance .v-confirm-btn.forced {
+  background: #f7c244 !important;
+  color: #132d67 !important;
+}
+
+.edition-vengeance .v-confirm-btn:hover {
+  filter: brightness(1.05) !important;
+}
+
+.edition-vengeance .v-confirm-btn:active {
+  transform: translate(1px, 2px) !important;
+  box-shadow: 1px 1px 0 #132d67 !important;
 }
 
 /* Room Dialog & Menu Dialog (Centered Floating Modal) */
