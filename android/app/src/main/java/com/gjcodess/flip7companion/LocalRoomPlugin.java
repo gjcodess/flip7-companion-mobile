@@ -168,7 +168,12 @@ public class LocalRoomPlugin extends Plugin {
     @PluginMethod
     public void revoke(PluginCall call) {
         String seatId = call.getString("seatId", "");
-        for (Map.Entry<String, String> entry : seatsBySecret.entrySet()) if (entry.getValue().equals(seatId)) seatsBySecret.remove(entry.getKey());
+        for (Map.Entry<String, String> entry : seatsBySecret.entrySet()) {
+            if (entry.getValue().equals(seatId)) seatsBySecret.remove(entry.getKey());
+        }
+        for (Map.Entry<String, JoinRequest> entry : requests.entrySet()) {
+            if (seatId.equals(entry.getValue().seatId)) requests.remove(entry.getKey());
+        }
         signalChange();
         call.resolve();
     }

@@ -91,7 +91,28 @@ export async function approveLocalJoin(request: JoinRequest) {
 }
 
 export async function denyLocalJoin(requestId: string) { await plugin.deny({ requestId }); await refreshLocalRoomRequests() }
-export async function revokeLocalSeat(seatId: string) { await plugin.revoke({ seatId }); await refreshLocalRoomRequests() }
+export async function revokeLocalSeat(seatId: string) {
+  const activeSession = session
+  const currentRoom = activeSession ? getLibrary().rooms.find(item => item.id === activeSession.roomId) : null
+  await plugin.revoke({ seatId })
+  if (currentRoom) {
+    const inPending = currentRoom.pendingPlayers?.some(p => p.id === seatId)
+    const inRosterBeforeStart = !currentRoom.state && currentRoom.roster.some(p => p.id === seatId)
+    if (inRosterBeforeStart || inPending) {
+      updateLibrary(current => ({
+        ...current,
+        rooms: current.rooms.map(item => item.id !== currentRoom.id ? item : {
+          ...item,
+          roster: inRosterBeforeStart ? item.roster.filter(p => p.id !== seatId) : item.roster,
+          pendingPlayers: item.pendingPlayers?.filter(p => p.id !== seatId),
+          updatedAt: Date.now(),
+        })
+      }))
+    }
+    await syncLocalRoom(getLibrary())
+  }
+  await refreshLocalRoomRequests()
+}
 
 export function checkedGuestAction(state: BankerState, seatId: string, raw: unknown): BankerAction {
   if (!raw || typeof raw !== 'object') throw new Error('Invalid action.')

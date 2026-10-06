@@ -117,7 +117,11 @@ export function GuestRoomScreen({ inviteUrl }: { inviteUrl: string }) {
             forgetJoinedRoom(url)
             setCredential(null)
             setViewPlayerId('')
-            setNotice('The host took back control of your seat. Ask to join again if you want to play.')
+            setNotice(
+              next.room?.state
+                ? 'The host disconnected your device. Your seat is now controlled on the host phone.'
+                : 'You were removed from the table by the host.'
+            )
           } else if (credential?.secret && next.room) {
             try { saveJoinedRoom({ url, room: next.room, seatId: credential.seatId, secret: credential.secret, savedAt: Date.now() }) }
             catch { setNotice('Live play works, but this device could not save a history copy.') }
@@ -284,7 +288,7 @@ export function GuestRoomScreen({ inviteUrl }: { inviteUrl: string }) {
       {!connected && <div className="floating-offline-chip" role="status"><WifiOff size={12} /> Showing saved copy · Reconnecting</div>}
       <section className="match-strip"><div><span>ROUND</span><b>{String(state!.roundNumber).padStart(2, '0')}</b></div><div className="target"><span>FIRST TO</span><b>{state!.targetScore}</b></div><div><span>VIEWING</span><b>{selectedPlayer?.name ?? '—'}</b></div></section>
       <div className="banker-turn-callout" role="status"><span>CURRENT TURN</span><b>{state!.players.find(player => player.id === currentTurnId)?.name ?? (state!.phase === 'results' ? 'Match complete' : 'Round complete')}</b></div>
-      {joiningNextRound && <div className="local-next-round-banner"><LoaderCircle size={16} /> {state!.phase === 'results' ? 'This match ended before your first turn. Ask the host to invite you to the next match.' : 'You are approved. Your table joins at the next round.'}</div>}
+      {joiningNextRound && <div className="local-next-round-banner"><LoaderCircle size={16} className="spin" /> {state!.phase === 'results' ? 'This match ended before your first turn. Ask the host to invite you to the next match.' : 'You are approved. Your table joins at the next round.'}</div>}
       <section className="banker-player-strip" aria-label="Player tables">{state!.players.map(player => <button type="button" key={player.id} aria-label={`${player.name}${player.id === ownSeatId ? ', your table' : ''}`} className={'banker-player-tab opponent' + (player.id === displayedId ? ' selected' : '') + (player.id === currentTurnId ? ' turn' : '') + ' ' + statusClass(player)} aria-current={player.id === currentTurnId ? 'step' : undefined} onClick={() => { setViewPlayerId(player.id); setSelectedCardIndex(null); setOrganized(false) }}><PlayerAvatar player={player} className="mini-avatar" /><span className="opponent-copy"><b>{player.name}</b><span>{tabSummary(player)}</span></span><strong><small>Total pts:</small> <b>{player.totalScore}</b></strong></button>)}</section>
       {selectedPlayer && state!.phase === 'round' && <>
         <GameTable table={entries.map(item => item.entry.card)} tableCardIds={entries.map(item => item.entry.instanceId)} isVoidedCard={index => !!entries[index]?.entry.voided} score={derived?.score ?? 0} flipSevenBonus={derived?.flipSevenBonus ?? 0} busted={selectedPlayer.round.status === 'busted'} frozen={selectedPlayer.round.status === 'frozen'} submitting={busy} interactionLocked={!canCorrect || pickerOpen || selectedCardIndex !== null} canEditCards={canCorrect} canAddCards={canRecord} confirmedAt={selectedPlayer.round.status === 'active' ? null : 'banker'} isStaying={selectedPlayer.round.status === 'stayed'} isOrganized={organized} playerName={selectedPlayer.name} isHost={false} onOrganize={() => setOrganized(current => !current)} onOpenPicker={() => { setEditingIndex(null); setPickerOpen(true) }} onSelectCard={index => { if (!canCorrect) return; if (entries[index].entry.card.kind === 'action') { setNotice('Ask the host to correct an action card.'); return } setSelectedCardIndex(entries[index].index) }} />

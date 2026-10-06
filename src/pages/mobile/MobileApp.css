@@ -1713,14 +1713,6 @@
   opacity: 1;
   background: rgba(0, 0, 0, 0.08);
 }
-  margin: 15px 0 !important;
-  background: #e5eed1;
-  padding: 12px;
-  font-size: 12px;
-  color: #446228;
-  border-radius: 10px;
-  line-height: 1.6;
-}
 
 .room-detail-hero {
   padding: 23px 19px;
