@@ -641,8 +641,8 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
   const selectedScore = selected ? vengeanceScore(selected) : 0
   const isSelectedTurn = selected?.id === turnPlayerId
   const interactionLocked = pickerOpen || Boolean(pending) || roundSummaryOpen || Boolean(saveError)
-  const numberCount = selected?.entries.filter((e) => e.card.kind === 'number').length ?? 0
-  const hasZero = Boolean(selected?.entries.some((e) => e.card.id === 'v-number-zero'))
+  const numberCount = selected?.entries.filter((e) => !e.voided && e.card.kind === 'number').length ?? 0
+  const hasZero = Boolean(selected?.entries.some((e) => !e.voided && e.card.id === 'v-number-zero'))
   const canStay =
     state.phase === 'turn' &&
     isSelectedTurn &&
@@ -754,7 +754,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
         <GameTable
           table={tableCards}
           tableCardIds={tableCardIds}
-          isVoidedCard={() => false}
+          isVoidedCard={(index) => Boolean(displayedEntries[index]?.voided)}
           score={selectedScore}
           flipSevenBonus={selected?.status === 'flip-seven' ? 15 : 0}
           busted={selected?.status === 'busted'}
@@ -853,7 +853,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
             >
               <div className="picker-heading">
                 <div>
-                  <span>FACE-UP CARD</span>
+                  <span>{displayedEntries[selectedCardIndex].voided ? 'DISCARDED CARD' : 'FACE-UP CARD'}</span>
                   <h2>{displayedEntries[selectedCardIndex].card.label}</h2>
                 </div>
                 <button
@@ -874,11 +874,13 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                 <CardArtwork card={displayedEntries[selectedCardIndex].card} />
               </motion.div>
               <p>
-                {displayedEntries[selectedCardIndex].card.kind === 'number'
-                  ? `Counts toward ${selected?.name}'s round total.`
-                  : displayedEntries[selectedCardIndex].card.kind === 'modifier'
-                    ? `Modifier penalty applied to ${selected?.name}'s round total.`
-                    : `Action ability card.`}
+                {displayedEntries[selectedCardIndex].voided
+                  ? `This card was discarded by Unlucky 7.`
+                  : displayedEntries[selectedCardIndex].card.kind === 'number'
+                    ? `Counts toward ${selected?.name}'s round total.`
+                    : displayedEntries[selectedCardIndex].card.kind === 'modifier'
+                      ? `Modifier penalty applied to ${selected?.name}'s round total.`
+                      : `Action ability card.`}
               </p>
               <button
                 className="secondary-action"

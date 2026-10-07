@@ -32,7 +32,7 @@ export function buildTvSnapshot(room: Room): TvSnapshot {
       players: state ? state.players.map(player => ({ id: player.id, name: player.name, color: player.color, avatar: player.avatar,
         total: player.totalScore, roundScore: vengeanceScore(player), status: player.status,
         isTurn: state.phase !== 'results' && player.id === (state.forced[0]?.targetId ?? state.turnPlayerId),
-        cards: player.entries.map(entry => ({ image: entry.card.image ?? '', label: entry.card.label, voided: player.status === 'busted' })) }))
+        cards: player.entries.map(entry => ({ image: entry.card.image ?? '', label: entry.card.label, voided: player.status === 'busted' || Boolean(entry.voided) })) }))
         : room.roster.map(player => ({ id: player.id, name: player.name, color: player.color, avatar: player.avatar, total: 0, roundScore: 0, status: 'ready', isTurn: false, cards: [] })) }
   }
   const state = room.state

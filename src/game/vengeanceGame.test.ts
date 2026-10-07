@@ -43,10 +43,14 @@ describe('Vengeance rules', () => {
     expect(next.players.slice(0, 2).map(item => item.status)).toEqual(['busted', 'busted'])
   })
 
-  it('Unlucky 7 discards prior cards before a matching seven can bust', () => {
+  it('Unlucky 7 discards prior cards by marking them voided before a matching seven can bust', () => {
     let state = round([player('a', ['v-number-7', 'v-modifier-minus-2']), player('b', []), player('c', [])])
     state = vengeanceReducer(state, { type: 'record', cardId: 'v-number-unlucky-7' })
-    expect(state.players[0].entries.map(item => item.card.id)).toEqual(['v-number-unlucky-7'])
+    expect(state.players[0].entries.map(item => item.card.id)).toEqual(['v-number-7', 'v-modifier-minus-2', 'v-number-unlucky-7'])
+    expect(state.players[0].entries[0].voided).toBe(true)
+    expect(state.players[0].entries[1].voided).toBe(true)
+    expect(state.players[0].entries[2].voided).toBeFalsy()
+    expect(vengeanceScore(state.players[0])).toBe(7)
     expect(state.players[0].status).toBe('active')
     state = vengeanceReducer({ ...state, phase: 'turn', turnPlayerId: 'a' }, { type: 'record', cardId: 'v-number-7' })
     expect(state.players[0].status).toBe('busted')

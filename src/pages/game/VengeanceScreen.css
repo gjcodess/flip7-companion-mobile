@@ -242,6 +242,11 @@
   box-shadow: 3px 4px 0 rgba(19, 45, 103, 0.65) !important;
 }
 
+.edition-vengeance .table-card.card-voided {
+  opacity: 0.38 !important;
+  filter: grayscale(0.85) !important;
+}
+
 /* Bottom Controls */
 .edition-vengeance .actions {
   background: #fff7da !important;

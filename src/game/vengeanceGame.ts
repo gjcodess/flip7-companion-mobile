@@ -2,7 +2,7 @@ import type { PlayerAvatarId } from '../lib/player-avatars'
 import { vengeanceCard, type VengeanceCard } from './vengeanceCards'
 
 export type VStatus = 'active' | 'stayed' | 'busted' | 'flip-seven'
-export type VEntry = { instanceId: string; card: VengeanceCard }
+export type VEntry = { instanceId: string; card: VengeanceCard; voided?: boolean }
 export type VPlayer = { id: string; name: string; color: string; avatar?: PlayerAvatarId; totalScore: number; status: VStatus; entries: VEntry[] }
 export type VPending = { card: VengeanceCard; sourceId: string; actorId?: string; targetId?: string; selectedCards: string[] }
 export type VForced = { kind: 'one' | 'four'; targetId: string; remaining: number; deferred: VPending[] }
@@ -64,15 +64,15 @@ export function vengeanceInitialState(roster: Pick<VPlayer, 'id' | 'name' | 'col
   }
 }
 
-const isNumber = (entry: VEntry) => entry.card.kind === 'number'
+const isNumber = (entry: VEntry) => !entry.voided && entry.card.kind === 'number'
 const value = (entry: VEntry) => entry.card.value ?? entry.card.points ?? 0
 export function vengeanceScore(player: VPlayer) {
   if (player.status === 'busted') return 0
   const numbers = player.entries.filter(isNumber)
-  if (player.entries.some(entry => entry.card.id === 'v-number-zero') && numbers.length < 7) return 0
+  if (player.entries.some(entry => !entry.voided && entry.card.id === 'v-number-zero') && numbers.length < 7) return 0
   const total = numbers.reduce((sum, entry) => sum + value(entry), 0)
-  const halved = player.entries.some(entry => entry.card.id === 'v-modifier-half') ? Math.floor(total / 2) : total
-  const penalties = player.entries.filter(entry => entry.card.kind === 'modifier').reduce((sum, entry) => sum + (entry.card.points ?? 0), 0)
+  const halved = player.entries.some(entry => !entry.voided && entry.card.id === 'v-modifier-half') ? Math.floor(total / 2) : total
+  const penalties = player.entries.filter(entry => !entry.voided && entry.card.kind === 'modifier').reduce((sum, entry) => sum + (entry.card.points ?? 0), 0)
   return Math.max(0, halved + penalties) + (player.status === 'flip-seven' || numbers.length >= 7 ? 15 : 0)
 }
 
@@ -89,7 +89,9 @@ function evaluate(player: VPlayer): VPlayer {
 }
 
 function receive(player: VPlayer, entry: VEntry): VPlayer {
-  const entries = entry.card.id === 'v-number-unlucky-7' ? player.entries.filter(item => item.card.kind === 'action') : player.entries
+  const entries = entry.card.id === 'v-number-unlucky-7'
+    ? player.entries.map(item => item.card.kind !== 'action' ? { ...item, voided: true } : item)
+    : player.entries
   return evaluate({ ...player, entries: [...entries, entry] })
 }
 
@@ -107,7 +109,7 @@ function nextActive(state: VState, afterId: string) {
   }
   return null
 }
-function faceUp(state: VState) { return state.players.flatMap(player => player.status === 'busted' ? [] : player.entries.map(entry => ({ player, entry }))) }
+function faceUp(state: VState) { return state.players.flatMap(player => player.status === 'busted' ? [] : player.entries.filter(entry => !entry.voided).map(entry => ({ player, entry }))) }
 export function vengeanceEligibleActors(state: VState, pending = state.pending): VPlayer[] {
   if (!pending) return []
   const faces = faceUp(state)
@@ -130,7 +132,7 @@ function applyNumber(state: VState, targetId: string, card: VengeanceCard): VSta
     if (player.id !== targetId) return player
     let entries = player.entries
     if (card.id === 'v-number-unlucky-7') {
-      entries = entries.filter(entry => entry.card.kind === 'action')
+      entries = entries.map(entry => entry.card.kind !== 'action' ? { ...entry, voided: true } : entry)
       message += '; previous number and modifier cards were discarded'
     }
     return evaluate({ ...player, entries: [...entries, { instanceId: `v-card-${state.nextId}`, card }] })
@@ -240,7 +242,7 @@ export function vengeanceReducer(state: VState, action: VAction): VState {
   if (action.type === 'stay') {
     if (state.phase !== 'turn' || state.pending || state.forced.length || !state.turnPlayerId) return state
     const player = state.players.find(item => item.id === state.turnPlayerId)
-    if (!player || player.status !== 'active' || player.entries.some(entry => entry.card.id === 'v-number-zero')) return state
+    if (!player || player.status !== 'active' || player.entries.some(entry => !entry.voided && entry.card.id === 'v-number-zero')) return state
     const numberCount = player.entries.filter(isNumber).length
     if (numberCount < 2) return state
     const players = state.players.map(item => item.id === player.id ? { ...item, status: 'stayed' as const } : item)
