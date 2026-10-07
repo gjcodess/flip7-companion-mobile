@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { bankerInitialState, type BankerPlayer } from '../game/bankerGame'
 import { pickerCards } from '../game/cards'
 import { demoInitialState } from '../game/demoGame'
+import { vengeanceCard } from '../game/vengeanceCards'
+import { vengeanceInitialState } from '../game/vengeanceGame'
 import type { Room } from './room-store'
 import { buildTvSnapshot } from './tv-snapshot'
 
@@ -49,5 +51,17 @@ describe('TV scoreboard snapshot', () => {
     expect(snapshot.phase).toBe('results')
     expect(snapshot.winnerIds).toEqual(['a'])
     expect(snapshot.players[0].isTurn).toBe(false)
+  })
+
+  it('sends Vengeance card artwork and stayed hands to the TV', () => {
+    const initial = vengeanceInitialState(roster)
+    const vengeanceState = { ...initial, phase: 'turn' as const, players: initial.players.map((person, index) => index === 0 ? {
+      ...person, status: 'stayed' as const, entries: [{ instanceId: 'v-1', card: vengeanceCard('v-number-lucky-13')! }],
+    } : person) }
+    const snapshot = buildTvSnapshot({ ...room, edition: 'vengeance', vengeanceState })
+    expect(snapshot.edition).toBe('vengeance')
+    expect(snapshot.players[0].status).toBe('stayed')
+    expect(snapshot.players[0].roundScore).toBe(13)
+    expect(snapshot.players[0].cards[0].image).toBe('/cards/vengeance/v-number-lucky-13.webp')
   })
 })

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { bankerReducer } from '../game/bankerGame'
 import { pickerCards } from '../game/cards'
+import { vengeanceReducer } from '../game/vengeanceGame'
 
 const card = (id: string) => pickerCards.find(c => c.id === id)!
 let saved = new Map<string, string>()
@@ -32,6 +33,45 @@ async function completedFixture(tied = false) {
 }
 
 describe('offline room saves', () => {
+  it('migrates a version 2 Classic save without mixing Vengeance players or rooms', async () => {
+    const { store, room, roster } = await fixture()
+    const old = JSON.parse(saved.get(store.STORAGE_KEY)!)
+    old.version = 2
+    delete old.vengeancePlayers
+    delete old.vengeanceArchivedStats
+    delete old.settings.edition
+    delete old.settings.vengeanceTargetScore
+    delete old.rooms[0].edition
+    delete old.rooms[0].vengeanceState
+    const migrated = store.decodeLibrary(JSON.stringify(old))
+    expect(migrated.version).toBe(3)
+    expect(migrated.rooms[0].edition).toBe('classic')
+    expect(migrated.rooms[0].state?.players.map(player => player.id)).toEqual(roster.map(player => player.id))
+    expect(migrated.vengeancePlayers).toEqual([])
+    expect(migrated.rooms[0].id).toBe(room.id)
+  })
+
+  it('saves a pending Vengeance action and keeps edition profiles separate after reload', async () => {
+    const store = await import('./room-store')
+    const classic = [store.newProfile('Ari', 0), store.newProfile('Bea', 1)]
+    store.createRoom('Classic', 200, classic)
+    const vengeance = [store.newProfile('Ari', 0), store.newProfile('Bea', 1)]
+    const room = store.createRoom('Vengeance', 200, vengeance, 'vengeance', vengeance[1].id)
+    store.startRoom(room)
+    let state = store.getLibrary().rooms.find(item => item.id === room.id)!.vengeanceState!
+    expect(state.dealerId).toBe(vengeance[1].id)
+    state = vengeanceReducer(state, { type: 'record', cardId: 'v-action-flip-four' })
+    expect(state.pending?.card.id).toBe('v-action-flip-four')
+    store.saveVengeanceState(room.id, state)
+    vi.resetModules()
+    const reloaded = await import('./room-store')
+    const restored = reloaded.getLibrary().rooms.find(item => item.id === room.id)!.vengeanceState!
+    expect(restored.pending?.card.id).toBe('v-action-flip-four')
+    expect(restored.turnPlayerId).toBe(state.turnPlayerId)
+    expect(reloaded.getLibrary().players).toHaveLength(2)
+    expect(reloaded.getLibrary().vengeancePlayers).toHaveLength(2)
+    expect(reloaded.getLibrary().rooms.filter(item => item.edition === 'vengeance')).toHaveLength(1)
+  })
   it('updates a saved player by ID across rooms, active games, and round history', async () => {
     const { store, roster, room } = await completedFixture()
     const active = store.createRoom('Another table', 200, roster)
@@ -172,7 +212,7 @@ describe('offline room saves', () => {
     const { store } = await fixture()
     const previous = saved.get(store.STORAGE_KEY)!
     expect(() => store.restoreBackup('{')).toThrow()
-    expect(() => store.restoreBackup(previous.replace('"version":2', '"version":3'))).toThrow('Unsupported')
+    expect(() => store.restoreBackup(previous.replace('"version":3', '"version":4'))).toThrow('Unsupported')
     expect(saved.get(store.STORAGE_KEY)).toBe(previous)
     vi.resetModules()
     saved.set(store.STORAGE_KEY, '{broken')
@@ -265,7 +305,7 @@ describe('offline room saves', () => {
     saved.set(store.STORAGE_KEY, legacy)
     vi.resetModules()
     const migrated = await import('./room-store')
-    expect(migrated.getLibrary().version).toBe(2)
+    expect(migrated.getLibrary().version).toBe(3)
     expect(migrated.getLibrary().archivedStats).toEqual({})
     expect(migrated.getLibrary().rooms[0].state?.history).toHaveLength(1)
     expect(migrated.playerStats(roster[0].id)).toEqual({ matches: 1, wins: 1, best: 50 })

@@ -10,6 +10,7 @@ import { LegalScreen } from './pages/legal/LegalScreen'
 import { ContactScreen } from './pages/contact/ContactScreen'
 import { DemoScreen } from './pages/game/DemoScreen'
 import { BankerScreen } from './pages/game/BankerScreen'
+import { VengeanceScreen } from './pages/game/VengeanceScreen'
 import { MobileApp } from './pages/mobile/MobileApp'
 import { useLibrary } from './lib/room-store'
 import { preloadCardArtwork } from './game/cardArtworkPreloader'
@@ -96,6 +97,7 @@ export default function App() {
   const isContactPage = location.pathname === '/contact'
   const isDemoPage = location.pathname === '/demo'
   const isBankerPage = location.pathname === '/banker'
+  const isVengeancePage = location.pathname === '/vengeance'
   const isPlayPage = location.pathname === '/play'
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -114,7 +116,9 @@ export default function App() {
   else if (isPrivacyPage) content = <LegalScreen kind="privacy" />
   else if (isTermsPage) content = <LegalScreen kind="terms" />
   else if (isContactPage) content = <ContactScreen />
-  else if (isDemoPage) content = <DemoScreen />
+  else if (isDemoPage) content = library.settings.edition === 'vengeance' ? <VengeanceScreen key="vengeance-demo" demo /> : <DemoScreen />
+  else if (location.pathname === '/vengeance-demo') content = <VengeanceScreen key="vengeance-demo" demo />
+  else if (isVengeancePage) { const roomId = new URLSearchParams(location.search).get('room'); content = roomId ? <VengeanceScreen key={roomId} roomId={roomId} /> : <MobileApp key="new" page="new" /> }
   else if (isBankerPage) { const roomId = new URLSearchParams(location.search).get('room'); content = roomId ? <BankerScreen key={roomId} roomId={roomId} /> : <MobileApp key="new" page="new" /> }
   else if (isPlayPage || location.pathname === '/new') content = <MobileApp key="new" page="new" />
   else if (location.pathname === '/players') content = <MobileApp key="players" page="players" />

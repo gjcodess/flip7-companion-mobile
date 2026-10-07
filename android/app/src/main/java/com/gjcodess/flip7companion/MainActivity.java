@@ -10,6 +10,7 @@ public class MainActivity extends BridgeActivity {
         SplashScreen.installSplashScreen(this);
         registerPlugin(TvServerPlugin.class);
         registerPlugin(ResultsImagePlugin.class);
+        registerPlugin(NativeBackupPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

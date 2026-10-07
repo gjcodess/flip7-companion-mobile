@@ -1,11 +1,15 @@
 {
   "name": "flip7-companion",
   "private": true,
-  "version": "1.4.0",
+  "version": "2.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && node scripts/prune-staging-assets.mjs",
+    "build:release": "npm run check:vengeance-artwork && npm run build",
+    "check:vengeance-artwork": "node scripts/check-vengeance-artwork.mjs",
+    "generate:card-thumbnails": "node scripts/generate-card-thumbnails.mjs",
+    "import:vengeance-cards": "node scripts/import-vengeance-cards.mjs",
     "preview": "vite preview",
     "test": "vitest run"
   },
@@ -23,6 +27,7 @@
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.1.1",
+    "sharp": "^0.35.5",
     "typescript": "5.9.3",
     "vite": "8.3.0",
     "vitest": "^5.0.2"

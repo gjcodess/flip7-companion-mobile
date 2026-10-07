@@ -1,0 +1,234 @@
+.edition-fab {
+    position: fixed;
+    z-index: 21;
+    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    display: grid;
+    place-items: center;
+    width: 80px;
+    height: 80px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    touch-action: none;
+    cursor: grab;
+    user-select: none;
+    filter: drop-shadow(2px 4px 2px #132d6740);
+    transition: left 240ms cubic-bezier(.22, .61, .36, 1), transform 160ms ease;
+}
+
+.edition-fab.is-dragging {
+    cursor: grabbing;
+    transition: none;
+}
+
+.edition-fab img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.edition-fab:active {
+    transform: scale(.96);
+}
+
+.edition-vengeance {
+    --ink: #132d67;
+    --cream: #fff8e7;
+    --yellow: #f7c244;
+    --pink: #e83239;
+    --cyan: #bcdbf8;
+    background: #efe1ca;
+}
+
+.edition-vengeance .room-app-main {
+    background-color: #ebd7be;
+    background-image:
+        radial-gradient(circle, #132d6724 1px, transparent 1.1px),
+        radial-gradient(ellipse at center, #fff7da 0%, #f4e2c8 56%, #ebd7be 100%);
+    background-size: 12px 12px, 100% 115dvh;
+    background-repeat: repeat, repeat-y;
+}
+
+.edition-vengeance .room-page-art--vengeance .room-home-promo {
+    top: calc(5px + env(safe-area-inset-top, 0px));
+    right: -10px;
+    width: clamp(170px, 46vw, 220px);
+    max-height: none;
+    opacity: .18;
+    transform: rotate(-1deg);
+}
+
+.edition-vengeance .room-welcome em {
+    color: #e83239;
+}
+
+.edition-vengeance .room-history-banner {
+    background: #132d67;
+    color: #fff9e7;
+}
+
+.edition-vengeance .library-room-card.featured {
+    box-shadow: 3px 4px 0 #132d67, 5px 6px 0 #e83239;
+}
+
+.edition-vengeance .room-bottom-nav {
+    box-shadow: 0 5px 0 #b52b35;
+}
+
+.edition-vengeance .room-page-heading .room-kicker,
+.edition-vengeance .room-section-heading .room-section-note {
+    color: #b92530;
+}
+
+/* Vengeance Promo Carousel */
+.edition-vengeance .room-promo-slide-0 {
+    background: #f7c244;
+}
+
+.edition-vengeance .room-promo-slide-1 {
+    background: #bcdbf8;
+}
+
+.edition-vengeance .room-promo-slide-2 {
+    background: #fadb9e;
+}
+
+.edition-vengeance .room-promo-slide-3 {
+    background: #fae69e;
+}
+
+.edition-vengeance .room-promo-slide-3 h2 {
+    font-size: 20px;
+}
+
+.edition-vengeance .room-promo-arrow,
+.edition-vengeance .room-promo-dots button {
+    background: #fff8e7;
+    border: 1.5px solid #132d67;
+    color: #132d67;
+    box-shadow: 2px 2px 0 #132d67;
+}
+
+.edition-vengeance .room-promo-dots button.active {
+    background: #e83239;
+}
+
+/* Home Stats in Vengeance */
+.edition-vengeance .room-home-stats {
+    background: transparent;
+    color: #5c6370;
+}
+
+.edition-vengeance .room-home-stats b {
+    color: #132d67;
+}
+
+.edition-vengeance .room-home-stats>span+span {
+    border-left: 1px solid #dcd1ba;
+}
+
+.vengeance-history-cards {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    padding: 10px;
+}
+
+.vengeance-history-cards span {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 44px;
+    height: 62px;
+    padding: 3px;
+    overflow: hidden;
+    border: 1px solid #132d67;
+    border-radius: 5px;
+    background: #fff3d6;
+    font-size: 9px;
+    font-weight: 850;
+    text-align: center;
+}
+
+.vengeance-history-cards span img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.vengeance-history-events {
+    margin: 0 12px 15px;
+    padding-left: 22px;
+    color: #4a5876;
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+.vengeance-faq-logo {
+    max-width: 135px;
+    max-height: 100px;
+    object-fit: contain;
+}
+
+.vengeance-dealer-select {
+    width: 100%;
+    min-height: 45px;
+    padding: 8px;
+    border: 2px solid #132d67;
+    border-radius: 8px;
+    color: #132d67;
+    background: #fffdf4;
+    font-weight: 850;
+}
+
+
+.edition-vengeance .guide-card {
+    border-top: 5px solid #e83239;
+}
+
+.vengeance-rule-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(57px, 1fr));
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.vengeance-rule-cards figure {
+    min-width: 0;
+    margin: 0;
+    text-align: center;
+}
+
+.vengeance-rule-cards img {
+    display: block;
+    width: min(100%, 75px);
+    height: 105px;
+    margin: auto;
+    object-fit: contain;
+}
+
+.vengeance-rule-cards figcaption {
+    margin-top: 3px;
+    color: #132d67;
+    font-size: 10px;
+    font-weight: 850;
+}
+
+
+@media (max-width: 360px) {
+    .edition-fab {
+        width: 70px;
+        height: 70px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .edition-fab {
+        transition: none;
+    }
+}
