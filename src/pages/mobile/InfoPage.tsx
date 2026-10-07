@@ -1,10 +1,12 @@
 import { useEffect, type ReactNode } from 'react'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { useAppNavigation } from '../../lib/navigation'
+import { useKeyboardVisible } from '../../lib/use-keyboard-visible'
 import { BottomNav } from './MobileApp'
 import { PageArtwork } from './PageArtwork'
 import { AppFooter } from './AppFooter'
-import { useLibrary } from '../../lib/room-store'
+import { EditionFab } from './EditionFab'
+import { updateLibrary, useLibrary, type Edition } from '../../lib/room-store'
 
 export type InfoPageKind = 'rules' | 'faq' | 'privacy' | 'terms' | 'contact'
 
@@ -14,7 +16,16 @@ export function AssetCardFan({ cards }: { cards: string[] }) {
 
 export function InfoPage({ kind, kicker, title, accent, intro, children }: { kind: InfoPageKind; kicker: string; title: string; accent: string; intro: string; children: ReactNode }) {
   const navigate = useAppNavigation()
-  const edition = useLibrary().settings.edition
+  const library = useLibrary()
+  const keyboardVisible = useKeyboardVisible()
+  const edition = library.settings.edition
+  const nextEdition: Edition = edition === 'classic' ? 'vengeance' : 'classic'
+  const switchEdition = (next: Edition) => {
+    if (next === library.settings.edition) return
+    try { updateLibrary(current => ({ ...current, settings: { ...current.settings, edition: next } })) }
+    catch (cause) { window.alert((cause as Error).message) }
+  }
+
   useEffect(() => {
     document.documentElement.classList.add('room-app-active')
     return () => document.documentElement.classList.remove('room-app-active')
@@ -27,7 +38,7 @@ export function InfoPage({ kind, kicker, title, accent, intro, children }: { kin
     <nav className="info-page-tabs" aria-label="Help and app information">{links.map(link => <a key={link.kind} href={link.href} aria-current={kind === link.kind ? 'page' : undefined}>{link.label}</a>)}</nav>
     {children}
     <AppFooter />
-  </main><BottomNav page="settings" /></div>
+  </main>{!keyboardVisible && <EditionFab target={nextEdition} onSwitch={() => switchEdition(nextEdition)} />}<BottomNav page="settings" /></div>
 }
 
 export function InfoPlayCallout({ practice = false }: { practice?: boolean }) {

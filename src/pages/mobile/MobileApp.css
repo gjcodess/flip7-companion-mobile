@@ -253,7 +253,7 @@
 .room-rules-art img:last-child { top: 16px; left: 31px; transform: rotate(9deg); }
 .room-promo-soon-label { display: inline-block; margin-top: 16px; padding: 8px 10px; border: 1.5px solid var(--ink); border-radius: 8px; background: #fff9df; box-shadow: 2px 2px 0 var(--ink); font-size: 9px; font-weight: 900; letter-spacing: .06em; }
 .room-vengeance-art { position: relative; z-index: 1; display: flex; flex: 0 0 120px; width: 120px; flex-direction: column; align-items: center; justify-content: center; gap: 5px; margin-left: 5px; }
-.room-vengeance-base-logo { display: block; width: 108px; max-height: 42px; object-fit: contain; filter: drop-shadow(1px 2px 0 #132d6740); }
+.room-vengeance-base-logo { display: block; width: 108px; max-height: 42px; object-fit: contain; filter: drop-shadow(1px 2px 0 #132d6740); transform: rotate(-5deg); }
 .room-vengeance-logo { display: block; width: 128px; max-height: 100px; object-fit: contain; filter: drop-shadow(2px 3px 0 #132d6740); }
 .room-promo-controls { display: flex; align-items: center; justify-content: center; gap: 15px; min-height: 32px; margin-top: 11px; }
 .room-promo-arrow { width: 30px; height: 30px; display: grid; place-items: center; padding: 0; border: 1.5px solid var(--ink); border-radius: 9px; background: #fff9df; color: var(--ink); box-shadow: 2px 2px 0 var(--ink); cursor: pointer; }
