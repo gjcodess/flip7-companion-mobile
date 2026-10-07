@@ -20,7 +20,7 @@ export function AppFooter() {
       </p>
     </div>
     <div className="room-footer-copy">
-      <span className="room-footer-version">v2.1</span>
+      <span className="room-footer-version">v2.2</span>
       <span className="room-footer-sep">·</span>
       <small>© 2026 Flip7 Companion</small>
     </div>
