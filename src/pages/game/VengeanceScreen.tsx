@@ -467,7 +467,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
   const [pickerOpen, setPickerOpen] = useState(false)
   const pickerSessionRef = useRef(0)
   const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(null)
-  const [organized, setOrganized] = useState(false)
+  const [organizedPlayers, setOrganizedPlayers] = useState<Record<string, boolean>>({})
   const [showMenu, setShowMenu] = useState(false)
   const [playersOpen, setPlayersOpen] = useState(false)
   const [rulesOpen, setRulesOpen] = useState(false)
@@ -624,19 +624,29 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
     )
   }
 
+  // Reset player organize states on new round
+  useEffect(() => {
+    setOrganizedPlayers({})
+  }, [state?.roundNumber])
+
   const selectCardForTable = (card: VengeanceCard) => {
     setPickerOpen(false)
     setSelectedCardIndex(null)
-    setOrganized(false)
     dispatch({ type: 'record', cardId: card.id })
   }
 
+  const isCurrentOrganized = Boolean(selected && organizedPlayers[selected.id])
+
   const toggleOrganize = () => {
-    setOrganized(!organized)
+    if (!selected) return
+    setOrganizedPlayers((prev) => ({
+      ...prev,
+      [selected.id]: !prev[selected.id],
+    }))
   }
 
   const displayedEntries = selected
-    ? organized
+    ? isCurrentOrganized
       ? organizeVengeanceEntries(selected.entries)
       : selected.entries
     : []
@@ -743,7 +753,6 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
               aria-current={player.id === turnPlayerId ? 'step' : undefined}
               onClick={() => {
                 dispatch({ type: 'select-player', playerId: player.id })
-                setOrganized(false)
                 setSelectedCardIndex(null)
               }}
             >
@@ -773,7 +782,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
           canAddCards={canRecord && isSelectedTurn}
           confirmedAt={selected?.status === 'stayed' ? 'stayed' : selected?.status === 'frozen' ? 'frozen' : null}
           isStaying={selected?.status === 'stayed' || selected?.status === 'frozen'}
-          isOrganized={organized}
+          isOrganized={isCurrentOrganized}
           playerName={selected?.name ?? 'Player'}
           isHost={false}
           onOrganize={toggleOrganize}
@@ -1053,6 +1062,9 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                             .map((player) => {
                               const isActorHand = player.id === pending.actorId
                               const cannotStealHere = isSteal && isActorHand
+                              const numberCardCount = player.entries.filter(
+                                (e) => !e.voided && e.card.kind === 'number'
+                              ).length
                               const cardRows = Array.from(
                                 { length: Math.ceil(player.entries.length / 5) },
                                 (_, rowIndex) => player.entries.slice(rowIndex * 5, rowIndex * 5 + 5)
@@ -1079,7 +1091,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                                         <span className="v-role-badge frozen">Frozen</span>
                                       )}
                                       <span className="v-role-badge count">
-                                        {player.entries.length} card{player.entries.length === 1 ? '' : 's'}
+                                        {numberCardCount} card{numberCardCount === 1 ? '' : 's'}
                                       </span>
                                     </div>
                                   </div>
