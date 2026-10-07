@@ -687,6 +687,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
         message: demo ? 'Temporary hands and scores will be cleared.' : 'Retry saving the last action before leaving.',
         shouldBlock: () => true,
         confirmLabel: 'Leave table',
+        edition: 'vengeance',
       }
       : null
   )
@@ -797,6 +798,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
           />
           {newGamePromptOpen && (
             <ConfirmationModal
+              edition="vengeance"
               eyebrow="NEW VENGEANCE GAME"
               title="Start a new game?"
               message={demo ? "Start a fresh practice match with these players." : "Your completed match stays saved in room history."}

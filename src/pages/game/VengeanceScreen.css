@@ -29,8 +29,13 @@
 
 /* Topbar */
 .edition-vengeance .banker-topbar {
-  background: #fff7da;
-  border-bottom: 2px solid #132d67;
+  background: transparent !important;
+  border-bottom: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  min-height: calc(70px + env(safe-area-inset-top, 0px)) !important;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 12px !important;
 }
 
 .edition-vengeance .banker-topbar > .brand-button.menu-button {
@@ -60,8 +65,8 @@
   gap: 12px !important;
   background: transparent !important;
   border-bottom: 0 !important;
-  min-height: 62px !important;
-  padding: 0 16px !important;
+  min-height: calc(70px + env(safe-area-inset-top, 0px)) !important;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 12px !important;
 }
 
 .edition-vengeance .demo-topbar .brand-button {
@@ -1732,3 +1737,35 @@
   color: #ad1824;
   border: 1px solid #f18c94;
 }
+
+/* Vengeance Confirmation Modals (Red primary action and eyebrow instead of classic pink) */
+:is(.edition-vengeance, body:has(.edition-vengeance)) .confirmation-modal .picker-heading span,
+.confirmation-modal--vengeance .picker-heading span,
+.confirmation-modal.edition-vengeance .picker-heading span {
+  color: #e83239 !important;
+}
+
+:is(.edition-vengeance, body:has(.edition-vengeance)) .confirmation-modal .home-prompt-actions :is(.primary-wide, .confirmation-confirm),
+.confirmation-modal--vengeance .home-prompt-actions :is(.primary-wide, .confirmation-confirm),
+.confirmation-modal.edition-vengeance .home-prompt-actions :is(.primary-wide, .confirmation-confirm) {
+  background: #e83239 !important;
+  color: #fffdf5 !important;
+  border: 1.5px solid #132d67 !important;
+  box-shadow: 2px 3px 0 #132d67 !important;
+}
+
+:is(.edition-vengeance, body:has(.edition-vengeance)) .confirmation-modal .home-prompt-actions :is(.primary-wide, .confirmation-confirm):hover,
+.confirmation-modal--vengeance .home-prompt-actions :is(.primary-wide, .confirmation-confirm):hover,
+.confirmation-modal.edition-vengeance .home-prompt-actions :is(.primary-wide, .confirmation-confirm):hover {
+  background: #d41f26 !important;
+  color: #fffdf5 !important;
+}
+
+:is(.edition-vengeance, body:has(.edition-vengeance)) .confirmation-modal .home-prompt-actions :is(.primary-wide, .confirmation-confirm):active,
+.confirmation-modal--vengeance .home-prompt-actions :is(.primary-wide, .confirmation-confirm):active,
+.confirmation-modal.edition-vengeance .home-prompt-actions :is(.primary-wide, .confirmation-confirm):active {
+  background: #cc252b !important;
+  transform: translate(1px, 1px);
+  box-shadow: 1px 2px 0 #132d67 !important;
+}
+

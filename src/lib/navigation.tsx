@@ -19,6 +19,8 @@ export type NavigationGuard = {
   message: string
   confirmLabel?: string
   cancelLabel?: string
+  edition?: 'classic' | 'vengeance'
+  variant?: 'floating'
   onConfirm?: (to: string) => void | Promise<void>
 }
 
@@ -183,6 +185,8 @@ export function AppNavigationProvider({ navigate, onPopState, children }: { navi
       message={pendingNavigation.guard.message}
       confirmLabel={pendingNavigation.guard.confirmLabel}
       cancelLabel={pendingNavigation.guard.cancelLabel}
+      edition={pendingNavigation.guard.edition}
+      variant={pendingNavigation.guard.variant}
       confirming={confirming}
       onCancel={() => { if (!confirming) setPendingNavigation(null) }}
       onConfirm={() => void confirmNavigation()}
