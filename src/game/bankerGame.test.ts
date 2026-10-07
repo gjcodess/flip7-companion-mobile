@@ -84,27 +84,33 @@ describe('Banker turn progression', () => {
     expect(state.turnPlayerId).toBe('banker-player-2')
   })
 
-  it('freezes the target and skips it in the next normal turn', () => {
+  it('freezes the target, voids the Freeze card, and skips it in the next normal turn', () => {
     const state = action(start(), 'banker-player-1', 'banker-player-2', freeze())
     expect(state.players[1].round.status).toBe('frozen')
+    expect(state.players[1].round.entries[0].voided).toBe(true)
     expect(state.turnPlayerId).toBe('banker-player-3')
   })
 
-  it('routes Flip Three cards one by one, then resumes after the source player', () => {
+  it('routes Flip Three cards one by one, then voids Flip Three and resumes after the source player', () => {
     let state = action(start(), 'banker-player-1', 'banker-player-2', flipThree())
     expect(state.forcedTurns[0]).toMatchObject({ targetPlayerId: 'banker-player-2', remaining: 3, resumeAfterPlayerId: 'banker-player-1' })
+    expect(state.players[1].round.entries[0].voided).toBe(false)
     state = record(state, 'banker-player-2', numberCard(1))
+    expect(state.players[1].round.entries[0].voided).toBe(false)
     state = record(state, 'banker-player-2', numberCard(2))
+    expect(state.players[1].round.entries[0].voided).toBe(false)
     state = record(state, 'banker-player-2', numberCard(3))
     expect(state.forcedTurns).toHaveLength(0)
+    expect(state.players[1].round.entries[0].voided).toBe(true)
     expect(state.turnPlayerId).toBe('banker-player-2')
   })
 
-  it('stops a Flip Three sequence when the target busts', () => {
+  it('stops a Flip Three sequence and voids Flip Three when the target busts', () => {
     let state = action(start(), 'banker-player-1', 'banker-player-2', flipThree())
     state = record(state, 'banker-player-2', numberCard(4))
     state = record(state, 'banker-player-2', numberCard(4))
     expect(state.players[1].round.status).toBe('busted')
+    expect(state.players[1].round.entries[0].voided).toBe(true)
     expect(state.forcedTurns).toHaveLength(0)
     expect(state.turnPlayerId).toBe('banker-player-3')
   })

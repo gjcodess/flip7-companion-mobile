@@ -1,11 +1,11 @@
 /* Vengeance Mode In-Game Styles & Theme Palette Alignment */
 
 /* Shell & Marquees */
-.banker-shell.edition-vengeance {
+:is(.banker-shell, .demo-shell).edition-vengeance {
   background-color: #ebd7be;
 }
 
-.banker-shell.edition-vengeance .game-shell {
+:is(.banker-shell, .demo-shell).edition-vengeance .game-shell {
   background-color: #ebd7be;
   background-image:
     radial-gradient(circle, #132d6724 1px, transparent 1.1px),
@@ -51,6 +51,62 @@
   width: min(44vw, 210px);
   max-height: 52px;
   object-fit: contain;
+}
+
+.edition-vengeance .demo-topbar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  background: transparent !important;
+  border-bottom: 0 !important;
+  min-height: 62px !important;
+  padding: 0 16px !important;
+}
+
+.edition-vengeance .demo-topbar .brand-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  cursor: pointer !important;
+}
+
+.edition-vengeance .demo-topbar .brand-logo {
+  max-height: 44px !important;
+  width: auto !important;
+  max-width: 190px !important;
+  object-fit: contain !important;
+  mix-blend-mode: normal !important;
+  filter: none !important;
+}
+
+.edition-vengeance .demo-topbar .exit-button {
+  margin-left: auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  min-height: 44px !important;
+  padding: 0 15px !important;
+  border-radius: 12px !important;
+  border: 1.5px solid #132d67 !important;
+  background: #132d67 !important;
+  color: #fff7da !important;
+  box-shadow: 2px 3px 0 #f7c244 !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+  cursor: pointer !important;
+  line-height: 1 !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease !important;
+}
+
+.edition-vengeance .demo-topbar .exit-button:hover,
+.edition-vengeance .demo-topbar .exit-button:active {
+  background: #1a3c87 !important;
+  transform: translate(1px, 2px) !important;
+  box-shadow: 1px 1px 0 #f7c244 !important;
 }
 
 /* Match Strip */
@@ -158,13 +214,19 @@
   background-color: #eef6d9 !important;
 }
 
+.edition-vengeance .banker-player-tab.frozen {
+  border-color: #2b7897 !important;
+  box-shadow: 2px 3px 0 #2b7897 !important;
+  background-color: #dff3f8 !important;
+}
+
 .edition-vengeance .banker-player-tab.flip-seven {
   border-color: #d68700 !important;
   box-shadow: 2px 3px 0 #d68700 !important;
   background-color: #fff1c4 !important;
 }
 
-.edition-vengeance .banker-player-tab.selected:is(.busted, .stayed, .flip-seven) {
+.edition-vengeance .banker-player-tab.selected:is(.busted, .stayed, .frozen, .flip-seven) {
   background-color: #f7c244 !important;
 }
 
@@ -215,6 +277,10 @@
 
 .edition-vengeance .flip-seven-bonus.stay-badge {
   background: #4d8a45 !important;
+}
+
+.edition-vengeance .flip-seven-bonus.freeze-badge {
+  background: #2b7897 !important;
 }
 
 .edition-vengeance .add-card-card {
@@ -274,6 +340,42 @@
   color: #132d67 !important;
 }
 
+.edition-vengeance .card-action-buttons {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px !important;
+  margin-top: 14px !important;
+}
+
+.edition-vengeance .card-action-buttons button {
+  min-height: 48px !important;
+  border: 1.5px solid #132d67 !important;
+  border-radius: 11px !important;
+  box-shadow: 2px 3px 0 #132d67 !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.edition-vengeance .card-action-buttons button:active {
+  transform: translate(2px, 3px) !important;
+  box-shadow: none !important;
+}
+
+.edition-vengeance .card-action-buttons .secondary-action {
+  background: #57b8d7 !important;
+  color: #132d67 !important;
+}
+
+.edition-vengeance .card-action-buttons .danger-action {
+  background: #e93234 !important;
+  color: #fffdf5 !important;
+}
+
 .edition-vengeance .stay-action {
   background: #f7c244 !important;
   color: #132d67 !important;
@@ -286,6 +388,11 @@
 
 .edition-vengeance .stay-action.bust-state {
   background: #c32950 !important;
+  color: #fffdf5 !important;
+}
+
+.edition-vengeance .stay-action.frozen-state {
+  background: #2b7897 !important;
   color: #fffdf5 !important;
 }
 
@@ -386,7 +493,7 @@
 .edition-vengeance .card-focus-art {
   border: 2px solid #132d67 !important;
   border-radius: 12px !important;
-  box-shadow: 4px 5px 0 #132d67 !important;
+  box-shadow: 3px 4px 0 #132d67 !important;
   background: #fff !important;
 }
 
@@ -678,6 +785,16 @@
   border: 1px solid #4d8a45 !important;
 }
 
+.edition-vengeance .v-frozen-tag {
+  font-size: 9px !important;
+  font-weight: 900 !important;
+  background: #dff3f8 !important;
+  color: #2b7897 !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  border: 1px solid #2b7897 !important;
+}
+
 /* Swap Stepper Indicator inside Header */
 .edition-vengeance .v-swap-stepper {
   display: flex !important;
@@ -811,6 +928,12 @@
   background: #eef6d9 !important;
   color: #4d8a45 !important;
   border-color: #4d8a45 !important;
+}
+
+.edition-vengeance .v-role-badge.frozen {
+  background: #dff3f8 !important;
+  color: #2b7897 !important;
+  border-color: #2b7897 !important;
 }
 
 .edition-vengeance .v-role-badge.count {
@@ -1169,46 +1292,443 @@
 
 .v-demo-names {
   display: grid !important;
-  gap: 9px !important;
-  margin: 16px 0 !important;
+  gap: 8px !important;
+  margin: 12px 0 16px !important;
 }
 
-.v-demo-names label {
-  display: grid !important;
-  gap: 5px !important;
+.v-demo-player-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 8px 10px !important;
+  border: 1.5px solid #132d67 !important;
+  border-radius: 9px !important;
+  background: #fffdf5 !important;
+  box-shadow: 2px 2px 0 #132d67 !important;
+}
+
+.v-demo-player-num {
   font-size: 11px !important;
   font-weight: 900 !important;
-  color: #132d67 !important;
+  color: #7b8599 !important;
+  flex: 0 0 18px !important;
 }
 
-.v-demo-names input,
-.v-demo-add input {
-  width: 100% !important;
-  padding: 11px !important;
-  border: 2px solid #132d67 !important;
-  border-radius: 8px !important;
-  background: #fffdf5 !important;
+.v-demo-player-row input {
+  flex: 1 !important;
+  min-width: 0 !important;
+  padding: 8px 10px !important;
+  border: 1.5px solid #132d67 !important;
+  border-radius: 6px !important;
+  background: #ffffff !important;
   color: #132d67 !important;
-  font-size: 14px !important;
-  font-weight: 700 !important;
+  font-size: 13px !important;
+  font-weight: 750 !important;
+}
+
+.v-demo-player-row input:focus,
+.v-demo-add input:focus {
+  border-color: #e83239 !important;
+  box-shadow: 2px 2px 0 #e83239 !important;
+  outline: none !important;
+}
+
+.v-demo-player-remove {
+  display: grid !important;
+  place-items: center !important;
+  width: 28px !important;
+  height: 28px !important;
+  flex: 0 0 28px !important;
+  border: 1.5px solid #132d67 !important;
+  border-radius: 6px !important;
+  background: #ffe5e5 !important;
+  color: #b92530 !important;
+  cursor: pointer !important;
+}
+
+.v-demo-player-remove:hover {
+  background: #e83239 !important;
+  color: #ffffff !important;
 }
 
 .v-demo-add {
   display: flex !important;
   gap: 8px !important;
-  margin-bottom: 15px !important;
+  margin-bottom: 12px !important;
 }
 
 .v-demo-add input {
   flex: 1 !important;
+  padding: 10px 12px !important;
+  border: 1.5px solid #132d67 !important;
+  border-radius: 8px !important;
+  background: #fffdf5 !important;
+  color: #132d67 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
 }
 
 .v-demo-add button {
   padding: 0 16px !important;
-  border: 2px solid #132d67 !important;
+  border: 1.5px solid #132d67 !important;
   border-radius: 8px !important;
   background: #f7c244 !important;
   color: #132d67 !important;
   font-weight: 900 !important;
   cursor: pointer !important;
+  box-shadow: 2px 2px 0 #132d67 !important;
+}
+
+.v-demo-bottom-row {
+  display: flex !important;
+  align-items: stretch !important;
+  gap: 10px !important;
+  margin-top: 18px !important;
+}
+
+.v-demo-target-wrap {
+  flex: 0 0 auto !important;
+}
+
+.v-demo-target-wrap .room-score-dropdown {
+  height: 100% !important;
+}
+
+.v-demo-target-wrap .room-score-trigger {
+  height: 100% !important;
+  min-height: 48px !important;
+  padding: 10px 14px !important;
+  border: 2px solid #132d67 !important;
+  border-radius: 12px !important;
+  background: #fffdf5 !important;
+  box-shadow: 3px 4px 0 #132d67 !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+  color: #132d67 !important;
+}
+
+.v-demo-target-wrap .room-score-options {
+  bottom: calc(100% + 8px) !important;
+  top: auto !important;
+  left: 0 !important;
+  right: auto !important;
+}
+
+.v-demo-start-btn {
+  flex: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-height: 48px !important;
+  padding: 12px 18px !important;
+  border: 2px solid #132d67 !important;
+  border-radius: 12px !important;
+  background: #e83239 !important;
+  color: #ffffff !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+  cursor: pointer !important;
+  box-shadow: 3px 4px 0 #132d67 !important;
+  transition: transform 0.1s ease, box-shadow 0.1s ease !important;
+}
+
+.v-demo-start-btn:active:not(:disabled) {
+  transform: translate(2px, 2px) !important;
+  box-shadow: 1px 2px 0 #132d67 !important;
+}
+
+.v-demo-start-btn:disabled {
+  opacity: 0.55 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Brutal Mode Badges & In-Game Styles */
+.v-busted-tag {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 850;
+  text-transform: uppercase;
+  color: #fff;
+  background: #c71b28;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: .05em;
+  margin-left: 6px;
+}
+
+.edition-vengeance .match-strip .v-match-strip-brutal {
+  position: absolute;
+  top: -11px;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px 3px 7px;
+  border: 2px solid #132d67;
+  border-radius: 999px;
+  background: #e83239;
+  box-shadow: 2px 2px 0 #132d67;
+  color: #fff;
+  z-index: 2;
+}
+
+.edition-vengeance .match-strip .v-match-strip-brutal em {
+  font-style: normal;
+  font-size: 9px;
+  font-weight: 1000;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  color: #fff;
+}
+
+/* Brutal Flip 7 Decision Dialog (inherits .floating-confirmation-modal shell) */
+.v-flipseven-backdrop {
+  z-index: 1000;
+}
+
+.v-flipseven-dialog {
+  width: min(100%, 460px) !important;
+  max-width: 460px !important;
+  background: #fff7da !important;
+  border: 2px solid #132d67 !important;
+  border-radius: 22px !important;
+  box-shadow: 5px 6px 0 #132d67 !important;
+  color: #132d67 !important;
+  padding: 22px 18px 24px !important;
+}
+
+.v-flipseven-dialog .picker-heading {
+  background: transparent !important;
+  border-bottom: 1px dashed #b9ad88 !important;
+  padding-bottom: 12px !important;
+  margin-bottom: 14px !important;
+}
+
+.v-flipseven-eyebrow {
+  color: #e83239 !important;
+  font-size: 9px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+.v-flipseven-dialog .picker-heading h2 {
+  color: #132d67 !important;
+  font-size: 24px !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.8px !important;
+  line-height: 1.15 !important;
+  margin: 2px 0 0 !important;
+}
+
+.v-flipseven-dialog .v-flipseven-intro {
+  color: #53607a !important;
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+  margin: 0 0 14px !important;
+}
+
+.v-flipseven-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.v-flipseven-choice-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  background: #fffdf5;
+  border: 1.5px solid #132d67;
+  border-radius: 12px;
+  box-shadow: 2px 2px 0 #132d67;
+  color: #132d67;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.12s ease;
+}
+
+.v-flipseven-choice-card:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 #132d67;
+}
+
+.v-flipseven-choice-card.selected {
+  background: #f7c244;
+}
+
+.v-flipseven-choice-card.penalize.selected {
+  background: #e83239;
+}
+
+.v-flipseven-radio {
+  position: relative;
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  border: 2px solid #132d67;
+  border-radius: 50%;
+  background: #fffdf5;
+}
+
+.v-flipseven-choice-card.selected .v-flipseven-radio::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: #132d67;
+}
+
+.v-flipseven-choice-info strong {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 900;
+  color: #132d67;
+  margin-bottom: 3px;
+  line-height: 1.3;
+}
+
+.v-flipseven-choice-info small {
+  display: block;
+  font-size: 11.5px;
+  color: #53607a;
+  line-height: 1.45;
+}
+
+.v-flipseven-choice-card.selected .v-flipseven-choice-info small {
+  color: #2b3952;
+}
+
+.v-flipseven-choice-card.penalize.selected .v-flipseven-choice-info strong,
+.v-flipseven-choice-card.penalize.selected .v-flipseven-choice-info small {
+  color: #fff;
+}
+
+.v-flipseven-rival-section {
+  margin-bottom: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed #b9ad88;
+}
+
+.v-flipseven-rival-label {
+  display: block;
+  font-size: 9px;
+  font-weight: 950;
+  text-transform: uppercase;
+  color: #e83239;
+  letter-spacing: 0.12em;
+  margin-bottom: 8px;
+}
+
+.v-flipseven-rival-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 160px;
+  overflow-y: auto;
+  padding: 2px 3px 4px 2px;
+}
+
+.v-flipseven-rival-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1.5px solid #132d67;
+  background: #fffdf5;
+  box-shadow: 2px 2px 0 #132d67;
+  cursor: pointer;
+  text-align: left;
+}
+
+.v-flipseven-rival-btn.selected {
+  background: #f7c244;
+}
+
+.v-flipseven-rival-btn .v-rival-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.v-flipseven-rival-btn .v-rival-info b {
+  font-size: 12px;
+  color: #132d67;
+}
+
+.v-flipseven-rival-btn .v-rival-info small {
+  font-size: 10px;
+  color: #53607a;
+}
+
+.v-rival-check {
+  color: #132d67;
+}
+
+.v-flipseven-actions {
+  margin-top: 4px;
+}
+
+.v-flipseven-dialog .v-flipseven-confirm-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: 100%;
+  min-height: 48px;
+  border: 2px solid #132d67 !important;
+  border-radius: 11px !important;
+  background: #e83239 !important;
+  color: #fff !important;
+  box-shadow: 2px 3px 0 #132d67 !important;
+  font-size: 11.5px !important;
+  font-weight: 900 !important;
+  cursor: pointer;
+}
+
+.v-flipseven-dialog .v-flipseven-confirm-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 2px 0 #132d67 !important;
+}
+
+.v-flipseven-dialog .v-flipseven-confirm-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Round Summary badges for Flip 7 choice */
+.v-flipseven-summary-badge {
+  display: inline-block;
+  font-size: 8px;
+  font-weight: 900;
+  border-radius: 4px;
+  padding: 2px 5px;
+  text-transform: uppercase;
+  margin-left: 0;
+  letter-spacing: .04em;
+}
+
+.v-flipseven-summary-badge.bonus {
+  background: #d4f2db;
+  color: #1b682e;
+  border: 1px solid #7cc98c;
+}
+
+.v-flipseven-summary-badge.penalty {
+  background: #ffe3e5;
+  color: #ad1824;
+  border: 1px solid #f18c94;
 }

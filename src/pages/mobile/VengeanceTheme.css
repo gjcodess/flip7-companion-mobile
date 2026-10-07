@@ -14,7 +14,13 @@
     cursor: grab;
     user-select: none;
     filter: drop-shadow(2px 4px 2px #132d6740);
-    transition: left 240ms cubic-bezier(.22, .61, .36, 1), transform 160ms ease;
+    transition: left 240ms cubic-bezier(.22, .61, .36, 1), transform 220ms cubic-bezier(.22, .61, .36, 1), opacity 220ms ease;
+}
+
+.edition-fab.is-scroll-hidden {
+    transform: translateY(calc(100% + 120px + env(safe-area-inset-bottom, 0px)));
+    opacity: 0;
+    pointer-events: none;
 }
 
 .edition-fab.is-dragging {
@@ -29,7 +35,7 @@
     object-fit: contain;
 }
 
-.edition-fab:active {
+.edition-fab:active:not(.is-scroll-hidden) {
     transform: scale(.96);
 }
 
@@ -65,12 +71,16 @@
 }
 
 .edition-vengeance .room-history-banner {
-    background: #132d67;
-    color: #fff9e7;
+    background: #f7c244;
+    color: #132d67;
+}
+
+.edition-vengeance .room-history-banner > svg:last-child {
+    color: #e83239;
 }
 
 .edition-vengeance .library-room-card.featured {
-    box-shadow: 3px 4px 0 #132d67, 5px 6px 0 #e83239;
+    box-shadow: 3px 4px 0 #132d67, 5px 6px 0 #f7c244;
 }
 
 .edition-vengeance .room-bottom-nav {
@@ -80,6 +90,14 @@
 .edition-vengeance .room-page-heading .room-kicker,
 .edition-vengeance .room-section-heading .room-section-note {
     color: #b92530;
+}
+
+.edition-vengeance :is(input:not([type="file"]), textarea):focus,
+.edition-vengeance .room-form-panel :is(.room-field input, .room-add-player input):focus,
+.edition-vengeance .room-dialog .room-field input:focus,
+.edition-vengeance .room-search:focus-within {
+    border-color: #e83239 !important;
+    box-shadow: 3px 3px 0 #e83239 !important;
 }
 
 /* Vengeance Promo Carousel */
@@ -186,39 +204,83 @@
     font-weight: 850;
 }
 
-
-.edition-vengeance .guide-card {
-    border-top: 5px solid #e83239;
+/* Info and Guide Cards in Vengeance */
+.edition-vengeance .info-heading h1 {
+    text-shadow: 1px 1px 0 #f7c244;
 }
 
-.vengeance-rule-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(57px, 1fr));
-    gap: 8px;
-    margin-top: 15px;
+.edition-vengeance .info-art-banner.yellow {
+    background-color: #f7c244;
 }
 
-.vengeance-rule-cards figure {
-    min-width: 0;
-    margin: 0;
-    text-align: center;
+.edition-vengeance .guide-number,
+.edition-vengeance .info-section-top > b {
+    background: #f7c244;
 }
 
-.vengeance-rule-cards img {
-    display: block;
-    width: min(100%, 75px);
-    height: 105px;
-    margin: auto;
+.edition-vengeance .guide-step-list li::before {
+    background: #f7c244;
+}
+
+.edition-vengeance .guide-score-step > b {
+    background: #f7c244;
+}
+
+.edition-vengeance .guide-score-value {
+    background: #f7c244;
+    box-shadow: 2px 2px 0 #e83239;
+}
+
+.edition-vengeance .guide-card-scoring {
+    box-shadow: 4px 5px 0 #e83239;
+}
+
+.edition-vengeance .guide-card-scoring .eyebrow,
+.edition-vengeance .guide-score-plus,
+.edition-vengeance .guide-score-equals,
+.edition-vengeance .guide-score-inline-bonus {
+    color: #f7c244;
+}
+
+.edition-vengeance .guide-score-inline-bonus strong {
+    color: #f7c244;
+    text-shadow: 2px 2px 0 #e83239;
+}
+
+.edition-vengeance .guide-score-inline-bonus small {
+    color: #f7c244;
+}
+
+.edition-vengeance .guide-card-heading .eyebrow,
+.edition-vengeance .info-section-top .room-kicker {
+    color: #e83239;
+}
+
+.edition-vengeance .guide-callout-pink {
+    background: #fce1e6;
+    border-color: #e83239;
+    border-left-color: #e83239;
+}
+
+.edition-vengeance .info-heading h1 em {
+    color: #e83239;
+}
+
+.edition-vengeance .info-play-callout a {
+    background: #f7c244;
+}
+
+.edition-vengeance .info-category-chips button[aria-pressed=true] {
+    background: #f7c244;
+}
+
+.edition-vengeance .info-play-callout > img {
+    width: 115px;
+    height: 100px;
+    flex: 0 0 115px;
     object-fit: contain;
+    transform: rotate(-3deg);
 }
-
-.vengeance-rule-cards figcaption {
-    margin-top: 3px;
-    color: #132d67;
-    font-size: 10px;
-    font-weight: 850;
-}
-
 
 @media (max-width: 360px) {
     .edition-fab {

@@ -72,6 +72,28 @@ describe('offline room saves', () => {
     expect(reloaded.getLibrary().vengeancePlayers).toHaveLength(2)
     expect(reloaded.getLibrary().rooms.filter(item => item.edition === 'vengeance')).toHaveLength(1)
   })
+
+  it('saves and restores a Vengeance game with a frozen player without corruption', async () => {
+    const store = await import('./room-store')
+    const roster = [store.newProfile('P1', 0), store.newProfile('P2', 1), store.newProfile('P3', 2)]
+    const room = store.createRoom('Vengeance Game', 200, roster, 'vengeance')
+    store.startRoom(room)
+    let state = store.getLibrary().rooms.find(item => item.id === room.id)!.vengeanceState!
+    // P1 deals Just One More to P2
+    state = vengeanceReducer(state, { type: 'record', cardId: 'v-action-just-one-more' })
+    state = vengeanceReducer(state, { type: 'choose-actor', playerId: roster[1].id })
+    // P2 flips card 12 and freezes
+    state = vengeanceReducer(state, { type: 'record', cardId: 'v-number-12' })
+    expect(state.players[1].status).toBe('frozen')
+    store.saveVengeanceState(room.id, state)
+
+    vi.resetModules()
+    const reloaded = await import('./room-store')
+    expect(reloaded.getStorageError()).toBe('')
+    const restored = reloaded.getLibrary().rooms.find(item => item.id === room.id)!.vengeanceState!
+    expect(restored.players[1].status).toBe('frozen')
+    expect(restored.turnPlayerId).toBe(roster[2].id)
+  })
   it('updates a saved player by ID across rooms, active games, and round history', async () => {
     const { store, roster, room } = await completedFixture()
     const active = store.createRoom('Another table', 200, roster)
@@ -360,5 +382,36 @@ describe('offline room saves', () => {
     expect(() => store.restoreBackup(previous)).toThrow('could not restore')
     expect(store.getLibrary()).toBe(current)
     expect(saved.get(store.STORAGE_KEY)).toBe(previous)
+  })
+
+  it('supports Brutal Mode room creation, state initialization, and negative score serialization', async () => {
+    const { store, roster } = await fixture()
+    const brutalRoom = store.createRoom('Brutal Night', 200, roster, 'vengeance', undefined, 'brutal')
+    expect(brutalRoom.variant).toBe('brutal')
+
+    store.startRoom(brutalRoom)
+    const started = store.getLibrary().rooms.find(r => r.id === brutalRoom.id)!
+    expect(started.vengeanceState?.variant).toBe('brutal')
+
+    // Simulate round with negative score in history
+    const stateWithNegativeHistory = {
+      ...started.vengeanceState!,
+      history: [{
+        round: 1,
+        scores: { [roster[0].id]: -10, [roster[1].id]: 25 },
+        hands: {},
+        events: [],
+        variant: 'brutal' as const,
+        flipSevenChoice: undefined
+      }]
+    }
+    store.saveVengeanceState(brutalRoom.id, stateWithNegativeHistory)
+
+    // Verify backup decoding preserves negative scores and variant
+    const raw = JSON.stringify(store.getLibrary())
+    const decoded = store.decodeLibrary(raw)
+    const decodedRoom = decoded.rooms.find(r => r.id === brutalRoom.id)!
+    expect(decodedRoom.variant).toBe('brutal')
+    expect(decodedRoom.vengeanceState?.history[0].scores[roster[0].id]).toBe(-10)
   })
 })
