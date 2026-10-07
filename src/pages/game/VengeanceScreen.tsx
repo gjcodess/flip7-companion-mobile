@@ -597,6 +597,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
   const [pickerOpen, setPickerOpen] = useState(false)
   const pickerSessionRef = useRef(0)
   const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(null)
+  const [editingCardInstanceId, setEditingCardInstanceId] = useState<string | null>(null)
   const [organizedPlayers, setOrganizedPlayers] = useState<Record<string, boolean>>({})
   const [showMenu, setShowMenu] = useState(false)
   const [playersOpen, setPlayersOpen] = useState(false)
@@ -616,6 +617,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
   const openPicker = () => {
     pickerSessionRef.current += 1
     setSelectedCardIndex(null)
+    setEditingCardInstanceId(null)
     setPickerOpen(true)
   }
 
@@ -760,9 +762,20 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
   }
 
   const selectCardForTable = (card: VengeanceCard) => {
+    const editInstanceId = editingCardInstanceId
     setPickerOpen(false)
     setSelectedCardIndex(null)
-    dispatch({ type: 'record', cardId: card.id })
+    setEditingCardInstanceId(null)
+    if (editInstanceId && selected) {
+      dispatch({
+        type: 'replace-card',
+        playerId: selected.id,
+        instanceId: editInstanceId,
+        cardId: card.id,
+      })
+    } else {
+      dispatch({ type: 'record', cardId: card.id })
+    }
   }
 
   const isCurrentOrganized = Boolean(selected && organizedPlayers[selected.id])
@@ -985,7 +998,10 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
           >
             <VengeanceCardPickerPanel
               submitting={false}
-              onClose={() => setPickerOpen(false)}
+              onClose={() => {
+                setPickerOpen(false)
+                setEditingCardInstanceId(null)
+              }}
               onSelect={selectCardForTable}
             />
           </motion.div>
@@ -1011,12 +1027,12 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
             >
               <div className="picker-heading">
                 <div>
-                  <span>{displayedEntries[selectedCardIndex].voided ? 'DISCARDED CARD' : 'FACE-UP CARD'}</span>
+                  <span>{displayedEntries[selectedCardIndex].voided ? 'DISCARDED CARD' : 'MY CARD'}</span>
                   <h2>{displayedEntries[selectedCardIndex].card.label}</h2>
                 </div>
                 <button
                   className="close-button"
-                  aria-label="Close card focus"
+                  aria-label="Close card actions"
                   title="Close"
                   onClick={() => setSelectedCardIndex(null)}
                 >
@@ -1033,20 +1049,43 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
               </motion.div>
               <p>
                 {displayedEntries[selectedCardIndex].voided
-                  ? `This card was discarded.`
-                  : displayedEntries[selectedCardIndex].card.kind === 'number'
-                    ? `Counts toward ${selected?.name}'s round total.`
-                    : displayedEntries[selectedCardIndex].card.kind === 'modifier'
-                      ? `Modifier penalty applied to ${selected?.name}'s round total.`
-                      : `Action ability card.`}
+                  ? 'This card was discarded. Edit to correct a misclick or remove it from the table.'
+                  : 'Edit this card or remove it while your round is still active.'}
               </p>
-              <button
-                className="secondary-action"
-                style={{ width: '100%', minHeight: '44px' }}
-                onClick={() => setSelectedCardIndex(null)}
-              >
-                Done
-              </button>
+              <div className="card-action-buttons">
+                <button
+                  type="button"
+                  className="secondary-action"
+                  onClick={() => {
+                    const entry = displayedEntries[selectedCardIndex]
+                    if (entry) {
+                      setEditingCardInstanceId(entry.instanceId)
+                      setSelectedCardIndex(null)
+                      pickerSessionRef.current += 1
+                      setPickerOpen(true)
+                    }
+                  }}
+                >
+                  Edit card
+                </button>
+                <button
+                  type="button"
+                  className="danger-action"
+                  onClick={() => {
+                    const entry = displayedEntries[selectedCardIndex]
+                    if (entry && selected) {
+                      dispatch({
+                        type: 'remove-card',
+                        playerId: selected.id,
+                        instanceId: entry.instanceId,
+                      })
+                      setSelectedCardIndex(null)
+                    }
+                  }}
+                >
+                  Remove card
+                </button>
+              </div>
             </motion.section>
           </motion.div>
         )}

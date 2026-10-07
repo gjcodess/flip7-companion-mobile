@@ -40,6 +40,8 @@ export type VAction =
   | { type: 'undo' }
   | { type: 'redo' }
   | { type: 'cancel-pending' }
+  | { type: 'remove-card'; playerId: string; instanceId: string }
+  | { type: 'replace-card'; playerId: string; instanceId: string; cardId: string }
 
 export function vengeanceInitialState(roster: Pick<VPlayer, 'id' | 'name' | 'color' | 'avatar'>[], targetScore = 200, starterId = roster[0]?.id): VState {
   const first = roster.find(player => player.id === starterId) ?? roster[0]
@@ -78,7 +80,6 @@ export function vengeanceScore(player: VPlayer) {
 }
 
 function evaluate(player: VPlayer): VPlayer {
-  if (player.status === 'busted') return player
   const numbers = player.entries.filter(isNumber)
   const counts = new Map<number, number>()
   for (const entry of numbers) counts.set(value(entry), (counts.get(value(entry)) ?? 0) + 1)
@@ -86,6 +87,9 @@ function evaluate(player: VPlayer): VPlayer {
   const busted = [...counts].some(([number, count]) => count > (number === 13 && lucky ? 2 : 1))
   if (busted) return { ...player, status: 'busted' }
   if (numbers.length >= 7) return { ...player, status: 'flip-seven' }
+  if (player.status === 'busted' || player.status === 'flip-seven') {
+    return { ...player, status: 'active' }
+  }
   return player
 }
 
@@ -285,6 +289,34 @@ export function vengeanceReducer(state: VState, action: VAction): VState {
       past: [],
       future: []
     }
+  }
+  if (action.type === 'remove-card') {
+    const player = state.players.find(p => p.id === action.playerId)
+    if (!player) return state
+    const entryToRemove = player.entries.find(e => e.instanceId === action.instanceId)
+    if (!entryToRemove) return state
+    const nextEntries = player.entries.filter(e => e.instanceId !== action.instanceId)
+    const baseStatus = player.status === 'busted' || player.status === 'flip-seven' ? 'active' : player.status
+    const updatedPlayer = evaluate({ ...player, entries: nextEntries, status: baseStatus })
+    const players = state.players.map(p => p.id === action.playerId ? updatedPlayer : p)
+    const message = `${player.name} removed ${entryToRemove.card.label}`
+    return commit(state, addEvent({ ...state, players }, message))
+  }
+  if (action.type === 'replace-card') {
+    const player = state.players.find(p => p.id === action.playerId)
+    const newCard = vengeanceCard(action.cardId)
+    if (!player || !newCard) return state
+    const entryToReplace = player.entries.find(e => e.instanceId === action.instanceId)
+    if (!entryToReplace) return state
+    let nextEntries = player.entries.map(e => e.instanceId === action.instanceId ? { ...e, card: newCard } : e)
+    if (newCard.id === 'v-number-unlucky-7') {
+      nextEntries = nextEntries.map(entry => entry.instanceId === action.instanceId ? entry : (entry.card.kind !== 'action' ? { ...entry, voided: true } : entry))
+    }
+    const baseStatus = player.status === 'busted' || player.status === 'flip-seven' ? 'active' : player.status
+    const updatedPlayer = evaluate({ ...player, entries: nextEntries, status: baseStatus })
+    const players = state.players.map(p => p.id === action.playerId ? updatedPlayer : p)
+    const message = `${player.name} edited card to ${newCard.label}`
+    return commit(state, addEvent({ ...state, players }, message))
   }
   if (state.phase === 'settlement' || state.phase === 'results') return state
   if (action.type === 'stay') {

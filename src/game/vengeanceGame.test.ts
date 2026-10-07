@@ -388,6 +388,31 @@ describe('Vengeance rules', () => {
     // Neither counts towards b's score
     expect(vengeanceScore(state.players[1])).toBe(0)
   })
+
+  it('allows removing and replacing a card from player table, updating score and bust status', () => {
+    // Player 'a' had a duplicate 5 causing a bust
+    let state = round([player('a', ['v-number-5', 'v-number-5'], 'busted'), player('b', ['v-number-3'])])
+    expect(state.players[0].status).toBe('busted')
+
+    // Replace the duplicate 5 with a 6
+    state = vengeanceReducer(state, {
+      type: 'replace-card',
+      playerId: 'a',
+      instanceId: 'a-1',
+      cardId: 'v-number-6',
+    })
+    expect(state.players[0].status).toBe('active')
+    expect(vengeanceScore(state.players[0])).toBe(11)
+
+    // Remove the 6
+    state = vengeanceReducer(state, {
+      type: 'remove-card',
+      playerId: 'a',
+      instanceId: 'a-1',
+    })
+    expect(state.players[0].entries).toHaveLength(1)
+    expect(vengeanceScore(state.players[0])).toBe(5)
+  })
 })
 
 
