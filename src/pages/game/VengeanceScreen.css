@@ -158,13 +158,19 @@
   background-color: #eef6d9 !important;
 }
 
+.edition-vengeance .banker-player-tab.frozen {
+  border-color: #2b7897 !important;
+  box-shadow: 2px 3px 0 #2b7897 !important;
+  background-color: #dff3f8 !important;
+}
+
 .edition-vengeance .banker-player-tab.flip-seven {
   border-color: #d68700 !important;
   box-shadow: 2px 3px 0 #d68700 !important;
   background-color: #fff1c4 !important;
 }
 
-.edition-vengeance .banker-player-tab.selected:is(.busted, .stayed, .flip-seven) {
+.edition-vengeance .banker-player-tab.selected:is(.busted, .stayed, .frozen, .flip-seven) {
   background-color: #f7c244 !important;
 }
 
@@ -215,6 +221,10 @@
 
 .edition-vengeance .flip-seven-bonus.stay-badge {
   background: #4d8a45 !important;
+}
+
+.edition-vengeance .flip-seven-bonus.freeze-badge {
+  background: #2b7897 !important;
 }
 
 .edition-vengeance .add-card-card {
@@ -286,6 +296,11 @@
 
 .edition-vengeance .stay-action.bust-state {
   background: #c32950 !important;
+  color: #fffdf5 !important;
+}
+
+.edition-vengeance .stay-action.frozen-state {
+  background: #2b7897 !important;
   color: #fffdf5 !important;
 }
 
@@ -678,6 +693,16 @@
   border: 1px solid #4d8a45 !important;
 }
 
+.edition-vengeance .v-frozen-tag {
+  font-size: 9px !important;
+  font-weight: 900 !important;
+  background: #dff3f8 !important;
+  color: #2b7897 !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  border: 1px solid #2b7897 !important;
+}
+
 /* Swap Stepper Indicator inside Header */
 .edition-vengeance .v-swap-stepper {
   display: flex !important;
@@ -811,6 +836,12 @@
   background: #eef6d9 !important;
   color: #4d8a45 !important;
   border-color: #4d8a45 !important;
+}
+
+.edition-vengeance .v-role-badge.frozen {
+  background: #dff3f8 !important;
+  color: #2b7897 !important;
+  border-color: #2b7897 !important;
 }
 
 .edition-vengeance .v-role-badge.count {

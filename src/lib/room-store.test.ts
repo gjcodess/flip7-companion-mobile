@@ -72,6 +72,28 @@ describe('offline room saves', () => {
     expect(reloaded.getLibrary().vengeancePlayers).toHaveLength(2)
     expect(reloaded.getLibrary().rooms.filter(item => item.edition === 'vengeance')).toHaveLength(1)
   })
+
+  it('saves and restores a Vengeance game with a frozen player without corruption', async () => {
+    const store = await import('./room-store')
+    const roster = [store.newProfile('P1', 0), store.newProfile('P2', 1), store.newProfile('P3', 2)]
+    const room = store.createRoom('Vengeance Game', 200, roster, 'vengeance')
+    store.startRoom(room)
+    let state = store.getLibrary().rooms.find(item => item.id === room.id)!.vengeanceState!
+    // P1 deals Just One More to P2
+    state = vengeanceReducer(state, { type: 'record', cardId: 'v-action-just-one-more' })
+    state = vengeanceReducer(state, { type: 'choose-actor', playerId: roster[1].id })
+    // P2 flips card 12 and freezes
+    state = vengeanceReducer(state, { type: 'record', cardId: 'v-number-12' })
+    expect(state.players[1].status).toBe('frozen')
+    store.saveVengeanceState(room.id, state)
+
+    vi.resetModules()
+    const reloaded = await import('./room-store')
+    expect(reloaded.getStorageError()).toBe('')
+    const restored = reloaded.getLibrary().rooms.find(item => item.id === room.id)!.vengeanceState!
+    expect(restored.players[1].status).toBe('frozen')
+    expect(restored.turnPlayerId).toBe(roster[2].id)
+  })
   it('updates a saved player by ID across rooms, active games, and round history', async () => {
     const { store, roster, room } = await completedFixture()
     const active = store.createRoom('Another table', 200, roster)

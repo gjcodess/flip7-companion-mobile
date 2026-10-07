@@ -25,18 +25,42 @@ describe('Vengeance rules', () => {
     expect(vengeanceScore(player('a', ['v-number-zero', 'v-number-1', 'v-number-2', 'v-number-3', 'v-number-4', 'v-number-5', 'v-number-6'], 'flip-seven'))).toBe(36)
   })
 
-  it('steals a card into a stayed hand, can bust it, and undoes both hands together', () => {
-    const initial = round([player('a', ['v-number-13'], 'stayed'), player('b', ['v-number-13']), player('c', [])])
+  it('steals a card between active hands, can bust, and undoes both hands together', () => {
+    const initial = round([player('a', ['v-number-13']), player('b', ['v-number-13']), player('c', [])])
     const next = resolve(initial, 'v-action-steal', 'a', ['b-0'])
     expect(next.players[0].status).toBe('busted')
-    expect(next.players[0].entries).toHaveLength(2)
+    expect(next.players[0].entries).toHaveLength(3)
+    expect(next.players[0].entries[2].card.id).toBe('v-action-steal')
+    expect(next.players[0].entries[2].voided).toBe(true)
     expect(next.players[1].entries).toHaveLength(0)
     const undone = vengeanceReducer(next, { type: 'undo' })
-    expect(undone.players[0].status).toBe('stayed')
+    expect(undone.players[0].status).toBe('active')
     expect(undone.players[0].entries).toHaveLength(1)
     expect(undone.players[1].entries).toHaveLength(1)
   })
 
+  it('does not allow actions or modifiers to target stayed, frozen, or busted players', () => {
+    const state = round([player('a', ['v-number-2']), player('b', ['v-number-5'], 'stayed'), player('c', ['v-number-8'], 'frozen')])
+    const pendingSteal: VState = { ...state, pending: { card: vengeanceCard('v-action-steal')!, sourceId: 'a', selectedCards: [] } }
+    // Only 'a' is active, but stealing from self is invalid, so 0 eligible actors
+    expect(vengeanceEligibleActors(pendingSteal)).toHaveLength(0)
+
+    const pendingModifier: VState = { ...state, pending: { card: vengeanceCard('v-modifier-minus-2')!, sourceId: 'a', selectedCards: [] } }
+    expect(vengeanceEligibleActors(pendingModifier).map(p => p.id)).toEqual(['a'])
+
+    const pendingJustOneMore: VState = { ...state, pending: { card: vengeanceCard('v-action-just-one-more')!, sourceId: 'a', selectedCards: [] } }
+    expect(vengeanceEligibleActors(pendingJustOneMore).map(p => p.id)).toEqual(['a'])
+  })
+
+  it('cancels pending action dialog with cancel-pending or undo even if past is empty', () => {
+    const initial: VState = { ...round([player('a', ['v-number-2']), player('b', [])]), past: [] }
+    const withPending: VState = { ...initial, pending: { card: vengeanceCard('v-action-just-one-more')!, sourceId: 'a', selectedCards: [] } }
+    const canceled = vengeanceReducer(withPending, { type: 'cancel-pending' })
+    expect(canceled.pending).toBeNull()
+
+    const undone = vengeanceReducer(withPending, { type: 'undo' })
+    expect(undone.pending).toBeNull()
+  })
   it('a swap can bust both players', () => {
     const initial = round([player('a', ['v-number-10', 'v-number-11']), player('b', ['v-number-10', 'v-number-11']), player('c', [])])
     const next = resolve(initial, 'v-action-swap', 'c', ['a-0', 'b-1'])
@@ -64,11 +88,27 @@ describe('Vengeance rules', () => {
     expect(state.players[0].status).toBe('busted')
   })
 
-  it('forces use of a valid action and discards an untargetable one', () => {
+  it('forces use of a valid action and keeps untargetable Swap, Steal, or Discard on flipper table marked voided', () => {
     const noCards = round([player('a', []), player('b', []), player('c', [])])
-    const discarded = vengeanceReducer(noCards, { type: 'record', cardId: 'v-action-swap' })
-    expect(discarded.pending).toBeNull()
-    expect(discarded.events.at(-1)).toContain('no valid target')
+    const discardedSwap = vengeanceReducer(noCards, { type: 'record', cardId: 'v-action-swap' })
+    expect(discardedSwap.pending).toBeNull()
+    expect(discardedSwap.events.at(-1)).toContain('no valid target')
+    expect(discardedSwap.players[0].entries).toHaveLength(1)
+    expect(discardedSwap.players[0].entries[0].card.id).toBe('v-action-swap')
+    expect(discardedSwap.players[0].entries[0].voided).toBe(true)
+
+    const discardedSteal = vengeanceReducer(noCards, { type: 'record', cardId: 'v-action-steal' })
+    expect(discardedSteal.pending).toBeNull()
+    expect(discardedSteal.players[0].entries).toHaveLength(1)
+    expect(discardedSteal.players[0].entries[0].card.id).toBe('v-action-steal')
+    expect(discardedSteal.players[0].entries[0].voided).toBe(true)
+
+    const discardedDiscard = vengeanceReducer(noCards, { type: 'record', cardId: 'v-action-discard' })
+    expect(discardedDiscard.pending).toBeNull()
+    expect(discardedDiscard.players[0].entries).toHaveLength(1)
+    expect(discardedDiscard.players[0].entries[0].card.id).toBe('v-action-discard')
+    expect(discardedDiscard.players[0].entries[0].voided).toBe(true)
+
     const withCard = round([player('a', []), player('b', ['v-number-3']), player('c', [])])
     const pending = vengeanceReducer(withCard, { type: 'record', cardId: 'v-action-steal' })
     expect(vengeanceEligibleActors(pending).map(item => item.id)).toContain('a')
@@ -88,7 +128,8 @@ describe('Vengeance rules', () => {
     state = vengeanceReducer(state, { type: 'choose-actor', playerId: 'b' })
     state = vengeanceReducer(state, { type: 'choose-card', instanceId: 'b-0' })
     state = vengeanceReducer(state, { type: 'confirm' })
-    expect(state.players[1].entries.map(item => item.card.id)).not.toContain('v-number-4')
+    expect(state.players[1].entries.find(e => e.card.id === 'v-number-4')?.voided).toBe(true)
+    expect(state.players[1].entries.find(e => e.card.id === 'v-action-discard')?.voided).toBe(true)
   })
 
   it('drops queued Flip Four actions after an early bust', () => {
@@ -113,24 +154,53 @@ describe('Vengeance rules', () => {
     expect(vengeanceScore(state.players[0])).toBe(43)
   })
 
-  it('keeps a stayed Flip Four recipient inactive while updating their hand', () => {
-    let state = round([player('a', []), player('b', ['v-number-2'], 'stayed'), player('c', [])])
+  it('updates hand and scores for an active Flip Four recipient', () => {
+    let state = round([player('a', []), player('b', ['v-number-2']), player('c', [])])
     state = resolve(state, 'v-action-flip-four', 'b')
     for (const cardId of ['v-number-3', 'v-number-4', 'v-number-5', 'v-number-6']) state = vengeanceReducer(state, { type: 'record', cardId })
-    expect(state.players[1].status).toBe('stayed')
-    expect(state.players[1].entries).toHaveLength(5)
+    expect(state.players[1].status).toBe('active')
+    expect(state.players[1].entries).toHaveLength(6)
     expect(vengeanceScore(state.players[1])).toBe(20)
   })
 
-  it('continues the initial deal after Just One More makes its first recipient stay', () => {
+  it('continues the initial deal after Just One More makes its first recipient freeze', () => {
     let state = vengeanceInitialState(roster)
     state = vengeanceReducer(state, { type: 'record', cardId: 'v-action-just-one-more' })
     state = vengeanceReducer(state, { type: 'choose-actor', playerId: 'b' })
     state = vengeanceReducer(state, { type: 'confirm' })
     state = vengeanceReducer(state, { type: 'record', cardId: 'v-number-1' })
-    expect(state.players[1].status).toBe('stayed')
+    expect(state.players[1].status).toBe('frozen')
+    expect(state.players[1].entries.map(e => e.card.id)).toEqual(['v-action-just-one-more', 'v-number-1'])
     expect(state.phase).toBe('deal')
-    expect(state.turnPlayerId).toBe('b')
+    // Next deal turn advances to 'c' because 'b' is already frozen
+    expect(state.turnPlayerId).toBe('c')
+  })
+
+  it('freezes the target player, transfers the card, and advances turn away from them on Just One More in turn phase', () => {
+    // 3 players with 1 card each in turn phase, turn is on player 'a'
+    let state = round([player('a', ['v-number-1']), player('b', ['v-number-2']), player('c', ['v-number-3'])])
+    expect(state.turnPlayerId).toBe('a')
+
+    // Player 'a' plays Just One More on player 'b'
+    state = vengeanceReducer(state, { type: 'record', cardId: 'v-action-just-one-more' })
+    state = vengeanceReducer(state, { type: 'choose-actor', playerId: 'b' })
+
+    // Forced flip for 'b'
+    expect(state.forced[0]?.targetId).toBe('b')
+    state = vengeanceReducer(state, { type: 'record', cardId: 'v-number-4' })
+
+    // 'b' is now frozen with 3 cards ('v-number-2', 'v-action-just-one-more', 'v-number-4') and 6 points
+    expect(state.players[1].status).toBe('frozen')
+    expect(state.players[1].entries.map(e => e.card.id)).toEqual(['v-number-2', 'v-action-just-one-more', 'v-number-4'])
+    expect(vengeanceScore(state.players[1])).toBe(6)
+
+    // Turn advances past 'a' and skips 'b' (who is frozen), landing on 'c'
+    expect(state.phase).toBe('turn')
+    expect(state.turnPlayerId).toBe('c')
+
+    // When 'c' takes a card, next turn goes back to 'a' (skipping frozen 'b')
+    state = vengeanceReducer(state, { type: 'record', cardId: 'v-number-5' })
+    expect(state.turnPlayerId).toBe('a')
   })
 
   it('starts the initial deal with player 1 and starts next round with the round finisher', () => {
@@ -278,8 +348,45 @@ describe('Vengeance rules', () => {
       kind: 'one',
       targetId: 'b',
       remaining: 1,
-      deferred: []
+      deferred: [],
+      actionInstanceId: 'v-card-1'
     })
+    expect(state.players[1].entries.find(e => e.card.id === 'v-action-just-one-more')?.voided).toBe(false)
+  })
+
+  it('keeps Swap card on the flipper table marked as voided after swapping cards', () => {
+    // Player 'a' flips Swap and swaps a card between player 'b' and player 'c'
+    let state = round([player('a', ['v-number-2']), player('b', ['v-number-5']), player('c', ['v-number-9'])])
+    state = vengeanceReducer(state, { type: 'record', cardId: 'v-action-swap' })
+    state = vengeanceReducer(state, { type: 'choose-actor', playerId: 'a' })
+    state = vengeanceReducer(state, { type: 'choose-card', instanceId: 'b-0' })
+    state = vengeanceReducer(state, { type: 'choose-card', instanceId: 'c-0' })
+    state = vengeanceReducer(state, { type: 'confirm' })
+
+    // Swap card stays on 'a' (the flipper) and is voided
+    expect(state.players[0].entries.find(e => e.card.id === 'v-action-swap')?.voided).toBe(true)
+    // b received 9, c received 5
+    expect(state.players[1].entries.some(e => e.card.id === 'v-number-9')).toBe(true)
+    expect(state.players[2].entries.some(e => e.card.id === 'v-number-5')).toBe(true)
+  })
+
+  it('transfers Discard card to targeted player table voided, and marks chosen discarded card voided', () => {
+    // Player 'a' flips Discard and targets player 'b's 5
+    let state = round([player('a', ['v-number-2']), player('b', ['v-number-5']), player('c', [])])
+    state = vengeanceReducer(state, { type: 'record', cardId: 'v-action-discard' })
+    state = vengeanceReducer(state, { type: 'choose-actor', playerId: 'a' })
+    state = vengeanceReducer(state, { type: 'choose-card', instanceId: 'b-0' })
+    state = vengeanceReducer(state, { type: 'confirm' })
+
+    // Discard card is transferred to 'b' (the target whose card was discarded) and is voided
+    expect(state.players[1].entries.find(e => e.card.id === 'v-action-discard')?.voided).toBe(true)
+    // 'a' has only their original 2
+    expect(state.players[0].entries.map(e => e.card.id)).toEqual(['v-number-2'])
+    // 'b' still has the card in entries, but it is marked voided
+    const bCard = state.players[1].entries.find(e => e.card.id === 'v-number-5')
+    expect(bCard?.voided).toBe(true)
+    // Neither counts towards b's score
+    expect(vengeanceScore(state.players[1])).toBe(0)
   })
 })
 

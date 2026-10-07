@@ -1,11 +1,11 @@
 import type { PlayerAvatarId } from '../lib/player-avatars'
 import { vengeanceCard, type VengeanceCard } from './vengeanceCards'
 
-export type VStatus = 'active' | 'stayed' | 'busted' | 'flip-seven'
+export type VStatus = 'active' | 'stayed' | 'busted' | 'frozen' | 'flip-seven'
 export type VEntry = { instanceId: string; card: VengeanceCard; voided?: boolean }
 export type VPlayer = { id: string; name: string; color: string; avatar?: PlayerAvatarId; totalScore: number; status: VStatus; entries: VEntry[] }
 export type VPending = { card: VengeanceCard; sourceId: string; actorId?: string; targetId?: string; selectedCards: string[] }
-export type VForced = { kind: 'one' | 'four'; targetId: string; remaining: number; deferred: VPending[] }
+export type VForced = { kind: 'one' | 'four'; targetId: string; remaining: number; deferred: VPending[]; actionInstanceId?: string }
 export type VHistory = { round: number; scores: Record<string, number>; hands: Record<string, { name: string; color: string; avatar?: PlayerAvatarId; status: VStatus; entries: VEntry[] }>; events: string[] }
 export type VSnapshot = Pick<VState, 'phase' | 'dealerId' | 'dealIndex' | 'turnPlayerId' | 'selectedPlayerId' | 'roundFinisherId' | 'players' | 'pending' | 'forced' | 'resolving' | 'events' | 'nextId'>
 export type VState = {
@@ -39,6 +39,7 @@ export type VAction =
   | { type: 'advance-round' }
   | { type: 'undo' }
   | { type: 'redo' }
+  | { type: 'cancel-pending' }
 
 export function vengeanceInitialState(roster: Pick<VPlayer, 'id' | 'name' | 'color' | 'avatar'>[], targetScore = 200, starterId = roster[0]?.id): VState {
   const first = roster.find(player => player.id === starterId) ?? roster[0]
@@ -109,13 +110,13 @@ function nextActive(state: VState, afterId: string) {
   }
   return null
 }
-function faceUp(state: VState) { return state.players.flatMap(player => player.status === 'busted' ? [] : player.entries.filter(entry => !entry.voided).map(entry => ({ player, entry }))) }
+function faceUp(state: VState) { return state.players.flatMap(player => player.status !== 'active' ? [] : player.entries.filter(entry => !entry.voided).map(entry => ({ player, entry }))) }
 export function vengeanceEligibleActors(state: VState, pending = state.pending): VPlayer[] {
   if (!pending) return []
   const faces = faceUp(state)
   if (pending.card.id === 'v-action-swap' && new Set(faces.map(face => face.player.id)).size < 2) return []
   if (pending.card.id === 'v-action-discard' && faces.length === 0) return []
-  return state.players.filter(player => player.status !== 'busted' && (pending.card.id !== 'v-action-steal' || faces.some(face => face.player.id !== player.id)))
+  return state.players.filter(player => player.status === 'active' && (pending.card.id !== 'v-action-steal' || faces.some(face => face.player.id !== player.id)))
 }
 export function vengeanceEligibleCards(state: VState, pending = state.pending) {
   if (!pending?.actorId) return []
@@ -146,7 +147,7 @@ function advanceNormal(state: VState): VState {
     const actualStart = startIndex >= 0 ? startIndex : 0
     for (let next = state.dealIndex + 1; next < state.players.length; next++) {
       const candidate = state.players[(actualStart + next) % state.players.length]
-      if (candidate.status !== 'busted') return { ...state, dealIndex: next, turnPlayerId: candidate.id, selectedPlayerId: candidate.id }
+      if (candidate.status === 'active') return { ...state, dealIndex: next, turnPlayerId: candidate.id, selectedPlayerId: candidate.id }
     }
     const first = nextActive(state, state.players[(actualStart + state.players.length - 1) % state.players.length].id)
     return { ...state, phase: first ? 'turn' : 'settlement', turnPlayerId: first, selectedPlayerId: first ?? state.selectedPlayerId }
@@ -159,17 +160,48 @@ function normalize(state: VState): VState {
   for (let guard = 0; guard < 50; guard++) {
     if (next.players.some(player => player.status === 'flip-seven')) {
       const finisher = next.players.find(p => p.status === 'flip-seven')?.id ?? next.roundFinisherId
-      return { ...next, phase: 'settlement', pending: null, forced: [], resolving: [], turnPlayerId: null, roundFinisherId: finisher }
+      const players = next.players.map(player => {
+        const matchingForce = next.forced.find(f => f.targetId === player.id)
+        if (!matchingForce) return player
+        return {
+          ...player,
+          entries: player.entries.map(entry =>
+            (entry.instanceId === matchingForce.actionInstanceId || (!entry.voided && entry.card.id === (matchingForce.kind === 'one' ? 'v-action-just-one-more' : 'v-action-flip-four')))
+              ? { ...entry, voided: true }
+              : entry
+          )
+        }
+      })
+      return { ...next, players, phase: 'settlement', pending: null, forced: [], resolving: [], turnPlayerId: null, roundFinisherId: finisher }
     }
     if (next.pending) {
       if (vengeanceEligibleActors(next).length > 0) return next
-      next = addEvent({ ...next, pending: null }, `${next.pending.card.label} discarded: no valid target`)
+      const pendingCard = next.pending.card
+      const sourceId = next.pending.sourceId
+      const actionCardEntry: VEntry = { instanceId: `v-card-${next.nextId}`, card: pendingCard, voided: true }
+      const players = next.players.map(player =>
+        player.id === sourceId
+          ? { ...player, entries: [...player.entries, actionCardEntry] }
+          : player
+      )
+      next = addEvent(
+        { ...next, players, nextId: next.nextId + 1, pending: null },
+        `${pendingCard.label} discarded: no valid target`
+      )
       continue
     }
     const force = next.forced[0]
     if (force?.remaining === 0) {
-      let players = next.players
-      if (force.kind === 'one') players = players.map(player => player.id === force.targetId && player.status === 'active' ? { ...player, status: 'stayed' as const } : player)
+      const players = next.players.map(player => {
+        if (player.id !== force.targetId) return player
+        const entries = player.entries.map(entry =>
+          (entry.instanceId === force.actionInstanceId || (!entry.voided && entry.card.id === (force.kind === 'one' ? 'v-action-just-one-more' : 'v-action-flip-four')))
+            ? { ...entry, voided: true }
+            : entry
+        )
+        const status = force.kind === 'one' && player.status === 'active' ? ('frozen' as const) : player.status
+        return { ...player, status, entries }
+      })
       next = { ...next, players, forced: next.forced.slice(1), resolving: [...force.deferred, ...next.resolving] }
       continue
     }
@@ -185,6 +217,21 @@ function normalize(state: VState): VState {
 
 export function vengeanceReducer(state: VState, action: VAction): VState {
   if (action.type === 'select-player') return state.players.some(player => player.id === action.playerId) ? { ...state, selectedPlayerId: action.playerId } : state
+  if (action.type === 'cancel-pending') {
+    if (!state.pending) return state
+    for (let i = state.past.length - 1; i >= 0; i--) {
+      if (!state.past[i].pending) {
+        const targetSnapshot = state.past[i]
+        return {
+          ...state,
+          ...targetSnapshot,
+          past: state.past.slice(0, i),
+          future: [snapshot(state), ...state.future]
+        }
+      }
+    }
+    return { ...state, pending: null }
+  }
   if (action.type === 'undo') {
     if (state.pending) {
       for (let i = state.past.length - 1; i >= 0; i--) {
@@ -198,6 +245,7 @@ export function vengeanceReducer(state: VState, action: VAction): VState {
           }
         }
       }
+      return { ...state, pending: null }
     }
     const previous = state.past.at(-1)
     return previous ? { ...state, ...previous, past: state.past.slice(0, -1), future: [snapshot(state), ...state.future] } : state
@@ -282,18 +330,24 @@ export function vengeanceReducer(state: VState, action: VAction): VState {
     if (action.playerId === '') return { ...state, pending: { ...pending, actorId: undefined, targetId: undefined, selectedCards: [] } }
     if (!vengeanceEligibleActors(state).some(player => player.id === action.playerId)) return state
     const actor = state.players.find(player => player.id === action.playerId)
-    if (!actor || actor.status === 'busted') return state
+    if (!actor || actor.status !== 'active') return state
     if (pending.card.id === 'v-action-just-one-more' || pending.card.id === 'v-action-flip-four') {
+      const actionInstanceId = `v-card-${state.nextId}`
       let next: VState = {
         ...state,
+        players: state.players.map(player => player.id === actor.id
+          ? { ...player, entries: [...player.entries, { instanceId: actionInstanceId, card: pending.card, voided: false }] }
+          : player),
+        nextId: state.nextId + 1,
         forced: [{
           kind: pending.card.id === 'v-action-flip-four' ? 'four' : 'one',
           targetId: actor.id,
           remaining: pending.card.id === 'v-action-flip-four' ? 4 : 1,
-          deferred: []
+          deferred: [],
+          actionInstanceId
         }, ...state.forced]
       }
-      const message = `${actor.name} must flip ${pending.card.id === 'v-action-flip-four' ? 'up to four cards' : 'one card, then stay'}`
+      const message = `${actor.name} received ${pending.card.label} and must flip ${pending.card.id === 'v-action-flip-four' ? 'up to four cards' : 'one card, then freeze'}`
       next = addEvent({ ...next, pending: null, roundFinisherId: actor.id }, message)
       return commit(state, normalize(next))
     }
@@ -302,7 +356,7 @@ export function vengeanceReducer(state: VState, action: VAction): VState {
   if (action.type === 'choose-target') {
     if (pending.card.kind !== 'modifier' || !vengeanceEligibleActors(state).some(player => player.id === action.playerId)) return state
     const target = state.players.find(player => player.id === action.playerId)
-    if (!target || target.status === 'busted') return state
+    if (!target || target.status !== 'active') return state
     let next: VState = {
       ...state,
       players: state.players.map(player => player.id === target.id
@@ -376,27 +430,88 @@ export function vengeanceReducer(state: VState, action: VAction): VState {
   let next: VState = state
   let message = ''
   if (pending.card.kind === 'modifier') {
-    if (!target || target.status === 'busted') return state
+    if (!target || target.status !== 'active') return state
     next = { ...next, players: next.players.map(player => player.id === target.id ? { ...player, entries: [...player.entries, { instanceId: `v-card-${next.nextId}`, card: pending.card }] } : player), nextId: next.nextId + 1 }
     message = `${target.name} received ${pending.card.label}`
   } else if (pending.card.id === 'v-action-just-one-more' || pending.card.id === 'v-action-flip-four') {
-    if (!actor || actor.status === 'busted') return state
-    next = { ...next, forced: [{ kind: pending.card.id === 'v-action-flip-four' ? 'four' : 'one', targetId: actor.id, remaining: pending.card.id === 'v-action-flip-four' ? 4 : 1, deferred: [] }, ...next.forced] }
-    message = `${actor.name} must flip ${pending.card.id === 'v-action-flip-four' ? 'up to four cards' : 'one card, then stay'}`
+    if (!actor || actor.status !== 'active') return state
+    const actionInstanceId = `v-card-${next.nextId}`
+    next = {
+      ...next,
+      players: next.players.map(player => player.id === actor.id
+        ? { ...player, entries: [...player.entries, { instanceId: actionInstanceId, card: pending.card, voided: false }] }
+        : player),
+      nextId: next.nextId + 1,
+      forced: [{
+        kind: pending.card.id === 'v-action-flip-four' ? 'four' : 'one',
+        targetId: actor.id,
+        remaining: pending.card.id === 'v-action-flip-four' ? 4 : 1,
+        deferred: [],
+        actionInstanceId
+      }, ...next.forced]
+    }
+    message = `${actor.name} received ${pending.card.label} and must flip ${pending.card.id === 'v-action-flip-four' ? 'up to four cards' : 'one card, then freeze'}`
   } else if (pending.card.id === 'v-action-steal') {
     const face = selected[0]
-    if (!actor || !face || face.player.id === actor.id) return state
-    next = { ...next, players: next.players.map(player => player.id === face.player.id ? evaluate({ ...player, entries: player.entries.filter(entry => entry.instanceId !== face.entry.instanceId) }) : player.id === actor.id ? receive(player, face.entry) : player) }
+    if (!actor || actor.status !== 'active' || !face || face.player.id === actor.id) return state
+    const actionCardEntry: VEntry = { instanceId: `v-card-${next.nextId}`, card: pending.card, voided: true }
+    next = {
+      ...next,
+      nextId: next.nextId + 1,
+      players: next.players.map(player => {
+        let p = player
+        if (p.id === face.player.id) {
+          p = evaluate({ ...p, entries: p.entries.filter(entry => entry.instanceId !== face.entry.instanceId) })
+        }
+        if (p.id === actor.id) {
+          p = receive(p, face.entry)
+        }
+        if (p.id === pending.sourceId) {
+          p = { ...p, entries: [...p.entries, actionCardEntry] }
+        }
+        return p
+      })
+    }
     message = `${actor.name} stole ${face.entry.card.label} from ${face.player.name}`
   } else if (pending.card.id === 'v-action-discard') {
     const face = selected[0]
-    if (!actor || !face) return state
-    next = { ...next, players: next.players.map(player => player.id === face.player.id ? evaluate({ ...player, entries: player.entries.filter(entry => entry.instanceId !== face.entry.instanceId) }) : player) }
+    if (!actor || actor.status !== 'active' || !face) return state
+    const actionCardEntry: VEntry = { instanceId: `v-card-${next.nextId}`, card: pending.card, voided: true }
+    next = {
+      ...next,
+      nextId: next.nextId + 1,
+      players: next.players.map(player => {
+        if (player.id !== face.player.id) return player
+        const updatedEntries = player.entries.map(entry =>
+          entry.instanceId === face.entry.instanceId ? { ...entry, voided: true } : entry
+        )
+        return evaluate({
+          ...player,
+          entries: [...updatedEntries, actionCardEntry]
+        })
+      })
+    }
     message = `${actor.name} discarded ${face.entry.card.label} from ${face.player.name}`
   } else if (pending.card.id === 'v-action-swap') {
     const [first, second] = selected
-    if (!actor || !first || !second || first.player.id === second.player.id) return state
-    next = { ...next, players: next.players.map(player => player.id === first.player.id ? receive({ ...player, entries: player.entries.filter(entry => entry.instanceId !== first.entry.instanceId) }, second.entry) : player.id === second.player.id ? receive({ ...player, entries: player.entries.filter(entry => entry.instanceId !== second.entry.instanceId) }, first.entry) : player) }
+    if (!actor || actor.status !== 'active' || !first || !second || first.player.id === second.player.id) return state
+    const actionCardEntry: VEntry = { instanceId: `v-card-${next.nextId}`, card: pending.card, voided: true }
+    next = {
+      ...next,
+      nextId: next.nextId + 1,
+      players: next.players.map(player => {
+        let p = player
+        if (p.id === first.player.id) {
+          p = receive({ ...p, entries: p.entries.filter(entry => entry.instanceId !== first.entry.instanceId) }, second.entry)
+        } else if (p.id === second.player.id) {
+          p = receive({ ...p, entries: p.entries.filter(entry => entry.instanceId !== second.entry.instanceId) }, first.entry)
+        }
+        if (p.id === pending.sourceId) {
+          p = { ...p, entries: [...p.entries, actionCardEntry] }
+        }
+        return p
+      })
+    }
     message = `${actor.name} swapped ${first.entry.card.label} (${first.player.name}) with ${second.entry.card.label} (${second.player.name})`
   } else return state
   next = addEvent({ ...next, pending: null, roundFinisherId: actor?.id ?? target?.id ?? state.roundFinisherId }, message)

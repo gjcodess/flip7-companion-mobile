@@ -88,6 +88,7 @@ export function deriveDemoState(entries: DemoEntry[]): Pick<DemoSnapshot, 'entri
   const evaluationEntries = [...nextEntries].sort((a, b) => Number(a.instanceId.replace('demo-card-', '')) - Number(b.instanceId.replace('demo-card-', '')))
   const seenNumbers = new Set<string>()
   let secondChanceCount = 0
+  const activeFlipThrees: { entry: DemoEntry; remaining: number }[] = []
   let flipThreeRemaining = 0
   let status: DemoStatus = 'active'
 
@@ -97,12 +98,23 @@ export function deriveDemoState(entries: DemoEntry[]): Pick<DemoSnapshot, 'entri
     if (card.kind === 'action') {
       if (card.id === 'action-second-chance') secondChanceCount += 1
       if (card.id === 'action-flip-three') {
-        if (wasForcedCard) flipThreeRemaining -= 1
+        if (wasForcedCard && activeFlipThrees.length > 0) {
+          activeFlipThrees[0].remaining -= 1
+          if (activeFlipThrees[0].remaining <= 0) {
+            activeFlipThrees[0].entry.voided = true
+            activeFlipThrees.shift()
+          }
+          flipThreeRemaining -= 1
+        }
         flipThreeRemaining += 3
+        activeFlipThrees.push({ entry, remaining: 3 })
       }
       if (card.id === 'action-freeze') {
         status = 'frozen'
         flipThreeRemaining = 0
+        entry.voided = true
+        for (const ft of activeFlipThrees) ft.entry.voided = true
+        activeFlipThrees.length = 0
       }
     } else if (card.kind === 'number') {
       if (seenNumbers.has(card.id)) {
@@ -120,11 +132,26 @@ export function deriveDemoState(entries: DemoEntry[]): Pick<DemoSnapshot, 'entri
         if (seenNumbers.size >= 7) {
           status = 'flip-seven'
           flipThreeRemaining = 0
+          for (const ft of activeFlipThrees) ft.entry.voided = true
+          activeFlipThrees.length = 0
           break
         }
       }
     }
-    if (wasForcedCard && card.id !== 'action-flip-three' && status === 'active') flipThreeRemaining -= 1
+    if (wasForcedCard && card.id !== 'action-flip-three' && status === 'active') {
+      flipThreeRemaining -= 1
+      if (activeFlipThrees.length > 0) {
+        activeFlipThrees[0].remaining -= 1
+        if (activeFlipThrees[0].remaining <= 0) {
+          activeFlipThrees[0].entry.voided = true
+          activeFlipThrees.shift()
+        }
+      }
+    }
+  }
+
+  if (status === 'busted') {
+    for (const ft of activeFlipThrees) ft.entry.voided = true
   }
 
   return { entries: nextEntries, status, flipThreeRemaining }

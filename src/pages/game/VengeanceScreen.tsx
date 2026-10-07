@@ -52,6 +52,7 @@ function statusClass(player: VPlayer) {
 
 function statusBadgeLabel(player: VPlayer) {
   if (player.status === 'busted') return 'Busted'
+  if (player.status === 'frozen') return 'Frozen'
   if (player.status === 'stayed') return 'Stayed'
   if (player.status === 'flip-seven') return 'Flip 7!'
   return 'Active'
@@ -59,8 +60,9 @@ function statusBadgeLabel(player: VPlayer) {
 
 function playerTabSummary(player: VPlayer) {
   const score = vengeanceScore(player)
-  const numberCount = player.entries.filter((entry) => entry.card.kind === 'number').length
+  const numberCount = player.entries.filter((entry) => !entry.voided && entry.card.kind === 'number').length
   if (player.status === 'busted') return 'Busted'
+  if (player.status === 'frozen') return `Frozen · ${score} pts`
   if (player.status === 'stayed') return `Stayed · ${score} pts`
   if (player.status === 'flip-seven') return `Flip 7 · ${score} pts`
   return `${numberCount} cards · ${score} pts`
@@ -68,6 +70,9 @@ function playerTabSummary(player: VPlayer) {
 
 function organizeVengeanceEntries(entries: VEntry[]): VEntry[] {
   return [...entries].sort((a, b) => {
+    if (Boolean(a.voided) !== Boolean(b.voided)) {
+      return a.voided ? 1 : -1
+    }
     if (a.card.kind === 'number' && b.card.kind === 'number') {
       const valA = a.card.value ?? a.card.points ?? 0
       const valB = b.card.value ?? b.card.points ?? 0
@@ -657,6 +662,9 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
   if (selected?.status === 'busted') {
     stayActionLabel = 'BUST!'
     stayActionClass = 'confirmed bust-state'
+  } else if (selected?.status === 'frozen') {
+    stayActionLabel = 'FROZEN'
+    stayActionClass = 'confirmed frozen-state'
   } else if (selected?.status === 'flip-seven') {
     stayActionLabel = 'FLIP 7!'
     stayActionClass = 'confirmed'
@@ -758,13 +766,13 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
           score={selectedScore}
           flipSevenBonus={selected?.status === 'flip-seven' ? 15 : 0}
           busted={selected?.status === 'busted'}
-          frozen={false}
+          frozen={selected?.status === 'frozen'}
           submitting={false}
           interactionLocked={interactionLocked}
           canEditCards={canRecord}
           canAddCards={canRecord && isSelectedTurn}
-          confirmedAt={selected?.status === 'stayed' ? 'stayed' : null}
-          isStaying={selected?.status === 'stayed'}
+          confirmedAt={selected?.status === 'stayed' ? 'stayed' : selected?.status === 'frozen' ? 'frozen' : null}
+          isStaying={selected?.status === 'stayed' || selected?.status === 'frozen'}
           isOrganized={organized}
           playerName={selected?.name ?? 'Player'}
           isHost={false}
@@ -875,7 +883,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
               </motion.div>
               <p>
                 {displayedEntries[selectedCardIndex].voided
-                  ? `This card was discarded by Unlucky 7.`
+                  ? `This card was discarded.`
                   : displayedEntries[selectedCardIndex].card.kind === 'number'
                     ? `Counts toward ${selected?.name}'s round total.`
                     : displayedEntries[selectedCardIndex].card.kind === 'modifier'
@@ -901,7 +909,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, pointerEvents: 'none' }}
-            onClick={() => dispatch({ type: 'undo' })}
+            onClick={() => dispatch({ type: 'cancel-pending' })}
           >
             <motion.section
               className="card-picker physical-card-picker vengeance-action-modal"
@@ -940,35 +948,35 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                 else if (isForced) eyebrow = `ACTION · ${pending.card.label.toUpperCase()}`
 
                 let title = `Who gets ${pending.card.label}?`
-                if (isModifier) {
-                  title = `Who gets ${pending.card.label}?`
-                } else if (!pending.actorId) {
-                  title = isForced
-                    ? (pending.card.id === 'v-action-flip-four' ? 'Who flips four cards?' : 'Who flips just one more?')
-                    : `Who is playing ${pending.card.label}?`
-                } else if (isSteal) {
+                if (isSteal && pending.actorId) {
                   title = `Steal a card into ${actor?.name}'s hand`
-                } else if (isSwap) {
+                } else if (isSwap && pending.actorId) {
                   title = `Swap 2 cards between tables`
-                } else if (isDiscard) {
+                } else if (isDiscard && pending.actorId) {
                   title = `Discard a card from table`
-                } else if (isForced) {
+                } else if (isForced && pending.actorId) {
                   title = `${actor?.name} flips ${pending.card.id === 'v-action-flip-four' ? 'four cards' : 'one card'}`
                 }
 
-                let subtitle = 'Choose who receives and resolves this action.'
+                let subtitle = `Choose which active player table receives this ${pending.card.label} action.`
                 if (isModifier) {
-                  subtitle = 'Choose who receives this penalty modifier. Non-busted players (active or stayed) are eligible.'
-                } else if (!pending.actorId) {
-                  subtitle = `Choose which player resolves this ${pending.card.label} action.`
-                } else if (isSteal) {
-                  subtitle = `Select 1 card from an opponent's table to steal into ${actor?.name}'s hand.`
-                } else if (isSwap) {
-                  subtitle = 'Select 1 card from each of 2 different players to swap between them.'
-                } else if (isDiscard) {
-                  subtitle = 'Select 1 card from any player table to discard from the round.'
+                  subtitle = `Choose which active player table receives this ${pending.card.label} modifier.`
                 } else if (isForced) {
-                  subtitle = `${actor?.name} must flip cards, then immediately stay unless they bust or reach Flip 7.`
+                  subtitle = pending.actorId
+                    ? `${actor?.name} must flip cards, then immediately freeze unless they bust or reach Flip 7.`
+                    : `Choose which active player table resolves this ${pending.card.label} action.`
+                } else if (isSteal) {
+                  subtitle = pending.actorId
+                    ? `Select 1 card from an active opponent's table to steal into ${actor?.name}'s hand.`
+                    : `Choose which active player gets Steal to take a card.`
+                } else if (isSwap) {
+                  subtitle = pending.actorId
+                    ? 'Select 1 card from each of 2 different active players to swap between them.'
+                    : `Choose which active player gets Swap to exchange cards.`
+                } else if (isDiscard) {
+                  subtitle = pending.actorId
+                    ? 'Select 1 card from any active player table to discard from the round.'
+                    : `Choose which active player gets Discard to remove a card.`
                 }
 
                 return (
@@ -983,7 +991,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                           className="close-button"
                           aria-label="Cancel action"
                           title="Cancel"
-                          onClick={() => dispatch({ type: 'undo' })}
+                          onClick={() => dispatch({ type: 'cancel-pending' })}
                         >
                           <X size={19} />
                         </button>
@@ -1027,6 +1035,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                                 <b>{player.name}</b>
                                 {player.id === state.turnPlayerId && <span className="v-current-tag">Current Turn</span>}
                                 {player.status === 'stayed' && <span className="v-stayed-tag">Stayed</span>}
+                                {player.status === 'frozen' && <span className="v-frozen-tag">Frozen</span>}
                               </span>
                             </button>
                           ))}
@@ -1040,7 +1049,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                       {needsCards && pending.actorId && (
                         <div className="v-fan-players-list">
                           {state.players
-                            .filter((player) => player.status !== 'busted')
+                            .filter((player) => player.status === 'active')
                             .map((player) => {
                               const isActorHand = player.id === pending.actorId
                               const cannotStealHere = isSteal && isActorHand
@@ -1065,6 +1074,9 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                                       )}
                                       {player.status === 'stayed' && (
                                         <span className="v-role-badge stayed">Stayed</span>
+                                      )}
+                                      {player.status === 'frozen' && (
+                                        <span className="v-role-badge frozen">Frozen</span>
                                       )}
                                       <span className="v-role-badge count">
                                         {player.entries.length} card{player.entries.length === 1 ? '' : 's'}
