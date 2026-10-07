@@ -55,7 +55,7 @@ describe('picker preview artwork', () => {
       sourceBytes += statSync(`public${card.image}`).size
       previewBytes += statSync(preview).size
     }
-    expect(previewBytes).toBeLessThan(sourceBytes * .1)
+    expect(previewBytes).toBeLessThan(sourceBytes * .35)
   })
 
   it('preloads and decodes only previews once, including concurrent requests', async () => {

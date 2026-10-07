@@ -33,7 +33,7 @@ for (const [inputName, outputName] of faces) {
   const input = path.join(source, inputName)
   const full = path.join(output, outputName)
   const preview = path.join(previews, outputName)
-  await sharp(input).webp({ quality: 90, effort: 6 }).toFile(full)
+  await sharp(input).resize({ width: 640, withoutEnlargement: true }).webp({ quality: 85, effort: 6 }).toFile(full)
   await sharp(input).resize({ width: 256, withoutEnlargement: true }).webp({ quality: 84, effort: 6 }).toFile(preview)
   sourceBytes += (await stat(input)).size
   outputBytes += (await stat(full)).size + (await stat(preview)).size
