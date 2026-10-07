@@ -235,6 +235,7 @@ export function MobileApp({ page, roomId }: { page: MobilePage; roomId?: string 
   const edition = room?.edition ?? library.settings.edition
   const nextEdition: Edition = edition === 'classic' ? 'vengeance' : 'classic'
   const showEditionFab = page === 'home' || page === 'players' || page === 'history' || page === 'settings'
+  const showBottomNav = page !== 'room'
   useEffect(() => {
     if (page === 'room' && room && room.edition !== library.settings.edition) {
       try { updateLibrary(current => ({ ...current, settings: { ...current.settings, edition: room.edition ?? 'classic' } })) }
@@ -247,5 +248,6 @@ export function MobileApp({ page, roomId }: { page: MobilePage; roomId?: string 
     try { updateLibrary(current => ({ ...current, settings: { ...current.settings, edition: next } })) }
     catch (cause) { window.alert((cause as Error).message) }
   }
-  return <div className={`room-app-shell edition-${edition}`}><main className={`room-app-main page-${page}`}>{page !== 'room' && <PageArtwork edition={edition} />}{error && <p className="room-error" role="alert">{error}</p>}{page === 'home' ? <HomeScreen /> : page === 'players' ? <PlayersScreen /> : page === 'history' ? <HistoryScreen /> : page === 'settings' ? <SettingsScreen /> : page === 'new' ? <RoomForm /> : room ? room.edition === 'vengeance' ? <VengeanceRoomDetail key={room.id} room={room} /> : <RoomDetail key={room.id} room={room} /> : <EmptyState icon={<FolderOpen size={30} />} title="This room isn’t here">It may have been removed or restored from a different backup.<ActionButton onClick={() => navigate('/landing')}>Back to your rooms</ActionButton></EmptyState>}</main>{showEditionFab && !keyboardVisible && <EditionFab target={nextEdition} onSwitch={() => switchEdition(nextEdition)} />}<BottomNav page={page} /></div>
+  return <div className={`room-app-shell edition-${edition}`}><main className={`room-app-main page-${page}`}>{page !== 'room' && <PageArtwork edition={edition} />}{error && <p className="room-error" role="alert">{error}</p>}{page === 'home' ? <HomeScreen /> : page === 'players' ? <PlayersScreen /> : page === 'history' ? <HistoryScreen /> : page === 'settings' ? <SettingsScreen /> : page === 'new' ? <RoomForm /> : room ? room.edition === 'vengeance' ? <VengeanceRoomDetail key={room.id} room={room} /> : <RoomDetail key={room.id} room={room} /> : <EmptyState icon={<FolderOpen size={30} />} title="This room isn’t here">It may have been removed or restored from a different backup.<ActionButton onClick={() => navigate('/landing')}>Back to your rooms</ActionButton></EmptyState>}</main>{showEditionFab && !keyboardVisible && <EditionFab target={nextEdition} onSwitch={() => switchEdition(nextEdition)} />}{showBottomNav && <BottomNav page={page} />}</div>
 }
+

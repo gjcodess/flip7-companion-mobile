@@ -65,8 +65,12 @@
 }
 
 .edition-vengeance .room-history-banner {
-    background: #132d67;
-    color: #fff9e7;
+    background: #f7c244;
+    color: #132d67;
+}
+
+.edition-vengeance .room-history-banner > svg:last-child {
+    color: #e83239;
 }
 
 .edition-vengeance .library-room-card.featured {
@@ -80,6 +84,14 @@
 .edition-vengeance .room-page-heading .room-kicker,
 .edition-vengeance .room-section-heading .room-section-note {
     color: #b92530;
+}
+
+.edition-vengeance :is(input:not([type="file"]), textarea):focus,
+.edition-vengeance .room-form-panel :is(.room-field input, .room-add-player input):focus,
+.edition-vengeance .room-dialog .room-field input:focus,
+.edition-vengeance .room-search:focus-within {
+    border-color: #e83239 !important;
+    box-shadow: 3px 3px 0 #e83239 !important;
 }
 
 /* Vengeance Promo Carousel */

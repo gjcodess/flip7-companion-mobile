@@ -50,8 +50,8 @@
   box-shadow: 2px 3px 0 #c0b699;
 }
 .room-form-panel :is(.room-field input, .room-add-player input):focus {
-  border-color: #ed4f7e;
-  box-shadow: 3px 3px 0 #ed4f7e;
+  border-color: var(--pink);
+  box-shadow: 3px 3px 0 var(--pink);
 }
 .room-app-shell .room-button:active:not(:disabled), .room-heading-action:active { transform: translate(2px, 3px); box-shadow: 1px 1px 0 #132d67; }
 

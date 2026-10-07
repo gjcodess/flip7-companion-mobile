@@ -60,6 +60,10 @@
   padding: calc(22px + env(safe-area-inset-top, 0px)) 22px calc(130px + env(safe-area-inset-bottom, 0px));
 }
 
+.room-app-main.page-room {
+  padding-bottom: calc(36px + env(safe-area-inset-bottom, 0px));
+}
+
 .room-home-hero {
   position: relative;
 }
