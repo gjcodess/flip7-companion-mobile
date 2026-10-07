@@ -14,7 +14,13 @@
     cursor: grab;
     user-select: none;
     filter: drop-shadow(2px 4px 2px #132d6740);
-    transition: left 240ms cubic-bezier(.22, .61, .36, 1), transform 160ms ease;
+    transition: left 240ms cubic-bezier(.22, .61, .36, 1), transform 220ms cubic-bezier(.22, .61, .36, 1), opacity 220ms ease;
+}
+
+.edition-fab.is-scroll-hidden {
+    transform: translateY(calc(100% + 120px + env(safe-area-inset-bottom, 0px)));
+    opacity: 0;
+    pointer-events: none;
 }
 
 .edition-fab.is-dragging {
@@ -29,7 +35,7 @@
     object-fit: contain;
 }
 
-.edition-fab:active {
+.edition-fab:active:not(.is-scroll-hidden) {
     transform: scale(.96);
 }
 

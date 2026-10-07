@@ -38,7 +38,7 @@ export function InfoPage({ kind, kicker, title, accent, intro, children }: { kin
     <nav className="info-page-tabs" aria-label="Help and app information">{links.map(link => <a key={link.kind} href={link.href} aria-current={kind === link.kind ? 'page' : undefined}>{link.label}</a>)}</nav>
     {children}
     <AppFooter />
-  </main>{!keyboardVisible && <EditionFab target={nextEdition} onSwitch={() => switchEdition(nextEdition)} />}<BottomNav page="settings" /></div>
+  </main>{!keyboardVisible && <EditionFab target={nextEdition} onSwitch={() => switchEdition(nextEdition)} page={kind} />}<BottomNav page="settings" /></div>
 }
 
 export function InfoPlayCallout({ practice = false }: { practice?: boolean }) {

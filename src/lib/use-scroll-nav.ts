@@ -14,7 +14,7 @@ export function nextScrollNav(state: ScrollNavState, scrollY: number, maxScroll:
   return { ...state, position, distance }
 }
 
-export function useScrollNav(page: string) {
+export function useScrollNav(page: string = '') {
   const navRef = useRef<HTMLElement>(null)
   const scrollState = useRef<ScrollNavState>({ position: 0, distance: 0, hidden: false })
   const [hidden, setHidden] = useState(false)

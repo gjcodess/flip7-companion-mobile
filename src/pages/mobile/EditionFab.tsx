@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import type { Edition } from '../../lib/room-store'
+import { useScrollNav } from '../../lib/use-scroll-nav'
 
 type Dock = { side: 'left' | 'right'; bottom: number }
 type Gesture = { pointerId: number; startX: number; startY: number; offsetX: number; offsetY: number; moved: boolean }
@@ -33,13 +34,15 @@ function saveDock(dock: Dock) {
   catch { /* The switch remains movable for this session. */ }
 }
 
-export function EditionFab({ target, onSwitch }: { target: Edition; onSwitch: () => void }) {
+export function EditionFab({ target, onSwitch, page = '' }: { target: Edition; onSwitch: () => void; page?: string }) {
+  const { navRef, hidden, reveal } = useScrollNav(page)
   const [dock, setDock] = useState<Dock>(readDock)
   const [dragLeft, setDragLeft] = useState<number | null>(null)
   const dockRef = useRef(dock)
   const dragLeftRef = useRef<number | null>(null)
   const gesture = useRef<Gesture | null>(null)
   const suppressClick = useRef(false)
+  const isScrollHidden = hidden && dragLeft === null && gesture.current === null
   const targetName = target === 'classic' ? 'Classic Flip 7' : 'Flip 7 With a Vengeance'
 
   const updateDock = (next: Dock) => { dockRef.current = next; setDock(next) }
@@ -93,12 +96,14 @@ export function EditionFab({ target, onSwitch }: { target: Edition; onSwitch: ()
   }
 
   return <button
+    ref={navRef as React.RefObject<HTMLButtonElement>}
     type="button"
-    className={`edition-fab${dragLeft !== null ? ' is-dragging' : ''}`}
+    className={`edition-fab${dragLeft !== null ? ' is-dragging' : ''}${isScrollHidden ? ' is-scroll-hidden' : ''}`}
     style={{ left: `${dragLeft ?? dockLeft(dock.side)}px`, bottom: `calc(${dock.bottom}px + env(safe-area-inset-bottom, 0px))` }}
     aria-label={`Switch to ${targetName}`}
     aria-description="Drag through the screen, then release to dock at the nearest side. Alt plus arrow keys also move the button."
     title={`Switch to ${targetName} · drag to move`}
+    onFocusCapture={reveal}
     onClick={() => { if (suppressClick.current) { suppressClick.current = false; return } onSwitch() }}
     onPointerDown={onPointerDown}
     onPointerMove={onPointerMove}
