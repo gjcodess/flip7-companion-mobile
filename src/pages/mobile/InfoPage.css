@@ -88,7 +88,7 @@
 .guide-card { min-width: 0; scroll-margin-top: 20px; background: #fffdf3; border: 1.5px solid #132d67; border-radius: 14px; padding: 20px 16px; box-shadow: 3px 4px 0 #132d67; }
 .guide-card-heading, .info-section-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .guide-card-heading .eyebrow, .info-section-top .room-kicker { font-size: 8px; color: #c53264; letter-spacing: .1em; font-weight: 900; }
-.guide-number, .info-section-top > b { display: grid; place-items: center; width: 29px; height: 29px; background: #ffe05c; border: 1.5px solid #132d67; border-radius: 8px; font-size: 10px; font-weight: 950; box-shadow: 2px 2px 0 #132d67; }
+.guide-number, .info-section-top > b { display: grid; place-items: center; width: 29px; height: 29px; background: #ffe05c; border: 1.5px solid #132d67; border-radius: 8px; font-size: 10px; font-weight: 950; box-shadow: 2px 2px 0 #132d67; color: #132d67; }
 .guide-card h2 { font-size: 22px; line-height: 1.17; font-weight: 950; letter-spacing: -.7px; margin-bottom: 12px; }
 .guide-card p { font-size: 13px; color: #53607a; line-height: 1.8; }
 .guide-card-strip { display: flex; gap: 8px; overflow-x: auto; overscroll-behavior-x: contain; padding: 17px 2px 10px; scrollbar-width: thin; scrollbar-color: #bfae80 transparent; }
@@ -117,22 +117,21 @@
 .guide-action-list b { display: block; color: #132d67; font-size: 12px; margin-bottom: 4px; }
 .guide-card-scoring { background: #132d67; color: #fff7da; box-shadow: 4px 5px 0 #ed4f7e; }
 .guide-card-scoring .eyebrow { color: #ffe05c; }
+.guide-card-scoring .guide-number { color: #132d67; }
 .guide-card-scoring p { color: #d0d9ec; }
-.guide-score-steps { display: grid; gap: 9px; margin: 19px 0; }
-.guide-score-steps > div { display: grid; grid-template-columns: 23px 1fr; column-gap: 8px; row-gap: 5px; padding: 11px; border: 1px solid #4e6593; border-radius: 9px; background: #1c3971; }
-.guide-score-steps > div > b { font-size: 17px; color: #ffe05c; grid-row: span 2; }
-.guide-score-steps span { font-size: 10px; color: #d0d9ec; line-height: 1.6; }
-.guide-score-steps strong { font-size: 11px; }
-.guide-score-examples { display: grid; gap: 14px; }
-.guide-score-example { min-width: 0; padding: 12px; border: 1px solid #4e6593; border-radius: 9px; }
-.guide-score-example-label { display: block; font-size: 9px; color: #ffe05c; font-weight: 850; margin-bottom: 12px; text-transform: uppercase; letter-spacing: .06em; }
-.guide-score-card-row { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
-.guide-score-card-row img { width: 34px; height: auto; border-radius: 4px; }
-.guide-score-plus, .guide-score-equals { font-size: 14px; color: #ffe05c; }
-.guide-score-value { background: #ffe05c; border: 1px solid #132d67; border-radius: 6px; color: #132d67; padding: 5px 8px; font-size: 20px; box-shadow: 2px 2px 0 #ed4f7e; }
-.guide-score-inline-bonus { display: flex; flex-direction: column; text-align: center; color: #ffe05c; padding: 4px; }
-.guide-score-inline-bonus strong { font-size: 23px; }
-.guide-score-inline-bonus small { font-size: 6px; line-height: 1.2; font-weight: 850; }
+.guide-score-steps { display: grid; gap: 10px; margin: 19px 0 0; }
+.guide-score-step { display: flex; gap: 10px; align-items: flex-start; padding: 12px 11px; border: 1px solid #4e6593; border-radius: 10px; background: #1c3971; min-width: 0; }
+.guide-score-step > b { display: grid; place-items: center; width: 25px; height: 25px; flex: 0 0 25px; font-size: 13px; font-weight: 950; color: #132d67; background: #ffe05c; border: 1px solid #132d67; border-radius: 6px; box-shadow: 1px 1px 0 #132d67; margin-top: 2px; }
+.guide-score-step-body { flex: 1; min-width: 0; display: grid; gap: 8px; }
+.guide-score-step-body span { font-size: 11px; color: #d0d9ec; line-height: 1.5; font-weight: 600; }
+.guide-score-card-row { display: flex; gap: 5px; align-items: center; flex-wrap: nowrap; min-width: 0; width: 100%; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; -ms-overflow-style: none; padding: 3px 1px; }
+.guide-score-card-row::-webkit-scrollbar { display: none; }
+.guide-score-card-row img { flex: 0 0 auto; width: 34px; height: auto; border: 1.5px solid #132d67; border-radius: 5px; filter: drop-shadow(1.5px 2px 0 #132d67); }
+.guide-score-plus, .guide-score-equals { flex: 0 0 auto; font-size: 14px; color: #ffe05c; }
+.guide-score-value { flex: 0 0 auto; background: #ffe05c; border: 1px solid #132d67; border-radius: 6px; color: #132d67; padding: 4px 7px; font-size: 18px; line-height: 1; box-shadow: 2px 2px 0 #ed4f7e; font-weight: 950; }
+.guide-score-inline-bonus { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #ffe05c; padding: 2px 3px; line-height: .85; }
+.guide-score-inline-bonus strong { color: #ffe05c; font-size: 23px; letter-spacing: -.06em; -webkit-text-stroke: 1.2px #132d67; paint-order: stroke fill; text-shadow: 2px 2px 0 #ed4f7e; }
+.guide-score-inline-bonus small { display: block; margin-top: 1px; color: #ffe05c; font-size: 7px; font-weight: 950; letter-spacing: .04em; line-height: 1; text-align: center; -webkit-text-stroke: .5px #132d67; paint-order: stroke fill; }
 .info-play-callout { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 20px 16px; margin-top: 28px; border: 2px solid #132d67; border-radius: 15px; background: #bce3e7; box-shadow: 4px 5px 0 #132d67; overflow: hidden; }
 .info-play-callout > div { flex: 1; min-width: 0; }
 .info-play-callout h2 { font-size: 22px; font-weight: 950; line-height: 1.15; letter-spacing: -.7px; margin: 8px 0; }

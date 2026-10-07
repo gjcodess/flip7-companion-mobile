@@ -31,5 +31,7 @@ export function InfoPage({ kind, kicker, title, accent, intro, children }: { kin
 }
 
 export function InfoPlayCallout({ practice = false }: { practice?: boolean }) {
-  return <section className="info-play-callout"><div><span className="room-kicker">{practice ? 'LEARN BY DOING' : 'BACK TO THE GOOD TIMES'}</span><h2>{practice ? 'Give it a practice flip.' : 'Your next game is waiting.'}</h2><p>{practice ? 'Try the cards and scoring on a solo practice table.' : 'Bring your crew, create a room, and press your luck.'}</p><a href={practice ? '/demo' : '/new'}>{practice ? 'Try the demo' : 'Create a room'} <ArrowRight size={16} /></a></div><img src={`/assets/${practice ? 'promo-1' : 'promo-2'}.png`} alt="" loading="lazy" decoding="async" /></section>
+  const edition = useLibrary().settings.edition
+  const imageSrc = edition === 'vengeance' ? '/assets/flip7-vengeance-logo.webp' : `/assets/${practice ? 'promo-1' : 'promo-2'}.webp`
+  return <section className="info-play-callout"><div><span className="room-kicker">{practice ? 'LEARN BY DOING' : 'BACK TO THE GOOD TIMES'}</span><h2>{practice ? 'Give it a practice flip.' : 'Your next game is waiting.'}</h2><p>{practice ? 'Try the cards and scoring on a solo practice table.' : 'Bring your crew, create a room, and press your luck.'}</p><a href={practice ? '/demo' : '/new'}>{practice ? 'Try the demo' : 'Create a room'} <ArrowRight size={16} /></a></div><img className={edition === 'vengeance' ? 'info-play-callout-vengeance-art' : undefined} src={imageSrc} alt="" loading="lazy" decoding="async" /></section>
 }
