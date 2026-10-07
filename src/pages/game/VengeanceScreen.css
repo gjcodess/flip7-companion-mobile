@@ -1,11 +1,11 @@
 /* Vengeance Mode In-Game Styles & Theme Palette Alignment */
 
 /* Shell & Marquees */
-.banker-shell.edition-vengeance {
+:is(.banker-shell, .demo-shell).edition-vengeance {
   background-color: #ebd7be;
 }
 
-.banker-shell.edition-vengeance .game-shell {
+:is(.banker-shell, .demo-shell).edition-vengeance .game-shell {
   background-color: #ebd7be;
   background-image:
     radial-gradient(circle, #132d6724 1px, transparent 1.1px),
@@ -51,6 +51,62 @@
   width: min(44vw, 210px);
   max-height: 52px;
   object-fit: contain;
+}
+
+.edition-vengeance .demo-topbar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  background: transparent !important;
+  border-bottom: 0 !important;
+  min-height: 62px !important;
+  padding: 0 16px !important;
+}
+
+.edition-vengeance .demo-topbar .brand-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  cursor: pointer !important;
+}
+
+.edition-vengeance .demo-topbar .brand-logo {
+  max-height: 44px !important;
+  width: auto !important;
+  max-width: 190px !important;
+  object-fit: contain !important;
+  mix-blend-mode: normal !important;
+  filter: none !important;
+}
+
+.edition-vengeance .demo-topbar .exit-button {
+  margin-left: auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  min-height: 44px !important;
+  padding: 0 15px !important;
+  border-radius: 12px !important;
+  border: 1.5px solid #132d67 !important;
+  background: #132d67 !important;
+  color: #fff7da !important;
+  box-shadow: 2px 3px 0 #f7c244 !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+  cursor: pointer !important;
+  line-height: 1 !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease !important;
+}
+
+.edition-vengeance .demo-topbar .exit-button:hover,
+.edition-vengeance .demo-topbar .exit-button:active {
+  background: #1a3c87 !important;
+  transform: translate(1px, 2px) !important;
+  box-shadow: 1px 1px 0 #f7c244 !important;
 }
 
 /* Match Strip */
@@ -1200,46 +1256,155 @@
 
 .v-demo-names {
   display: grid !important;
-  gap: 9px !important;
-  margin: 16px 0 !important;
+  gap: 8px !important;
+  margin: 12px 0 16px !important;
 }
 
-.v-demo-names label {
-  display: grid !important;
-  gap: 5px !important;
+.v-demo-player-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 8px 10px !important;
+  border: 1.5px solid #132d67 !important;
+  border-radius: 9px !important;
+  background: #fffdf5 !important;
+  box-shadow: 2px 2px 0 #132d67 !important;
+}
+
+.v-demo-player-num {
   font-size: 11px !important;
   font-weight: 900 !important;
-  color: #132d67 !important;
+  color: #7b8599 !important;
+  flex: 0 0 18px !important;
 }
 
-.v-demo-names input,
-.v-demo-add input {
-  width: 100% !important;
-  padding: 11px !important;
-  border: 2px solid #132d67 !important;
-  border-radius: 8px !important;
-  background: #fffdf5 !important;
+.v-demo-player-row input {
+  flex: 1 !important;
+  min-width: 0 !important;
+  padding: 8px 10px !important;
+  border: 1.5px solid #132d67 !important;
+  border-radius: 6px !important;
+  background: #ffffff !important;
   color: #132d67 !important;
-  font-size: 14px !important;
-  font-weight: 700 !important;
+  font-size: 13px !important;
+  font-weight: 750 !important;
+}
+
+.v-demo-player-row input:focus,
+.v-demo-add input:focus {
+  border-color: #e83239 !important;
+  box-shadow: 2px 2px 0 #e83239 !important;
+  outline: none !important;
+}
+
+.v-demo-player-remove {
+  display: grid !important;
+  place-items: center !important;
+  width: 28px !important;
+  height: 28px !important;
+  flex: 0 0 28px !important;
+  border: 1.5px solid #132d67 !important;
+  border-radius: 6px !important;
+  background: #ffe5e5 !important;
+  color: #b92530 !important;
+  cursor: pointer !important;
+}
+
+.v-demo-player-remove:hover {
+  background: #e83239 !important;
+  color: #ffffff !important;
 }
 
 .v-demo-add {
   display: flex !important;
   gap: 8px !important;
-  margin-bottom: 15px !important;
+  margin-bottom: 12px !important;
 }
 
 .v-demo-add input {
   flex: 1 !important;
+  padding: 10px 12px !important;
+  border: 1.5px solid #132d67 !important;
+  border-radius: 8px !important;
+  background: #fffdf5 !important;
+  color: #132d67 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
 }
 
 .v-demo-add button {
   padding: 0 16px !important;
-  border: 2px solid #132d67 !important;
+  border: 1.5px solid #132d67 !important;
   border-radius: 8px !important;
   background: #f7c244 !important;
   color: #132d67 !important;
   font-weight: 900 !important;
   cursor: pointer !important;
+  box-shadow: 2px 2px 0 #132d67 !important;
+}
+
+.v-demo-bottom-row {
+  display: flex !important;
+  align-items: stretch !important;
+  gap: 10px !important;
+  margin-top: 18px !important;
+}
+
+.v-demo-target-wrap {
+  flex: 0 0 auto !important;
+}
+
+.v-demo-target-wrap .room-score-dropdown {
+  height: 100% !important;
+}
+
+.v-demo-target-wrap .room-score-trigger {
+  height: 100% !important;
+  min-height: 48px !important;
+  padding: 10px 14px !important;
+  border: 2px solid #132d67 !important;
+  border-radius: 12px !important;
+  background: #fffdf5 !important;
+  box-shadow: 3px 4px 0 #132d67 !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+  color: #132d67 !important;
+}
+
+.v-demo-target-wrap .room-score-options {
+  bottom: calc(100% + 8px) !important;
+  top: auto !important;
+  left: 0 !important;
+  right: auto !important;
+}
+
+.v-demo-start-btn {
+  flex: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-height: 48px !important;
+  padding: 12px 18px !important;
+  border: 2px solid #132d67 !important;
+  border-radius: 12px !important;
+  background: #e83239 !important;
+  color: #ffffff !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+  cursor: pointer !important;
+  box-shadow: 3px 4px 0 #132d67 !important;
+  transition: transform 0.1s ease, box-shadow 0.1s ease !important;
+}
+
+.v-demo-start-btn:active:not(:disabled) {
+  transform: translate(2px, 2px) !important;
+  box-shadow: 1px 2px 0 #132d67 !important;
+}
+
+.v-demo-start-btn:disabled {
+  opacity: 0.55 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
 }

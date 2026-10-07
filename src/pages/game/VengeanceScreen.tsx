@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import {
+  ArrowDown,
   ArrowLeft,
   ArrowRightLeft,
+  ArrowUp,
   Cast,
   Check,
+  ChevronDown,
   ChevronRight,
   CircleHelp,
   ClipboardList,
@@ -12,6 +15,8 @@ import {
   LogOut,
   Menu,
   Monitor,
+  Pencil,
+  Plus,
   Redo2,
   RotateCcw,
   Share2,
@@ -39,12 +44,15 @@ import { ConfirmationModal } from '../../components/ConfirmationModal'
 import { CardArtwork } from '../../components/CardArtwork'
 import { PickerCardArtwork } from '../../components/PickerCardArtwork'
 import { PlayerAvatar } from '../../components/PlayerAvatar'
+import { defaultPlayerAvatarFor, type PlayerAvatarId } from '../../lib/player-avatars'
 import { TvShareDialog } from '../mobile/TvShareDialog'
 import { tvSharingAvailable, useTvSession } from '../../lib/tv-share'
+import { TargetScorePicker } from '../mobile/TargetScorePicker'
+import { RoomCharacterDialog } from '../mobile/MobileApp'
 import { GameTable } from './GameTable'
 import './VengeanceScreen.css'
 
-const demoColors = ['#e93234', '#193c89', '#da8736', '#257878', '#802e80']
+const demoColors = ['#e93234', '#193c89', '#da8736', '#257878', '#802e80', '#63439b', '#b33973', '#2e7d32']
 
 function statusClass(player: VPlayer) {
   return player.status === 'flip-seven' ? 'flip-seven' : player.status
@@ -199,16 +207,20 @@ function VengeanceResults({
 }
 
 function VengeanceMenuDialog({
+  demo = false,
   onClose,
   onOpenPlayers,
   onOpenRules,
   onOpenTvShare,
+  onRestart,
   onExit,
 }: {
+  demo?: boolean
   onClose: () => void
   onOpenPlayers: () => void
   onOpenRules: () => void
   onOpenTvShare: () => void
+  onRestart?: () => void
   onExit: () => void
 }) {
   const dialog = useRef<HTMLDialogElement>(null)
@@ -227,14 +239,14 @@ function VengeanceMenuDialog({
     >
       <div className="room-dialog-heading">
         <div>
-          <span className="room-kicker">WITH A VENGEANCE</span>
-          <h2>Game menu</h2>
+          <span className="room-kicker">{demo ? 'PRACTICE SESSION' : 'WITH A VENGEANCE'}</span>
+          <h2>{demo ? 'Practice menu' : 'Game menu'}</h2>
         </div>
         <button className="room-icon-button" aria-label="Close menu" onClick={onClose}>
           <X size={20} />
         </button>
       </div>
-      <p>Manage tables, view game rules, cast to TV, or exit this session.</p>
+      <p>{demo ? 'Manage tables, view game rules, restart, or exit this practice session.' : 'Manage tables, view game rules, cast to TV, or exit this session.'}</p>
       <div className="banker-menu-list">
         <button
           type="button"
@@ -270,7 +282,26 @@ function VengeanceMenuDialog({
           </div>
           <ChevronRight size={18} className="banker-menu-item-chevron" />
         </button>
-        {tvSharingAvailable() && (
+        {demo && onRestart && (
+          <button
+            type="button"
+            className="banker-menu-item"
+            onClick={() => {
+              onClose()
+              onRestart()
+            }}
+          >
+            <div className="banker-menu-item-icon">
+              <RotateCcw size={20} />
+            </div>
+            <div className="banker-menu-item-text">
+              <strong>Restart practice table</strong>
+              <span>Reset scores and reconfigure players</span>
+            </div>
+            <ChevronRight size={18} className="banker-menu-item-chevron" />
+          </button>
+        )}
+        {!demo && tvSharingAvailable() && (
           <button
             type="button"
             className="banker-menu-item"
@@ -301,8 +332,8 @@ function VengeanceMenuDialog({
             <LogOut size={20} />
           </div>
           <div className="banker-menu-item-text">
-            <strong>Exit game</strong>
-            <span>Return to room details (game stays saved)</span>
+            <strong>{demo ? 'Exit practice table' : 'Exit game'}</strong>
+            <span>{demo ? 'Leave practice session and return to app' : 'Return to room details (game stays saved)'}</span>
           </div>
           <ChevronRight size={18} className="banker-menu-item-chevron" />
         </button>
@@ -362,85 +393,184 @@ function VengeanceCardPickerPanel({
   )
 }
 
-function DemoSetup({ onStart, onExit }: { onStart: (players: PlayerProfile[]) => void; onExit: () => void }) {
-  const [names, setNames] = useState(['Player 1', 'Player 2', 'Player 3'])
+function DemoSetup({ onStart, onExit }: { onStart: (players: PlayerProfile[], targetScore: number) => void; onExit: () => void }) {
+  const library = getLibrary()
+  const [targetScore, setTargetScore] = useState(library.settings.vengeanceTargetScore || 200)
+  const [players, setPlayers] = useState<PlayerProfile[]>([
+    { id: 'demo-0', name: 'Player 1', color: demoColors[0], avatar: defaultPlayerAvatarFor('demo-0', 0) },
+    { id: 'demo-1', name: 'Player 2', color: demoColors[1], avatar: defaultPlayerAvatarFor('demo-1', 1) },
+    { id: 'demo-2', name: 'Player 3', color: demoColors[2], avatar: defaultPlayerAvatarFor('demo-2', 2) },
+  ])
   const [name, setName] = useState('')
+  const [editingCharacter, setEditingCharacter] = useState<PlayerProfile | null>(null)
+
+  const addPlayer = () => {
+    const trimmed = name.trim()
+    if (!trimmed || players.length >= 18) return
+    const id = `demo-${Date.now()}-${players.length}`
+    const nextPlayer: PlayerProfile = {
+      id,
+      name: trimmed,
+      color: demoColors[players.length % demoColors.length],
+      avatar: defaultPlayerAvatarFor(id, players.length),
+    }
+    setPlayers([...players, nextPlayer])
+    setName('')
+  }
+
+  const removePlayer = (player: PlayerProfile) => {
+    if (players.length <= 2) return
+    setPlayers(current => current.filter(p => p.id !== player.id))
+  }
+
+  const movePlayer = (index: number, delta: number) => {
+    const next = index + delta
+    if (next < 0 || next >= players.length) return
+    const copy = [...players]
+    const [moved] = copy.splice(index, 1)
+    copy.splice(next, 0, moved)
+    setPlayers(copy)
+  }
+
+  const saveCharacter = (player: PlayerProfile, avatar: PlayerAvatarId, color: string) => {
+    setPlayers(current => current.map(p => p.id === player.id ? { ...p, avatar, color } : p))
+  }
+
+  const canStart = players.length >= 2 && players.every((p) => p.name.trim().length > 0)
+
   return (
-    <div className="app-shell banker-shell saved-room-game edition-vengeance">
-      <aside className="desktop-marquee left">
-        <div>WITH A<br />VENGEANCE</div>
-      </aside>
-      <main className="game-shell">
-        <header className="topbar banker-topbar">
-          <button className="v-back" onClick={onExit}>
-            <ArrowLeft size={17} /> Back to Vengeance
+    <div className="room-app-shell edition-vengeance">
+      <main className="room-app-main page-room">
+        <div className="room-back-row">
+          <button className="room-back-link" onClick={onExit}>
+            <ArrowLeft size={19} /> Back
           </button>
-          <span className="game-topbar-brand">
-            <img src="/assets/flip7-vengeance-logo.webp" alt="Flip 7 With a Vengeance" />
-          </span>
-        </header>
-        <div style={{ padding: '20px 18px' }}>
+        </div>
+        <div style={{ padding: '0 0 20px' }}>
           <span className="eyebrow" style={{ color: '#e83239', fontWeight: 950, fontSize: '10px' }}>
             PRACTICE SESSION
           </span>
-          <h1 style={{ margin: '6px 0 8px', fontSize: '30px', color: '#132d67' }}>Practice table</h1>
+          <h1 style={{ margin: '6px 0 8px', fontSize: '28px', color: '#132d67', fontWeight: 950 }}>Practice table</h1>
           <p style={{ fontSize: '12px', color: '#53607a', lineHeight: 1.5, marginBottom: '18px' }}>
-            Set up temporary hands to explore cards and action abilities without affecting saved room history.
+            Set up temporary hands to explore cards, modifiers, and action abilities without affecting saved room history.
           </p>
-          <div className="v-demo-names">
-            {names.map((item, index) => (
-              <label key={index}>
-                Player {index + 1}
-                <input
-                  aria-label={`Player ${index + 1} name`}
-                  value={item}
-                  maxLength={24}
-                  onChange={(e) =>
-                    setNames((curr) => curr.map((entry, i) => (i === index ? e.target.value : entry)))
-                  }
-                />
+
+          {/* Player Roster */}
+          <div style={{ marginBottom: '14px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 900, color: '#132d67' }}>
+                Who’s at the table? ({players.length}/18)
               </label>
-            ))}
+              <span style={{ fontSize: '10px', color: '#6a7285', fontWeight: 700 }}>Min 2 players</span>
+            </div>
+
+            <div className="room-roster">
+              {players.map((p, i) => (
+                <div key={p.id} className="room-roster-row">
+                  <span className="room-seat">{String(i + 1).padStart(2, '0')}</span>
+                  <button
+                    type="button"
+                    className="room-roster-avatar-edit"
+                    aria-label={`Edit ${p.name}'s character`}
+                    title={`Edit ${p.name}'s character`}
+                    onClick={() => setEditingCharacter(p)}
+                  >
+                    <PlayerAvatar player={p} className="room-avatar small" />
+                    <Pencil size={13} />
+                  </button>
+                  <b>{p.name}</b>
+                  <div className="room-roster-controls">
+                    <button
+                      type="button"
+                      aria-label={`Move ${p.name} up`}
+                      disabled={i === 0}
+                      onClick={() => movePlayer(i, -1)}
+                    >
+                      <ArrowUp size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Move ${p.name} down`}
+                      disabled={i === players.length - 1}
+                      onClick={() => movePlayer(i, 1)}
+                    >
+                      <ArrowDown size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      className="room-roster-remove"
+                      aria-label={`Remove ${p.name} from practice`}
+                      title={`Remove ${p.name} from practice`}
+                      disabled={players.length <= 2}
+                      onClick={() => removePlayer(p)}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Add Player Input */}
+            <div className="room-add-player">
+              <input
+                aria-label="New player name"
+                maxLength={24}
+                placeholder="Add a player’s name"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    addPlayer()
+                  }
+                }}
+              />
+              <button
+                type="button"
+                aria-label="Add named player"
+                disabled={!name.trim() || players.length >= 18}
+                onClick={() => addPlayer()}
+              >
+                <Plus size={20} />
+              </button>
+            </div>
           </div>
-          <div className="v-demo-add">
-            <input
-              aria-label="Additional player name"
-              value={name}
-              maxLength={24}
-              placeholder="Another player"
-              onChange={(e) => setName(e.target.value)}
-            />
+
+          {/* Bottom Controls: Target Score + Start Practice */}
+          <div className="v-demo-bottom-row">
+            <div className="v-demo-target-wrap">
+              <TargetScorePicker value={targetScore} onChange={setTargetScore} />
+            </div>
             <button
-              disabled={!name.trim() || names.length >= 18}
-              onClick={() => {
-                setNames([...names, name.trim()])
-                setName('')
-              }}
+              type="button"
+              className="v-demo-start-btn"
+              disabled={!canStart}
+              onClick={() =>
+                onStart(
+                  players.map((p, i) => ({
+                    id: p.id || `demo-${i}`,
+                    name: p.name.trim(),
+                    color: p.color || demoColors[i % demoColors.length],
+                    avatar: p.avatar,
+                  })),
+                  targetScore
+                )
+              }
             >
-              Add
+              Start practice match
             </button>
           </div>
-          <button
-            className="next-round-button"
-            style={{ width: '100%', marginTop: '16px' }}
-            disabled={names.length < 2 || names.some((item) => !item.trim())}
-            onClick={() =>
-              onStart(
-                names.map((item, index) => ({
-                  id: `demo-${index}`,
-                  name: item.trim(),
-                  color: demoColors[index % demoColors.length],
-                }))
-              )
-            }
-          >
-            Start practice match
-          </button>
+
+          {editingCharacter && (
+            <RoomCharacterDialog
+              player={editingCharacter}
+              onClose={() => setEditingCharacter(null)}
+              onSave={(avatar, color) => saveCharacter(editingCharacter, avatar, color)}
+            />
+          )}
         </div>
       </main>
-      <aside className="desktop-marquee right">
-        <div>NO ONE'S<br />SAFE!</div>
-      </aside>
     </div>
   )
 }
@@ -559,12 +689,17 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
     else setRoundSummaryOpen(false)
   }, [state?.phase])
 
+  // Reset player organize states on new round
+  useEffect(() => {
+    setOrganizedPlayers({})
+  }, [state?.roundNumber])
+
   if (!state) {
     return demo ? (
       <DemoSetup
         onExit={exit}
-        onStart={(players) => {
-          const next = vengeanceInitialState(players)
+        onStart={(players, target) => {
+          const next = vengeanceInitialState(players, target)
           stateRef.current = next
           setState(next)
         }}
@@ -590,7 +725,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
         <main className="game-shell">
           <header className="topbar banker-topbar banker-results-topbar">
             <button type="button" className="banker-results-back" onClick={exit}>
-              <ArrowLeft size={18} /> Back to room
+              <ArrowLeft size={18} /> {demo ? 'Exit practice' : 'Back to room'}
             </button>
           </header>
           <VengeanceResults
@@ -605,7 +740,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
             <ConfirmationModal
               eyebrow="NEW VENGEANCE GAME"
               title="Start a new game?"
-              message="Your completed match stays saved in room history."
+              message={demo ? "Start a fresh practice match with these players." : "Your completed match stays saved in room history."}
               cancelLabel="Keep results"
               confirmLabel="New game"
               onCancel={() => setNewGamePromptOpen(false)}
@@ -623,11 +758,6 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
       </div>
     )
   }
-
-  // Reset player organize states on new round
-  useEffect(() => {
-    setOrganizedPlayers({})
-  }, [state?.roundNumber])
 
   const selectCardForTable = (card: VengeanceCard) => {
     setPickerOpen(false)
@@ -684,33 +814,44 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
   }
 
   return (
-    <div className="app-shell banker-shell saved-room-game edition-vengeance">
+    <div className={`app-shell ${demo ? 'demo-shell' : 'banker-shell saved-room-game'} edition-vengeance`}>
       <aside className="desktop-marquee left">
         <div>WITH A<br />VENGEANCE</div>
       </aside>
       <main className="game-shell">
-        <header className="topbar banker-topbar">
-          <button
-            className={`brand-button cast-button ${isSharing ? 'is-sharing' : ''}`}
-            aria-label="TV scoreboard"
-            title="TV scoreboard"
-            onClick={() => setTvOpen(true)}
-          >
-            <Cast size={20} />
-            {isSharing && <span className="cast-live-dot" />}
-          </button>
-          <span className="game-topbar-brand">
-            <img src="/assets/flip7-vengeance-logo.webp" alt="Flip 7 With a Vengeance" />
-          </span>
-          <button
-            className="brand-button menu-button"
-            aria-label="Open game menu"
-            title="Menu"
-            onClick={() => setShowMenu(true)}
-          >
-            <Menu size={20} />
-          </button>
-        </header>
+        {demo ? (
+          <header className="topbar demo-topbar">
+            <button className="brand-button" aria-label="Exit practice table" onClick={exit}>
+              <img className="brand-logo" src="/assets/flip7-vengeance-logo.webp" alt="Flip 7 With a Vengeance" />
+            </button>
+            <button className="account-pill exit-button" onClick={exit}>
+              <LogOut size={15} /> Exit
+            </button>
+          </header>
+        ) : (
+          <header className="topbar banker-topbar">
+            <button
+              className={`brand-button cast-button ${isSharing ? 'is-sharing' : ''}`}
+              aria-label="TV scoreboard"
+              title="TV scoreboard"
+              onClick={() => setTvOpen(true)}
+            >
+              <Cast size={20} />
+              {isSharing && <span className="cast-live-dot" />}
+            </button>
+            <span className="game-topbar-brand">
+              <img src="/assets/flip7-vengeance-logo.webp" alt="Flip 7 With a Vengeance" />
+            </span>
+            <button
+              className="brand-button menu-button"
+              aria-label="Open game menu"
+              title="Menu"
+              onClick={() => setShowMenu(true)}
+            >
+              <Menu size={20} />
+            </button>
+          </header>
+        )}
 
         {saveError && (
           <div className="room-game-save-error" role="alert">
@@ -727,7 +868,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
             <b>{String(state.roundNumber).padStart(2, '0')}</b>
           </div>
           <div className="target">
-            <span>FIRST TO</span>
+            <span>{demo ? 'PRACTICE TO' : 'FIRST TO'}</span>
             <b>{state.targetScore}</b>
           </div>
           <div>
@@ -1392,10 +1533,12 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
 
       {showMenu && (
         <VengeanceMenuDialog
+          demo={demo}
           onClose={() => setShowMenu(false)}
           onOpenPlayers={() => setPlayersOpen(true)}
           onOpenRules={() => setRulesOpen(true)}
           onOpenTvShare={() => setTvOpen(true)}
+          onRestart={demo ? () => setState(null) : undefined}
           onExit={exit}
         />
       )}
