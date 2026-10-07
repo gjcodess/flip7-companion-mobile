@@ -96,7 +96,7 @@ function BankerMenuDialog({ onClose, onOpenPlayers, onOpenRules, onOpenTvShare, 
     <div className="banker-menu-list">
       <button type="button" className="banker-menu-item" onClick={() => { onClose(); onOpenPlayers() }}>
         <div className="banker-menu-item-icon"><Users size={20} /></div>
-        <div className="banker-menu-item-text"><strong>Players & Tables</strong><span>View current scores, status, and player details</span></div>
+        <div className="banker-menu-item-text"><strong>Players</strong><span>View current scores, status, and player details</span></div>
         <ChevronRight size={18} className="banker-menu-item-chevron" />
       </button>
       <button type="button" className="banker-menu-item" onClick={() => { onClose(); onOpenRules() }}>

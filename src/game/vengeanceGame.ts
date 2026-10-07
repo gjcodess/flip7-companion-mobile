@@ -1,16 +1,19 @@
 import type { PlayerAvatarId } from '../lib/player-avatars'
 import { vengeanceCard, type VengeanceCard } from './vengeanceCards'
 
+export type VVariant = 'standard' | 'brutal'
+export type VFlipSevenChoice = { finisherId: string; choice: 'self' | 'penalize'; targetId?: string }
 export type VStatus = 'active' | 'stayed' | 'busted' | 'frozen' | 'flip-seven'
 export type VEntry = { instanceId: string; card: VengeanceCard; voided?: boolean }
 export type VPlayer = { id: string; name: string; color: string; avatar?: PlayerAvatarId; totalScore: number; status: VStatus; entries: VEntry[] }
 export type VPending = { card: VengeanceCard; sourceId: string; actorId?: string; targetId?: string; selectedCards: string[] }
 export type VForced = { kind: 'one' | 'four'; targetId: string; remaining: number; deferred: VPending[]; actionInstanceId?: string }
-export type VHistory = { round: number; scores: Record<string, number>; hands: Record<string, { name: string; color: string; avatar?: PlayerAvatarId; status: VStatus; entries: VEntry[] }>; events: string[] }
-export type VSnapshot = Pick<VState, 'phase' | 'dealerId' | 'dealIndex' | 'turnPlayerId' | 'selectedPlayerId' | 'roundFinisherId' | 'players' | 'pending' | 'forced' | 'resolving' | 'events' | 'nextId'>
+export type VHistory = { round: number; scores: Record<string, number>; hands: Record<string, { name: string; color: string; avatar?: PlayerAvatarId; status: VStatus; entries: VEntry[] }>; events: string[]; variant?: VVariant; flipSevenChoice?: VFlipSevenChoice }
+export type VSnapshot = Pick<VState, 'phase' | 'dealerId' | 'dealIndex' | 'turnPlayerId' | 'selectedPlayerId' | 'roundFinisherId' | 'players' | 'pending' | 'pendingFlipSeven' | 'flipSevenChoice' | 'forced' | 'resolving' | 'events' | 'nextId' | 'variant'>
 export type VState = {
   phase: 'deal' | 'turn' | 'settlement' | 'results'
   targetScore: number
+  variant: VVariant
   roundNumber: number
   dealerId: string
   dealIndex: number
@@ -19,6 +22,8 @@ export type VState = {
   roundFinisherId: string | null
   players: VPlayer[]
   pending: VPending | null
+  pendingFlipSeven: { finisherId: string } | null
+  flipSevenChoice: VFlipSevenChoice | null
   forced: VForced[]
   resolving: VPending[]
   events: string[]
@@ -42,12 +47,15 @@ export type VAction =
   | { type: 'cancel-pending' }
   | { type: 'remove-card'; playerId: string; instanceId: string }
   | { type: 'replace-card'; playerId: string; instanceId: string; cardId: string }
+  | { type: 'resolve-flip-seven'; choice: 'self' }
+  | { type: 'resolve-flip-seven'; choice: 'penalize'; targetPlayerId: string }
 
-export function vengeanceInitialState(roster: Pick<VPlayer, 'id' | 'name' | 'color' | 'avatar'>[], targetScore = 200, starterId = roster[0]?.id): VState {
+export function vengeanceInitialState(roster: Pick<VPlayer, 'id' | 'name' | 'color' | 'avatar'>[], targetScore = 200, starterId = roster[0]?.id, variant: VVariant = 'standard'): VState {
   const first = roster.find(player => player.id === starterId) ?? roster[0]
   return {
     phase: 'deal',
     targetScore,
+    variant,
     roundNumber: 1,
     dealerId: first?.id ?? '',
     dealIndex: 0,
@@ -56,6 +64,8 @@ export function vengeanceInitialState(roster: Pick<VPlayer, 'id' | 'name' | 'col
     roundFinisherId: null,
     players: roster.map(player => ({ ...player, totalScore: 0, status: 'active', entries: [] })),
     pending: null,
+    pendingFlipSeven: null,
+    flipSevenChoice: null,
     forced: [],
     resolving: [],
     events: [],
@@ -69,14 +79,40 @@ export function vengeanceInitialState(roster: Pick<VPlayer, 'id' | 'name' | 'col
 
 const isNumber = (entry: VEntry) => !entry.voided && entry.card.kind === 'number'
 const value = (entry: VEntry) => entry.card.value ?? entry.card.points ?? 0
-export function vengeanceScore(player: VPlayer) {
-  if (player.status === 'busted') return 0
+export function vengeanceScore(
+  player: VPlayer,
+  variant: VVariant = 'standard',
+  flipSevenChoice?: VFlipSevenChoice | null
+): number {
+  const isBrutal = variant === 'brutal'
+  const penalties = player.entries
+    .filter(entry => !entry.voided && entry.card.kind === 'modifier')
+    .reduce((sum, entry) => sum + (entry.card.points ?? 0), 0)
+
+  let flipDelta = 0
+  if (flipSevenChoice) {
+    if (flipSevenChoice.choice === 'self' && player.id === flipSevenChoice.finisherId) {
+      flipDelta = 15
+    } else if (flipSevenChoice.choice === 'penalize' && player.id === flipSevenChoice.targetId) {
+      flipDelta = -15
+    }
+  } else if (player.status === 'flip-seven') {
+    if (!isBrutal) flipDelta = 15
+  }
+
+  if (player.status === 'busted') {
+    return isBrutal ? penalties + flipDelta : 0
+  }
+
   const numbers = player.entries.filter(isNumber)
-  if (player.entries.some(entry => !entry.voided && entry.card.id === 'v-number-zero') && numbers.length < 7) return 0
+  if (player.entries.some(entry => !entry.voided && entry.card.id === 'v-number-zero') && numbers.length < 7) {
+    return isBrutal ? penalties + flipDelta : 0
+  }
+
   const total = numbers.reduce((sum, entry) => sum + value(entry), 0)
   const halved = player.entries.some(entry => !entry.voided && entry.card.id === 'v-modifier-half') ? Math.floor(total / 2) : total
-  const penalties = player.entries.filter(entry => !entry.voided && entry.card.kind === 'modifier').reduce((sum, entry) => sum + (entry.card.points ?? 0), 0)
-  return Math.max(0, halved + penalties) + (player.status === 'flip-seven' || numbers.length >= 7 ? 15 : 0)
+  const base = isBrutal ? (halved + penalties) : Math.max(0, halved + penalties)
+  return base + flipDelta
 }
 
 function evaluate(player: VPlayer): VPlayer {
@@ -101,8 +137,8 @@ function receive(player: VPlayer, entry: VEntry): VPlayer {
 }
 
 function snapshot(state: VState): VSnapshot {
-  const { phase, dealerId, dealIndex, turnPlayerId, selectedPlayerId, roundFinisherId, players, pending, forced, resolving, events, nextId } = state
-  return { phase, dealerId, dealIndex, turnPlayerId, selectedPlayerId, roundFinisherId, players, pending, forced, resolving, events, nextId }
+  const { phase, dealerId, dealIndex, turnPlayerId, selectedPlayerId, roundFinisherId, players, pending, pendingFlipSeven, flipSevenChoice, forced, resolving, events, nextId, variant } = state
+  return { phase, dealerId, dealIndex, turnPlayerId, selectedPlayerId, roundFinisherId, players, pending, pendingFlipSeven, flipSevenChoice, forced, resolving, events, nextId, variant }
 }
 function commit(previous: VState, next: VState): VState { return { ...next, past: [...previous.past, snapshot(previous)].slice(-30), future: [] } }
 function playerIndex(state: VState, id: string) { return state.players.findIndex(player => player.id === id) }
@@ -114,9 +150,15 @@ function nextActive(state: VState, afterId: string) {
   }
   return null
 }
-function faceUp(state: VState) { return state.players.flatMap(player => player.status !== 'active' ? [] : player.entries.filter(entry => !entry.voided).map(entry => ({ player, entry }))) }
+function faceUp(state: VState) { return state.players.flatMap(player => player.status !== 'active' ? [] : player.entries.filter(entry => !entry.voided && entry.card.kind !== 'action').map(entry => ({ player, entry }))) }
 export function vengeanceEligibleActors(state: VState, pending = state.pending): VPlayer[] {
   if (!pending) return []
+  if (pending.card.kind === 'modifier') {
+    if (state.variant === 'brutal') {
+      return state.players
+    }
+    return state.players.filter(player => player.status === 'active')
+  }
   const faces = faceUp(state)
   if (pending.card.id === 'v-action-swap' && new Set(faces.map(face => face.player.id)).size < 2) return []
   if (pending.card.id === 'v-action-discard' && faces.length === 0) return []
@@ -176,10 +218,19 @@ function normalize(state: VState): VState {
           )
         }
       })
-      return { ...next, players, phase: 'settlement', pending: null, forced: [], resolving: [], turnPlayerId: null, roundFinisherId: finisher }
+      const pendingFlipSeven = next.variant === 'brutal' && !next.flipSevenChoice && finisher
+        ? { finisherId: finisher }
+        : null
+      return { ...next, players, phase: 'settlement', pending: null, pendingFlipSeven, forced: [], resolving: [], turnPlayerId: null, roundFinisherId: finisher }
+    }
+    if (!next.players.some(player => player.status === 'flip-seven')) {
+      if (next.pendingFlipSeven || next.flipSevenChoice) {
+        next = { ...next, pendingFlipSeven: null, flipSevenChoice: null }
+      }
     }
     if (next.pending) {
-      if (vengeanceEligibleActors(next).length > 0) return next
+      const stealHasNothing = next.pending.card.id === 'v-action-steal' && !!next.pending.actorId && vengeanceEligibleCards(next).length === 0
+      if (vengeanceEligibleActors(next).length > 0 && !stealHasNothing) return next
       const pendingCard = next.pending.card
       const sourceId = next.pending.sourceId
       const actionCardEntry: VEntry = { instanceId: `v-card-${next.nextId}`, card: pendingCard, voided: true }
@@ -258,10 +309,33 @@ export function vengeanceReducer(state: VState, action: VAction): VState {
     const next = state.future[0]
     return next ? { ...state, ...next, past: [...state.past, snapshot(state)], future: state.future.slice(1) } : state
   }
+  if (action.type === 'resolve-flip-seven') {
+    if (!state.pendingFlipSeven) return state
+    const finisher = state.players.find(p => p.id === state.pendingFlipSeven?.finisherId)
+    if (!finisher) return state
+    let message = ''
+    let choice: VFlipSevenChoice
+    if (action.choice === 'self') {
+      choice = { finisherId: finisher.id, choice: 'self' }
+      message = `${finisher.name} claimed the +15 pt Flip 7 bonus`
+    } else {
+      const target = state.players.find(p => p.id === action.targetPlayerId)
+      if (!target) return state
+      choice = { finisherId: finisher.id, choice: 'penalize', targetId: target.id }
+      message = `${finisher.name} reached Flip 7 and inflicted -15 pts on ${target.name}!`
+    }
+    const next: VState = {
+      ...state,
+      pendingFlipSeven: null,
+      flipSevenChoice: choice
+    }
+    return commit(state, addEvent(next, message))
+  }
   if (action.type === 'advance-round') {
     if (state.phase !== 'settlement') return state
-    const scores = Object.fromEntries(state.players.map(player => [player.id, vengeanceScore(player)]))
-    const history = [...state.history, { round: state.roundNumber, scores, hands: Object.fromEntries(state.players.map(player => [player.id, { name: player.name, color: player.color, avatar: player.avatar, status: player.status, entries: player.entries }])), events: state.events }]
+    if (state.pendingFlipSeven) return state
+    const scores = Object.fromEntries(state.players.map(player => [player.id, vengeanceScore(player, state.variant, state.flipSevenChoice)]))
+    const history = [...state.history, { round: state.roundNumber, scores, hands: Object.fromEntries(state.players.map(player => [player.id, { name: player.name, color: player.color, avatar: player.avatar, status: player.status, entries: player.entries }])), events: state.events, variant: state.variant, flipSevenChoice: state.flipSevenChoice ?? undefined }]
     const players = state.players.map(player => ({ ...player, totalScore: player.totalScore + scores[player.id] }))
     if (players.some(player => player.totalScore >= state.targetScore)) {
       const top = Math.max(...players.map(player => player.totalScore))
@@ -282,6 +356,8 @@ export function vengeanceReducer(state: VState, action: VAction): VState {
       roundFinisherId: null,
       players: players.map(player => ({ ...player, status: 'active', entries: [] })),
       pending: null,
+      pendingFlipSeven: null,
+      flipSevenChoice: null,
       forced: [],
       resolving: [],
       events: [],
@@ -388,7 +464,23 @@ export function vengeanceReducer(state: VState, action: VAction): VState {
   if (action.type === 'choose-target') {
     if (pending.card.kind !== 'modifier' || !vengeanceEligibleActors(state).some(player => player.id === action.playerId)) return state
     const target = state.players.find(player => player.id === action.playerId)
-    if (!target || target.status !== 'active') return state
+    if (!target) return state
+    if (state.variant !== 'brutal' && target.status !== 'active') return state
+
+    if (state.variant === 'brutal' && target.status === 'busted' && pending.card.id === 'v-modifier-half') {
+      const actionCardEntry: VEntry = { instanceId: `v-card-${state.nextId}`, card: pending.card, voided: true }
+      let next: VState = {
+        ...state,
+        players: state.players.map(player => player.id === target.id
+          ? { ...player, entries: [...player.entries, actionCardEntry] }
+          : player),
+        nextId: state.nextId + 1
+      }
+      const message = `${target.name} received ÷2 while busted; it had no effect and was discarded`
+      next = addEvent({ ...next, pending: null, roundFinisherId: target.id }, message)
+      return commit(state, normalize(next))
+    }
+
     let next: VState = {
       ...state,
       players: state.players.map(player => player.id === target.id

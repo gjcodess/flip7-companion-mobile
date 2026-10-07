@@ -5,6 +5,7 @@ import { vengeanceScore } from '../game/vengeanceGame'
 
 export type TvSnapshot = {
   edition?: 'classic' | 'vengeance'
+  variant?: 'standard' | 'brutal'
   roomId: string
   roomName: string
   targetScore: number
@@ -27,10 +28,10 @@ export type TvSnapshot = {
 export function buildTvSnapshot(room: Room): TvSnapshot {
   if (room.edition === 'vengeance') {
     const state = room.vengeanceState
-    return { edition: 'vengeance', roomId: room.id, roomName: room.name, targetScore: room.targetScore, round: state?.roundNumber ?? 1,
+    return { edition: 'vengeance', variant: state?.variant ?? room.variant ?? 'standard', roomId: room.id, roomName: room.name, targetScore: room.targetScore, round: state?.roundNumber ?? 1,
       phase: state?.phase === 'results' ? 'results' : state ? 'round' : 'ready', winnerIds: state?.winnerIds ?? [],
       players: state ? state.players.map(player => ({ id: player.id, name: player.name, color: player.color, avatar: player.avatar,
-        total: player.totalScore, roundScore: vengeanceScore(player), status: player.status,
+        total: player.totalScore, roundScore: vengeanceScore(player, state.variant, state.flipSevenChoice), status: player.status,
         isTurn: state.phase !== 'results' && player.id === (state.forced[0]?.targetId ?? state.turnPlayerId),
         cards: player.entries.map(entry => ({ image: entry.card.image ?? '', label: entry.card.label, voided: player.status === 'busted' || Boolean(entry.voided) })) }))
         : room.roster.map(player => ({ id: player.id, name: player.name, color: player.color, avatar: player.avatar, total: 0, roundScore: 0, status: 'ready', isTurn: false, cards: [] })) }

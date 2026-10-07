@@ -20,6 +20,7 @@ import {
   Redo2,
   RotateCcw,
   Share2,
+  Skull,
   Sparkles,
   Undo2,
   Users,
@@ -37,10 +38,14 @@ import {
   type VEntry,
   type VPlayer,
   type VState,
+  type VVariant,
+  type VFlipSevenChoice,
 } from '../../game/vengeanceGame'
 import { getLibrary, saveVengeanceState, updateLibrary, type PlayerProfile } from '../../lib/room-store'
 import { useAppNavigation, useNavigationGuard } from '../../lib/navigation'
 import { ConfirmationModal } from '../../components/ConfirmationModal'
+import { BrutalWarningModal } from '../../components/BrutalWarningModal'
+import { BrutalFlipSevenModal } from './BrutalFlipSevenModal'
 import { CardArtwork } from '../../components/CardArtwork'
 import { PickerCardArtwork } from '../../components/PickerCardArtwork'
 import { PlayerAvatar } from '../../components/PlayerAvatar'
@@ -49,6 +54,7 @@ import { TvShareDialog } from '../mobile/TvShareDialog'
 import { tvSharingAvailable, useTvSession } from '../../lib/tv-share'
 import { TargetScorePicker } from '../mobile/TargetScorePicker'
 import { RoomCharacterDialog } from '../mobile/MobileApp'
+import { BrutalSkullIcon } from '../../components/BrutalSkullIcon'
 import { GameTable } from './GameTable'
 import './VengeanceScreen.css'
 
@@ -58,18 +64,22 @@ function statusClass(player: VPlayer) {
   return player.status === 'flip-seven' ? 'flip-seven' : player.status
 }
 
-function statusBadgeLabel(player: VPlayer) {
+function statusBadgeLabel(player: VPlayer, flipSevenChoice?: VFlipSevenChoice | null) {
   if (player.status === 'busted') return 'Busted'
   if (player.status === 'frozen') return 'Frozen'
   if (player.status === 'stayed') return 'Stayed'
-  if (player.status === 'flip-seven') return 'Flip 7!'
+  if (player.status === 'flip-seven') {
+    return flipSevenChoice?.choice === 'penalize' && flipSevenChoice.finisherId === player.id ? 'Banked' : 'Flip 7!'
+  }
   return 'Active'
 }
 
-function playerTabSummary(player: VPlayer) {
-  const score = vengeanceScore(player)
+function playerTabSummary(player: VPlayer, variant?: VVariant, flipSevenChoice?: VFlipSevenChoice | null) {
+  const score = vengeanceScore(player, variant, flipSevenChoice)
   const numberCount = player.entries.filter((entry) => !entry.voided && entry.card.kind === 'number').length
-  if (player.status === 'busted') return 'Busted'
+  if (player.status === 'busted') {
+    return variant === 'brutal' && score !== 0 ? `Busted · ${score} pts` : 'Busted'
+  }
   if (player.status === 'frozen') return `Frozen · ${score} pts`
   if (player.status === 'stayed') return `Stayed · ${score} pts`
   if (player.status === 'flip-seven') return `Flip 7 · ${score} pts`
@@ -170,7 +180,7 @@ function VengeanceResults({
                   </div>
                   <div className="results-rounds">
                     {history.map((round) => (
-                      <span className="round-score" key={`${player.id}-${round.round}`}>
+                      <span className={`round-score ${(round.scores[player.id] ?? 0) < 0 ? 'score-negative' : ''}`} key={`${player.id}-${round.round}`}>
                         R{round.round}: {round.scores[player.id] ?? 0}
                       </span>
                     ))}
@@ -178,7 +188,7 @@ function VengeanceResults({
                 </div>
                 <div className="results-total">
                   <small>Total pts</small>
-                  <strong>{player.totalScore}</strong>
+                  <strong className={player.totalScore < 0 ? 'score-negative' : ''}>{player.totalScore}</strong>
                 </div>
               </article>
             )
@@ -260,7 +270,7 @@ function VengeanceMenuDialog({
             <Users size={20} />
           </div>
           <div className="banker-menu-item-text">
-            <strong>Players & Hands</strong>
+            <strong>Players</strong>
             <span>View current scores, active cards, and table standings</span>
           </div>
           <ChevronRight size={18} className="banker-menu-item-chevron" />
@@ -393,9 +403,11 @@ function VengeanceCardPickerPanel({
   )
 }
 
-function DemoSetup({ onStart, onExit }: { onStart: (players: PlayerProfile[], targetScore: number) => void; onExit: () => void }) {
+function DemoSetup({ onStart, onExit }: { onStart: (players: PlayerProfile[], targetScore: number, variant?: VVariant) => void; onExit: () => void }) {
   const library = getLibrary()
   const [targetScore, setTargetScore] = useState(library.settings.vengeanceTargetScore || 200)
+  const [variant, setVariant] = useState<VVariant>('standard')
+  const [brutalWarningOpen, setBrutalWarningOpen] = useState(false)
   const [players, setPlayers] = useState<PlayerProfile[]>([
     { id: 'demo-0', name: 'Player 1', color: demoColors[0], avatar: defaultPlayerAvatarFor('demo-0', 0) },
     { id: 'demo-1', name: 'Player 2', color: demoColors[1], avatar: defaultPlayerAvatarFor('demo-1', 1) },
@@ -537,6 +549,37 @@ function DemoSetup({ onStart, onExit }: { onStart: (players: PlayerProfile[], ta
             </div>
           </div>
 
+          {/* Gameplay Style */}
+          <div style={{ marginBottom: '14px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 900, color: '#132d67', display: 'block', marginBottom: '8px' }}>
+              GAMEPLAY STYLE
+            </label>
+            <div className="room-variant-options">
+              <button
+                type="button"
+                className={variant === 'standard' ? 'selected' : ''}
+                aria-pressed={variant === 'standard'}
+                onClick={() => setVariant('standard')}
+              >
+                <strong>Standard</strong>
+                <small>Original Vengeance</small>
+              </button>
+              <button
+                type="button"
+                className={`brutal-variant-btn ${variant === 'brutal' ? 'selected' : ''}`}
+                aria-pressed={variant === 'brutal'}
+                onClick={() => {
+                  if (variant !== 'brutal') {
+                    setBrutalWarningOpen(true)
+                  }
+                }}
+              >
+                <strong>Brutal Mode <BrutalSkullIcon size={15} /></strong>
+                <small>Sub-zero & penalties</small>
+              </button>
+            </div>
+          </div>
+
           {/* Bottom Controls: Target Score + Start Practice */}
           <div className="v-demo-bottom-row">
             <div className="v-demo-target-wrap">
@@ -554,7 +597,8 @@ function DemoSetup({ onStart, onExit }: { onStart: (players: PlayerProfile[], ta
                     color: p.color || demoColors[i % demoColors.length],
                     avatar: p.avatar,
                   })),
-                  targetScore
+                  targetScore,
+                  variant
                 )
               }
             >
@@ -567,6 +611,16 @@ function DemoSetup({ onStart, onExit }: { onStart: (players: PlayerProfile[], ta
               player={editingCharacter}
               onClose={() => setEditingCharacter(null)}
               onSave={(avatar, color) => saveCharacter(editingCharacter, avatar, color)}
+            />
+          )}
+
+          {brutalWarningOpen && (
+            <BrutalWarningModal
+              onCancel={() => setBrutalWarningOpen(false)}
+              onConfirm={() => {
+                setVariant('brutal')
+                setBrutalWarningOpen(false)
+              }}
             />
           )}
         </div>
@@ -700,8 +754,8 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
     return demo ? (
       <DemoSetup
         onExit={exit}
-        onStart={(players, target) => {
-          const next = vengeanceInitialState(players, target)
+        onStart={(players, target, variant = 'standard') => {
+          const next = vengeanceInitialState(players, target, undefined, variant)
           stateRef.current = next
           setState(next)
         }}
@@ -748,7 +802,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
               onCancel={() => setNewGamePromptOpen(false)}
               onConfirm={() => {
                 setNewGamePromptOpen(false)
-                const next = vengeanceInitialState(state.players, state.targetScore)
+                const next = vengeanceInitialState(state.players, state.targetScore, undefined, state.variant)
                 persist(next)
               }}
             />
@@ -796,7 +850,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
 
   const tableCards: Card[] = displayedEntries.map((e) => e.card)
   const tableCardIds: string[] = displayedEntries.map((e) => e.instanceId)
-  const selectedScore = selected ? vengeanceScore(selected) : 0
+  const selectedScore = selected ? vengeanceScore(selected, state.variant, state.flipSevenChoice) : 0
   const isSelectedTurn = selected?.id === turnPlayerId
   const interactionLocked = pickerOpen || Boolean(pending) || roundSummaryOpen || Boolean(saveError)
   const numberCount = selected?.entries.filter((e) => !e.voided && e.card.kind === 'number').length ?? 0
@@ -888,6 +942,12 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
             <span>VIEWING</span>
             <b>{selected?.name || '—'}</b>
           </div>
+          {state.variant === 'brutal' && (
+            <div className="v-match-strip-brutal" aria-label="Brutal Mode">
+              <BrutalSkullIcon size={11} />
+              <em>BRUTAL MODE</em>
+            </div>
+          )}
         </section>
 
         <div className="banker-turn-callout" role="status">
@@ -913,10 +973,10 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
               <PlayerAvatar player={player} className="mini-avatar" />
               <span className="opponent-copy">
                 <b>{player.name}</b>
-                <span>{playerTabSummary(player)}</span>
+                <span>{playerTabSummary(player, state.variant, state.flipSevenChoice)}</span>
               </span>
               <strong>
-                <small>Total pts:</small> <b>{player.totalScore}</b>
+                <small>Total pts:</small> <b className={player.totalScore < 0 ? 'score-negative' : ''}>{player.totalScore}</b>
               </strong>
             </button>
           ))}
@@ -927,7 +987,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
           tableCardIds={tableCardIds}
           isVoidedCard={(index) => Boolean(displayedEntries[index]?.voided)}
           score={selectedScore}
-          flipSevenBonus={selected?.status === 'flip-seven' ? 15 : 0}
+          flipSevenBonus={selected?.status === 'flip-seven' ? (state.variant === 'brutal' ? (state.flipSevenChoice?.choice === 'self' ? 15 : 0) : 15) : 0}
           busted={selected?.status === 'busted'}
           frozen={selected?.status === 'frozen'}
           submitting={false}
@@ -1225,6 +1285,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                                 {player.id === state.turnPlayerId && <span className="v-current-tag">Current Turn</span>}
                                 {player.status === 'stayed' && <span className="v-stayed-tag">Stayed</span>}
                                 {player.status === 'frozen' && <span className="v-frozen-tag">Frozen</span>}
+                                {player.status === 'busted' && <span className="v-busted-tag">Busted (Vulnerable)</span>}
                               </span>
                             </button>
                           ))}
@@ -1369,8 +1430,18 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
           </motion.div>
         )}
 
+        {/* Brutal Flip 7 Choice Dialog */}
+        {state.pendingFlipSeven && (
+          <BrutalFlipSevenModal
+            finisher={state.players.find((p) => p.id === state.pendingFlipSeven?.finisherId) ?? state.players[0]}
+            players={state.players}
+            onResolveSelf={() => dispatch({ type: 'resolve-flip-seven', choice: 'self' })}
+            onResolvePenalize={(targetId) => dispatch({ type: 'resolve-flip-seven', choice: 'penalize', targetPlayerId: targetId })}
+          />
+        )}
+
         {/* Round Summary Settlement Dialog */}
-        {roundSummaryOpen && (
+        {roundSummaryOpen && !state.pendingFlipSeven && (
           <motion.div
             key="round-summary-backdrop"
             className="picker-backdrop"
@@ -1398,21 +1469,30 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                 </button>
               </div>
               <div className="banker-round-summary-list">
-                {state.players.map((player) => (
-                  <div className={`banker-summary-player ${statusClass(player)}`} key={player.id}>
-                    <PlayerAvatar player={player} className="mini-avatar" />
-                    <div className="banker-summary-player-copy">
-                      <b>{player.name}</b>
-                      <span className={`banker-status-pill ${statusClass(player)}`}>
-                        {statusBadgeLabel(player)}
-                      </span>
+                {state.players.map((player) => {
+                  const score = vengeanceScore(player, state.variant, state.flipSevenChoice)
+                  return (
+                    <div className={`banker-summary-player ${statusClass(player)}`} key={player.id}>
+                      <PlayerAvatar player={player} className="mini-avatar" />
+                      <div className="banker-summary-player-copy">
+                        <b>{player.name}</b>
+                        <span className={`banker-status-pill ${statusClass(player)}`}>
+                          {statusBadgeLabel(player, state.flipSevenChoice)}
+                        </span>
+                        {state.flipSevenChoice?.choice === 'self' && player.id === state.flipSevenChoice.finisherId && (
+                          <span className="v-flipseven-summary-badge bonus">+15 FLIP 7</span>
+                        )}
+                        {state.flipSevenChoice?.choice === 'penalize' && player.id === state.flipSevenChoice.targetId && (
+                          <span className="v-flipseven-summary-badge penalty">-15 FLIP 7 PENALTY</span>
+                        )}
+                      </div>
+                      <div className="banker-summary-score">
+                        <small>ROUND</small>
+                        <strong className={score < 0 ? 'score-negative' : ''}>{score}</strong>
+                      </div>
                     </div>
-                    <div className="banker-summary-score">
-                      <small>ROUND</small>
-                      <strong>{vengeanceScore(player)}</strong>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
               <p>Confirm these scores to finish the match or start the next round.</p>
               <div className="banker-results-actions">
@@ -1421,7 +1501,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                 </button>
                 <button
                   className="primary-wide"
-                  disabled={Boolean(saveError)}
+                  disabled={Boolean(saveError) || Boolean(state.pendingFlipSeven)}
                   onClick={() => {
                     setRoundSummaryOpen(false)
                     dispatch({ type: 'advance-round' })
@@ -1473,7 +1553,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
               <div className="info-panel-scroll">
                 <div className="info-list">
                   {state.players.map((player) => {
-                    const score = vengeanceScore(player)
+                    const score = vengeanceScore(player, state.variant, state.flipSevenChoice)
                     return (
                       <div
                         className={`info-player ${player.id === selected?.id ? 'current-player' : ''}`}
@@ -1485,16 +1565,16 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                             {player.name}
                             {player.id === selected?.id ? ' (current)' : ''}
                           </b>
-                          <small>{playerTabSummary(player)}</small>
+                          <small>{playerTabSummary(player, state.variant, state.flipSevenChoice)}</small>
                         </div>
                         <span className="info-player-scores">
                           <span>
                             <small>ROUND</small>
-                            <strong>{score}</strong>
+                            <strong className={score < 0 ? 'score-negative' : ''}>{score}</strong>
                           </span>
                           <span>
                             <small>TOTAL</small>
-                            <strong>{player.totalScore}</strong>
+                            <strong className={player.totalScore < 0 ? 'score-negative' : ''}>{player.totalScore}</strong>
                           </span>
                         </span>
                       </div>
@@ -1560,9 +1640,33 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                   <section>
                     <h3>Action & Modifier Cards</h3>
                     <p>
-                      Modifiers (÷2, −2, −4, −6, −8, −10) apply penalties to any non-busted player. Action cards (Steal, Swap, Discard, Just One More, Flip Four) let you attack or force flips!
+                      {state.variant === 'brutal'
+                        ? 'Modifiers (÷2, −2, −4, −6, −8, −10) can target any player, even busted ones. Action cards (Steal, Swap, Discard, Just One More, Flip Four) let you attack or force flips!'
+                        : 'Modifiers (÷2, −2, −4, −6, −8, −10) apply penalties to any non-busted player. Action cards (Steal, Swap, Discard, Just One More, Flip Four) let you attack or force flips!'}
                     </p>
                   </section>
+                  {state.variant === 'brutal' && (
+                    <>
+                      <section>
+                        <h3>Brutal: Sub-Zero Scoring</h3>
+                        <p>
+                          Round scores and match totals have no floor and can drop below 0 (e.g. −8 PTS).
+                        </p>
+                      </section>
+                      <section>
+                        <h3>Brutal: Attack Busted Players</h3>
+                        <p>
+                          You may give Modifier cards to any player, even if they have busted. ÷2 has no effect on a busted player and is discarded.
+                        </p>
+                      </section>
+                      <section>
+                        <h3>Brutal: Flip 7 Choice</h3>
+                        <p>
+                          When you reach Flip 7, either take +15 points yourself or subtract 15 points from another player.
+                        </p>
+                      </section>
+                    </>
+                  )}
                 </div>
               </div>
             </motion.section>

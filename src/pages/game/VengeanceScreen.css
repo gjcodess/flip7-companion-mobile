@@ -1444,3 +1444,291 @@
   box-shadow: none !important;
   transform: none !important;
 }
+
+/* Brutal Mode Badges & In-Game Styles */
+.v-busted-tag {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 850;
+  text-transform: uppercase;
+  color: #fff;
+  background: #c71b28;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: .05em;
+  margin-left: 6px;
+}
+
+.edition-vengeance .match-strip .v-match-strip-brutal {
+  position: absolute;
+  top: -11px;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px 3px 7px;
+  border: 2px solid #132d67;
+  border-radius: 999px;
+  background: #e83239;
+  box-shadow: 2px 2px 0 #132d67;
+  color: #fff;
+  z-index: 2;
+}
+
+.edition-vengeance .match-strip .v-match-strip-brutal em {
+  font-style: normal;
+  font-size: 9px;
+  font-weight: 1000;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  color: #fff;
+}
+
+/* Brutal Flip 7 Decision Dialog (inherits .floating-confirmation-modal shell) */
+.v-flipseven-backdrop {
+  z-index: 1000;
+}
+
+.v-flipseven-dialog {
+  width: min(100%, 460px) !important;
+  max-width: 460px !important;
+  background: #fff7da !important;
+  border: 2px solid #132d67 !important;
+  border-radius: 22px !important;
+  box-shadow: 5px 6px 0 #132d67 !important;
+  color: #132d67 !important;
+  padding: 22px 18px 24px !important;
+}
+
+.v-flipseven-dialog .picker-heading {
+  background: transparent !important;
+  border-bottom: 1px dashed #b9ad88 !important;
+  padding-bottom: 12px !important;
+  margin-bottom: 14px !important;
+}
+
+.v-flipseven-eyebrow {
+  color: #e83239 !important;
+  font-size: 9px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+.v-flipseven-dialog .picker-heading h2 {
+  color: #132d67 !important;
+  font-size: 24px !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.8px !important;
+  line-height: 1.15 !important;
+  margin: 2px 0 0 !important;
+}
+
+.v-flipseven-dialog .v-flipseven-intro {
+  color: #53607a !important;
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+  margin: 0 0 14px !important;
+}
+
+.v-flipseven-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.v-flipseven-choice-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  background: #fffdf5;
+  border: 1.5px solid #132d67;
+  border-radius: 12px;
+  box-shadow: 2px 2px 0 #132d67;
+  color: #132d67;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.12s ease;
+}
+
+.v-flipseven-choice-card:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 #132d67;
+}
+
+.v-flipseven-choice-card.selected {
+  background: #f7c244;
+}
+
+.v-flipseven-choice-card.penalize.selected {
+  background: #e83239;
+}
+
+.v-flipseven-radio {
+  position: relative;
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  border: 2px solid #132d67;
+  border-radius: 50%;
+  background: #fffdf5;
+}
+
+.v-flipseven-choice-card.selected .v-flipseven-radio::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: #132d67;
+}
+
+.v-flipseven-choice-info strong {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 900;
+  color: #132d67;
+  margin-bottom: 3px;
+  line-height: 1.3;
+}
+
+.v-flipseven-choice-info small {
+  display: block;
+  font-size: 11.5px;
+  color: #53607a;
+  line-height: 1.45;
+}
+
+.v-flipseven-choice-card.selected .v-flipseven-choice-info small {
+  color: #2b3952;
+}
+
+.v-flipseven-choice-card.penalize.selected .v-flipseven-choice-info strong,
+.v-flipseven-choice-card.penalize.selected .v-flipseven-choice-info small {
+  color: #fff;
+}
+
+.v-flipseven-rival-section {
+  margin-bottom: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed #b9ad88;
+}
+
+.v-flipseven-rival-label {
+  display: block;
+  font-size: 9px;
+  font-weight: 950;
+  text-transform: uppercase;
+  color: #e83239;
+  letter-spacing: 0.12em;
+  margin-bottom: 8px;
+}
+
+.v-flipseven-rival-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 160px;
+  overflow-y: auto;
+  padding: 2px 3px 4px 2px;
+}
+
+.v-flipseven-rival-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1.5px solid #132d67;
+  background: #fffdf5;
+  box-shadow: 2px 2px 0 #132d67;
+  cursor: pointer;
+  text-align: left;
+}
+
+.v-flipseven-rival-btn.selected {
+  background: #f7c244;
+}
+
+.v-flipseven-rival-btn .v-rival-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.v-flipseven-rival-btn .v-rival-info b {
+  font-size: 12px;
+  color: #132d67;
+}
+
+.v-flipseven-rival-btn .v-rival-info small {
+  font-size: 10px;
+  color: #53607a;
+}
+
+.v-rival-check {
+  color: #132d67;
+}
+
+.v-flipseven-actions {
+  margin-top: 4px;
+}
+
+.v-flipseven-dialog .v-flipseven-confirm-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: 100%;
+  min-height: 48px;
+  border: 2px solid #132d67 !important;
+  border-radius: 11px !important;
+  background: #e83239 !important;
+  color: #fff !important;
+  box-shadow: 2px 3px 0 #132d67 !important;
+  font-size: 11.5px !important;
+  font-weight: 900 !important;
+  cursor: pointer;
+}
+
+.v-flipseven-dialog .v-flipseven-confirm-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 2px 0 #132d67 !important;
+}
+
+.v-flipseven-dialog .v-flipseven-confirm-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Round Summary badges for Flip 7 choice */
+.v-flipseven-summary-badge {
+  display: inline-block;
+  font-size: 8px;
+  font-weight: 900;
+  border-radius: 4px;
+  padding: 2px 5px;
+  text-transform: uppercase;
+  margin-left: 0;
+  letter-spacing: .04em;
+}
+
+.v-flipseven-summary-badge.bonus {
+  background: #d4f2db;
+  color: #1b682e;
+  border: 1px solid #7cc98c;
+}
+
+.v-flipseven-summary-badge.penalty {
+  background: #ffe3e5;
+  color: #ad1824;
+  border: 1px solid #f18c94;
+}

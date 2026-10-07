@@ -1,4 +1,5 @@
 import { Fragment } from 'react'
+import { BrutalSkullIcon } from '../../components/BrutalSkullIcon'
 import { AssetCardFan, InfoPage, InfoPlayCallout } from '../mobile/InfoPage'
 import { useLibrary } from '../../lib/room-store'
 
@@ -61,10 +62,9 @@ function VengeanceRules() {
     </div>
 
     <nav className="info-jump-links" aria-label="Jump to a rules section">
-      <a href="#v-guide-how">The basics</a>
       <a href="#v-guide-numbers">Special cards</a>
       <a href="#v-guide-actions">Action cards</a>
-      <a href="#v-guide-scoring">Scoring</a>
+      <a href="#v-guide-brutal">Brutal Mode</a>
     </nav>
 
     <div className="guide-content">
@@ -305,6 +305,25 @@ function VengeanceRules() {
           <div>
             <b>Official rules & FAQs</b>
             <span>Have a specific edge case? View the <a href="https://theop.games/pages/flip-7-wav-faqs" target="_blank" rel="noreferrer">Official Vengeance FAQs</a>.</span>
+          </div>
+        </div>
+      </section>
+      <section id="v-guide-brutal" className="guide-card guide-card-wide guide-card-brutal">
+        <div className="guide-card-heading"><span className="eyebrow">HOUSE VARIANT</span><b className="guide-number">10</b></div>
+        <h2>Brutal Mode (Optional) <BrutalSkullIcon size={20} style={{ display: 'inline', verticalAlign: '-2px', marginLeft: '4px' }} /></h2>
+        <p>Looking for higher stakes and ruthless table play? Enable Brutal Mode when creating a Vengeance room or starting a practice table:</p>
+        <div className="guide-end-grid">
+          <div>
+            <b>Sub-zero scoring</b>
+            <p>Scores have no safety net! Your round score and cumulative match score can plunge below zero (e.g. −8 PTS).</p>
+          </div>
+          <div>
+            <b>Attack busted players</b>
+            <p>Negative modifiers can target any player, even after they have busted. (Note: ÷2 has no effect on a busted player and is discarded).</p>
+          </div>
+          <div>
+            <b>Flip 7 steal or score</b>
+            <p>Reaching Flip 7 gives you a choice: claim +15 bonus points for yourself, OR deduct 15 points directly from any rival!</p>
           </div>
         </div>
       </section>

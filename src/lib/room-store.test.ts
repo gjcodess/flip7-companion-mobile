@@ -383,4 +383,35 @@ describe('offline room saves', () => {
     expect(store.getLibrary()).toBe(current)
     expect(saved.get(store.STORAGE_KEY)).toBe(previous)
   })
+
+  it('supports Brutal Mode room creation, state initialization, and negative score serialization', async () => {
+    const { store, roster } = await fixture()
+    const brutalRoom = store.createRoom('Brutal Night', 200, roster, 'vengeance', undefined, 'brutal')
+    expect(brutalRoom.variant).toBe('brutal')
+
+    store.startRoom(brutalRoom)
+    const started = store.getLibrary().rooms.find(r => r.id === brutalRoom.id)!
+    expect(started.vengeanceState?.variant).toBe('brutal')
+
+    // Simulate round with negative score in history
+    const stateWithNegativeHistory = {
+      ...started.vengeanceState!,
+      history: [{
+        round: 1,
+        scores: { [roster[0].id]: -10, [roster[1].id]: 25 },
+        hands: {},
+        events: [],
+        variant: 'brutal' as const,
+        flipSevenChoice: undefined
+      }]
+    }
+    store.saveVengeanceState(brutalRoom.id, stateWithNegativeHistory)
+
+    // Verify backup decoding preserves negative scores and variant
+    const raw = JSON.stringify(store.getLibrary())
+    const decoded = store.decodeLibrary(raw)
+    const decodedRoom = decoded.rooms.find(r => r.id === brutalRoom.id)!
+    expect(decodedRoom.variant).toBe('brutal')
+    expect(decodedRoom.vengeanceState?.history[0].scores[roster[0].id]).toBe(-10)
+  })
 })

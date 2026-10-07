@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { vengeanceCard, vengeanceCards } from './vengeanceCards'
-import { vengeanceEligibleActors, vengeanceInitialState, vengeanceReducer, vengeanceScore, type VEntry, type VPlayer, type VState } from './vengeanceGame'
+import { vengeanceEligibleActors, vengeanceEligibleCards, vengeanceInitialState, vengeanceReducer, vengeanceScore, type VEntry, type VPlayer, type VState } from './vengeanceGame'
 
 const roster = [
   { id: 'a', name: 'Ari', color: '#e93234' },
@@ -113,6 +113,31 @@ describe('Vengeance rules', () => {
     const pending = vengeanceReducer(withCard, { type: 'record', cardId: 'v-action-steal' })
     expect(vengeanceEligibleActors(pending).map(item => item.id)).toContain('a')
     expect(vengeanceReducer(pending, { type: 'choose-actor', playerId: 'b' })).toBe(pending)
+
+    const onlyOwnCards = round([player('a', ['v-number-3']), player('b', []), player('c', [])])
+    const ownSteal = vengeanceReducer(onlyOwnCards, { type: 'record', cardId: 'v-action-steal' })
+    expect(ownSteal.pending).toBeNull()
+    expect(ownSteal.events.at(-1)).toContain('no valid target')
+    expect(ownSteal.players[0].entries.at(-1)?.card.id).toBe('v-action-steal')
+    expect(ownSteal.players[0].entries.at(-1)?.voided).toBe(true)
+
+    // Swap needs cards on two different players' tables; only one table has cards -> discarded
+    const swapOneTable = vengeanceReducer(onlyOwnCards, { type: 'record', cardId: 'v-action-swap' })
+    expect(swapOneTable.pending).toBeNull()
+    expect(swapOneTable.events.at(-1)).toContain('no valid target')
+
+    // Discard can hit the revealer's own card, so it stays pending
+    const discardOwn = vengeanceReducer(onlyOwnCards, { type: 'record', cardId: 'v-action-discard' })
+    expect(discardOwn.pending?.card.id).toBe('v-action-discard')
+    expect(vengeanceEligibleCards(discardOwn).map(face => face.entry.card.id)).toEqual(['v-number-3'])
+
+    // The in-play Just One More marker is not a legal target for Discard
+    let forcedState = round([player('a', []), player('b', []), player('c', [])])
+    forcedState = vengeanceReducer(forcedState, { type: 'record', cardId: 'v-action-just-one-more' })
+    forcedState = vengeanceReducer(forcedState, { type: 'choose-actor', playerId: 'a' })
+    const discardMarker = vengeanceReducer(forcedState, { type: 'record', cardId: 'v-action-discard' })
+    expect(discardMarker.pending).toBeNull()
+    expect(discardMarker.events.at(-1)).toContain('no valid target')
   })
 
   it('resolves queued Flip Four actions after four reveals, even if Just One More then busts', () => {
@@ -412,6 +437,84 @@ describe('Vengeance rules', () => {
     })
     expect(state.players[0].entries).toHaveLength(1)
     expect(vengeanceScore(state.players[0])).toBe(5)
+  })
+
+  describe('Brutal Mode rules', () => {
+    it('allows round scores to go below zero with negative modifiers', () => {
+      // 5 points minus 10 modifier = -5 in Brutal Mode
+      const p = player('a', ['v-number-5', 'v-modifier-minus-10'])
+      expect(vengeanceScore(p, 'standard')).toBe(0)
+      expect(vengeanceScore(p, 'brutal')).toBe(-5)
+    })
+
+    it('allows busted players to receive negative modifiers and score negative in Brutal Mode', () => {
+      const bustedWithMod = player('a', ['v-number-5', 'v-number-5', 'v-modifier-minus-6'], 'busted')
+      expect(vengeanceScore(bustedWithMod, 'standard')).toBe(0)
+      expect(vengeanceScore(bustedWithMod, 'brutal')).toBe(-6)
+    })
+
+    it('discards ÷2 if given to a busted player in Brutal Mode with no effect', () => {
+      let state = round([player('a', ['v-number-2']), player('b', ['v-number-5', 'v-number-5'], 'busted')])
+      state = { ...state, variant: 'brutal', pending: { card: vengeanceCard('v-modifier-half')!, sourceId: 'a', selectedCards: [] } }
+      expect(vengeanceEligibleActors(state)).toHaveLength(2)
+
+      const after = vengeanceReducer(state, { type: 'choose-target', playerId: 'b' })
+      expect(after.pending).toBeNull()
+      expect(after.players[1].entries.some(e => e.card.id === 'v-modifier-half' && e.voided)).toBe(true)
+      expect(vengeanceScore(after.players[1], 'brutal')).toBe(0)
+      expect(after.events.some(e => e.includes('÷2 while busted; it had no effect and was discarded'))).toBe(true)
+    })
+
+    it('allows targeting busted players with negative modifiers in Brutal Mode', () => {
+      let state = round([player('a', ['v-number-2']), player('b', ['v-number-5', 'v-number-5'], 'busted')])
+      state = { ...state, variant: 'brutal', pending: { card: vengeanceCard('v-modifier-minus-8')!, sourceId: 'a', selectedCards: [] } }
+      expect(vengeanceEligibleActors(state)).toHaveLength(2)
+
+      const after = vengeanceReducer(state, { type: 'choose-target', playerId: 'b' })
+      expect(after.pending).toBeNull()
+      expect(after.players[1].entries.some(e => e.card.id === 'v-modifier-minus-8' && !e.voided)).toBe(true)
+      expect(vengeanceScore(after.players[1], 'brutal')).toBe(-8)
+    })
+
+    it('handles Flip 7 choice in Brutal Mode: claim self (+15) vs penalize rival (-15)', () => {
+      const pA = player('a', ['v-number-1', 'v-number-2', 'v-number-3', 'v-number-4', 'v-number-5', 'v-number-6', 'v-number-7'], 'flip-seven')
+      const pB = player('b', ['v-number-10'])
+
+      // When choosing self:
+      expect(vengeanceScore(pA, 'brutal', { finisherId: 'a', choice: 'self' })).toBe(28 + 15) // 43
+      expect(vengeanceScore(pB, 'brutal', { finisherId: 'a', choice: 'self' })).toBe(10)
+
+      // When choosing penalize:
+      expect(vengeanceScore(pA, 'brutal', { finisherId: 'a', choice: 'penalize', targetId: 'b' })).toBe(28)
+      expect(vengeanceScore(pB, 'brutal', { finisherId: 'a', choice: 'penalize', targetId: 'b' })).toBe(10 - 15) // -5
+
+      // Can penalize a busted opponent:
+      const pBusted = player('b', ['v-number-5', 'v-number-5'], 'busted')
+      expect(vengeanceScore(pBusted, 'brutal', { finisherId: 'a', choice: 'penalize', targetId: 'b' })).toBe(-15)
+    })
+
+    it('requires resolving Flip 7 decision before advancing round, and accumulates negative total score', () => {
+      let state = round([
+        player('a', ['v-number-1', 'v-number-2', 'v-number-3', 'v-number-4', 'v-number-5', 'v-number-6', 'v-number-7'], 'flip-seven'),
+        player('b', ['v-number-5', 'v-number-5'], 'busted')
+      ])
+      state = { ...state, variant: 'brutal', phase: 'settlement', pendingFlipSeven: { finisherId: 'a' } }
+
+      // Advance round should be blocked while pendingFlipSeven
+      const blocked = vengeanceReducer(state, { type: 'advance-round' })
+      expect(blocked.roundNumber).toBe(1)
+
+      // Resolve Flip 7 penalizing 'b'
+      const resolved = vengeanceReducer(state, { type: 'resolve-flip-seven', choice: 'penalize', targetPlayerId: 'b' })
+      expect(resolved.pendingFlipSeven).toBeNull()
+      expect(resolved.flipSevenChoice).toEqual({ finisherId: 'a', choice: 'penalize', targetId: 'b' })
+
+      // Now advance round
+      const nextRound = vengeanceReducer(resolved, { type: 'advance-round' })
+      expect(nextRound.roundNumber).toBe(2)
+      expect(nextRound.players.find(p => p.id === 'a')?.totalScore).toBe(28)
+      expect(nextRound.players.find(p => p.id === 'b')?.totalScore).toBe(-15) // Cumulative total goes below zero!
+    })
   })
 })
 
