@@ -514,6 +514,7 @@ describe('Vengeance rules', () => {
       expect(nextRound.roundNumber).toBe(2)
       expect(nextRound.players.find(p => p.id === 'a')?.totalScore).toBe(28)
       expect(nextRound.players.find(p => p.id === 'b')?.totalScore).toBe(-15) // Cumulative total goes below zero!
+      expect(nextRound.history[0].flipSevenChoice).toEqual({ finisherId: 'a', choice: 'penalize', targetId: 'b' })
     })
   })
 })

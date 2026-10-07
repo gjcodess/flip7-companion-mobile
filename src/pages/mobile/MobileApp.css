@@ -1891,6 +1891,12 @@
   background: #ffe1e9;
 }
 
+.room-history-hand header>span.penalty-label {
+  color: #ad1824;
+  background: #ffe3e5;
+  border: 1px solid #f18c94;
+}
+
 .room-history-hand header>strong {
   font-size: 19px;
 }

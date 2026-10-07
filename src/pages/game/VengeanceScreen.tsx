@@ -60,7 +60,10 @@ import './VengeanceScreen.css'
 
 const demoColors = ['#e93234', '#193c89', '#da8736', '#257878', '#802e80', '#63439b', '#b33973', '#2e7d32']
 
-function statusClass(player: VPlayer) {
+function statusClass(player: VPlayer, flipSevenChoice?: VFlipSevenChoice | null) {
+  if (player.status === 'flip-seven' && flipSevenChoice?.choice === 'penalize' && flipSevenChoice.finisherId === player.id) {
+    return 'stayed'
+  }
   return player.status === 'flip-seven' ? 'flip-seven' : player.status
 }
 
@@ -1472,11 +1475,11 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                 {state.players.map((player) => {
                   const score = vengeanceScore(player, state.variant, state.flipSevenChoice)
                   return (
-                    <div className={`banker-summary-player ${statusClass(player)}`} key={player.id}>
+                    <div className={`banker-summary-player ${statusClass(player, state.flipSevenChoice)}`} key={player.id}>
                       <PlayerAvatar player={player} className="mini-avatar" />
                       <div className="banker-summary-player-copy">
                         <b>{player.name}</b>
-                        <span className={`banker-status-pill ${statusClass(player)}`}>
+                        <span className={`banker-status-pill ${statusClass(player, state.flipSevenChoice)}`}>
                           {statusBadgeLabel(player, state.flipSevenChoice)}
                         </span>
                         {state.flipSevenChoice?.choice === 'self' && player.id === state.flipSevenChoice.finisherId && (
