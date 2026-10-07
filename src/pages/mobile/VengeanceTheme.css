@@ -294,3 +294,34 @@
         transition: none;
     }
 }
+
+/* Vengeance Confirmation Modals */
+:is(.edition-vengeance, body:has(.edition-vengeance)) .confirmation-modal .picker-heading span,
+.confirmation-modal--vengeance .picker-heading span,
+.confirmation-modal.edition-vengeance .picker-heading span {
+    color: #e83239 !important;
+}
+
+:is(.edition-vengeance, body:has(.edition-vengeance)) .confirmation-modal .home-prompt-actions :is(.primary-wide, .confirmation-confirm),
+.confirmation-modal--vengeance .home-prompt-actions :is(.primary-wide, .confirmation-confirm),
+.confirmation-modal.edition-vengeance .home-prompt-actions :is(.primary-wide, .confirmation-confirm) {
+    background: #e83239 !important;
+    color: #fffdf5 !important;
+    border: 1.5px solid #132d67 !important;
+    box-shadow: 2px 3px 0 #132d67 !important;
+}
+
+:is(.edition-vengeance, body:has(.edition-vengeance)) .confirmation-modal .home-prompt-actions :is(.primary-wide, .confirmation-confirm):hover,
+.confirmation-modal--vengeance .home-prompt-actions :is(.primary-wide, .confirmation-confirm):hover,
+.confirmation-modal.edition-vengeance .home-prompt-actions :is(.primary-wide, .confirmation-confirm):hover {
+    background: #d41f26 !important;
+    color: #fffdf5 !important;
+}
+
+:is(.edition-vengeance, body:has(.edition-vengeance)) .confirmation-modal .home-prompt-actions :is(.primary-wide, .confirmation-confirm):active,
+.confirmation-modal--vengeance .home-prompt-actions :is(.primary-wide, .confirmation-confirm):active,
+.confirmation-modal.edition-vengeance .home-prompt-actions :is(.primary-wide, .confirmation-confirm):active {
+    background: #cc252b !important;
+    transform: translate(1px, 1px);
+    box-shadow: 1px 2px 0 #132d67 !important;
+}

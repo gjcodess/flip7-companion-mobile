@@ -10,6 +10,7 @@
     "check:vengeance-artwork": "node scripts/check-vengeance-artwork.mjs",
     "generate:card-thumbnails": "node scripts/generate-card-thumbnails.mjs",
     "import:vengeance-cards": "node scripts/import-vengeance-cards.mjs",
+    "optimize:assets": "node scripts/optimize-assets.mjs",
     "preview": "vite preview",
     "test": "vitest run"
   },
