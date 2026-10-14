@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, Cast, Check, ChevronRight, CircleHelp, ClipboardList, Download, LogOut, Menu, Monitor, Play, RotateCcw, Share2, Users, X } from 'lucide-react'
+import { ArrowLeft, Cast, Check, ChevronRight, CircleHelp, ClipboardList, LogOut, Menu, Monitor, Play, RotateCcw, Share2, Users, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import type { Card } from '../../game/cards'
 import { allBankerPlayersSettled, bankerInitialState, bankerPlayerDerived, bankerReducer, isBankerTerminal, type BankerAction, type BankerPlayer, type BankerState } from '../../game/bankerGame'
@@ -14,7 +14,7 @@ import { GameTable } from './GameTable'
 import { tvSharingAvailable, useTvSession } from '../../lib/tv-share'
 import { TvShareDialog } from '../mobile/TvShareDialog'
 import { PlayerAvatar } from '../../components/PlayerAvatar'
-import { saveGameResults, shareGameResults } from '../../lib/results-sharing'
+import { ResultsShareDialog } from './ResultsShareDialog'
 
 function statusLabel(player: BankerPlayer) {
   const status = player.round.status
@@ -54,37 +54,6 @@ function BankerResults({ players, history, targetScore, onNewGame, onExit }: { p
     </section>
     <section className="results-actions"><p>Your final scores and round cards are saved in this room on your device.</p><div className="banker-results-actions"><button className="secondary-action" onClick={onNewGame}><RotateCcw size={16} /> New game</button><button className="primary-wide" onClick={onExit}><ArrowLeft size={16} /> View room</button></div></section>
   </div>
-}
-
-function ResultsShareDialog({ roomName, players, history, targetScore, onClose }: { roomName: string; players: BankerPlayer[]; history: BankerState['history']; targetScore: number; onClose: () => void }) {
-  const dialog = useRef<HTMLDialogElement>(null)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
-  const [notice, setNotice] = useState('')
-  useEffect(() => { dialog.current?.showModal() }, [])
-  const act = async (action: 'share' | 'save') => {
-    setBusy(true)
-    setError('')
-    setNotice('')
-    try {
-      const options = { roomName, players, history, targetScore }
-      const message = action === 'share' ? await shareGameResults(options) : await saveGameResults(options)
-      setNotice(message)
-    } catch (failure) {
-      if ((failure as Error).name !== 'AbortError') setError((failure as Error).message)
-    } finally { setBusy(false) }
-  }
-  return <dialog ref={dialog} className="room-dialog banker-menu-dialog results-share-dialog" onCancel={event => { if (busy) event.preventDefault(); else onClose() }} onClick={event => { if (!busy && event.target === event.currentTarget) onClose() }}>
-    <div className="room-dialog-heading"><div><span className="room-kicker">FINAL SCORES</span><h2>Share game results</h2></div><button type="button" className="room-icon-button" aria-label="Close sharing options" disabled={busy} onClick={onClose}><X size={20} /></button></div>
-    <p>Keep a picture of your final scoreboard or send it to your crew.</p>
-    <div className="banker-menu-list">
-      <button type="button" className="banker-menu-item" disabled={busy} onClick={() => void act('share')}><span className="banker-menu-item-icon"><Share2 size={20} /></span><span className="banker-menu-item-text"><strong>Share results</strong><span>Send the score image to another app</span></span><ChevronRight size={18} className="banker-menu-item-chevron" /></button>
-      <button type="button" className="banker-menu-item" disabled={busy} onClick={() => void act('save')}><span className="banker-menu-item-icon"><Download size={20} /></span><span className="banker-menu-item-text"><strong>Save image</strong><span>Keep a PNG copy on this device</span></span><ChevronRight size={18} className="banker-menu-item-chevron" /></button>
-    </div>
-    {busy && <p className="results-share-status" role="status">Preparing your results image…</p>}
-    {notice && <p className="results-share-status" role="status">{notice}</p>}
-    {error && <p className="room-error" role="alert">{error}</p>}
-  </dialog>
 }
 
 function BankerMenuDialog({ onClose, onOpenPlayers, onOpenRules, onOpenTvShare, onExit }: { onClose: () => void; onOpenPlayers: () => void; onOpenRules: () => void; onOpenTvShare: () => void; onExit: () => void }) {

@@ -1,6 +1,5 @@
 import { Capacitor, registerPlugin } from '@capacitor/core'
-import type { BankerPlayer, BankerRoundResult } from '../game/bankerGame'
-import { createResultsImage, resultsShareText } from './results-image'
+import { createResultsImage, resultsShareText, type ResultsMode, type ResultsPlayer, type ResultsRound } from './results-image'
 
 type ResultsImagePlugin = {
   shareImage(options: { dataUrl: string; fileName: string; text: string }): Promise<void>
@@ -23,12 +22,13 @@ function blobDataUrl(blob: Blob): Promise<string> {
   })
 }
 
-type Results = { roomName: string; players: BankerPlayer[]; history: BankerRoundResult[]; targetScore: number }
+export type GameResults = ResultsMode & { roomName: string; players: ResultsPlayer[]; history: ResultsRound[]; targetScore: number }
 
-export async function shareGameResults({ roomName, players, history, targetScore }: Results) {
-  const image = await createResultsImage(roomName, players, history, targetScore)
+export async function shareGameResults({ roomName, players, history, targetScore, edition, variant }: GameResults) {
+  const mode = { edition, variant }
+  const image = await createResultsImage(roomName, players, history, targetScore, mode)
   const fileName = fileNameFor(roomName)
-  const text = resultsShareText(roomName, players, targetScore)
+  const text = resultsShareText(roomName, players, targetScore, mode)
   if (Capacitor.getPlatform() === 'android') {
     await nativeResultsImage.shareImage({ dataUrl: await blobDataUrl(image), fileName, text })
     return 'Share options opened.'
@@ -47,8 +47,8 @@ export async function shareGameResults({ roomName, players, history, targetScore
   return 'Results copied. Paste them into a message to share.'
 }
 
-export async function saveGameResults({ roomName, players, history, targetScore }: Results) {
-  const image = await createResultsImage(roomName, players, history, targetScore)
+export async function saveGameResults({ roomName, players, history, targetScore, edition, variant }: GameResults) {
+  const image = await createResultsImage(roomName, players, history, targetScore, { edition, variant })
   const fileName = fileNameFor(roomName)
   if (Capacitor.getPlatform() === 'android') {
     const result = await nativeResultsImage.saveImage({ dataUrl: await blobDataUrl(image), fileName })
