@@ -1,0 +1,146 @@
+/* Tablet layout starts at 600 CSS pixels. Keep phone rules below this width intact.
+   Use width rather than orientation so opening the keyboard cannot collapse the layout. */
+@media (min-width: 600px) {
+  .room-app-main {
+    --room-page-gutter: clamp(28px, 4vw, 48px);
+    width: 100%;
+    max-width: 1040px;
+    padding: calc(32px + env(safe-area-inset-top, 0px)) var(--room-page-gutter) calc(152px + env(safe-area-inset-bottom, 0px));
+    border-inline: 0;
+    box-shadow: none;
+  }
+
+  .room-home-header img { width: 210px; height: 90px; }
+  .room-home-header { margin-bottom: 24px; }
+  .room-welcome h1, .room-page-heading h1 { font-size: clamp(40px, 5.5vw, 54px); }
+  .room-welcome p, .room-page-heading p { max-width: 560px; font-size: 16px; }
+  .room-page-art .room-home-promo { width: 300px; max-height: 340px; right: 16px; }
+  .edition-vengeance .room-page-art--vengeance .room-home-promo { width: 300px; }
+
+  .room-promo-carousel { margin-top: 30px; }
+  .room-promo-carousel .room-create-banner { height: 280px; padding: 28px 32px; }
+  .room-create-banner .room-kicker { font-size: 10px; }
+  .room-create-banner h2, .room-promo-slide-3 h2 { font-size: clamp(28px, 4vw, 36px); }
+  .room-promo-copy p { max-width: 310px; font-size: 14px; }
+  .room-create-banner button { min-height: 48px; padding-inline: 20px; font-size: 14px; }
+  .room-promo-art, .room-promo-slide-1 .room-promo-art { width: 190px; flex-basis: 190px; height: 215px; }
+  .room-create-banner .room-rules-art { width: 180px; flex-basis: 180px; height: 205px; }
+  .room-rules-art img { width: 112px; }
+  .room-rules-art img:last-child { left: 48px; }
+  .room-vengeance-art { width: 185px; flex-basis: 185px; }
+  .room-vengeance-base-logo { width: 150px; max-height: 55px; }
+  .room-vengeance-logo { width: 180px; max-height: 135px; }
+  .room-promo-arrow { width: 44px; height: 44px; }
+  .room-promo-controls { margin-top: 16px; }
+  .room-home-stats { margin-block: 28px 32px; font-size: 14px; }
+  .room-home-stats b { font-size: 24px; }
+  .room-section-heading h2 { font-size: 24px; }
+  .room-section-note { font-size: 11px; }
+  .room-filter-tabs button { min-height: 48px; font-size: 13px; }
+  .room-search { min-height: 54px; }
+  .room-search input { font-size: 16px; }
+  .room-list, .room-player-list { gap: 22px; }
+  .library-room-card { padding: 20px; }
+  .room-card-meta { font-size: 12px; line-height: 1.6; }
+  .room-badge { font-size: 10px; }
+  .room-empty { min-height: 260px; padding: 36px 24px; display: grid; justify-items: center; align-content: center; }
+  .room-empty h2 { font-size: 24px; }
+  .room-empty p { max-width: 420px; font-size: 15px; }
+
+  .room-bottom-nav { width: calc(100% - 64px); max-width: 720px; height: 76px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+  .room-bottom-nav .nav-label { font-size: 12px; line-height: 16px; }
+  .room-bottom-nav .nav-item { gap: 7px; }
+  .room-bottom-nav .nav-item svg { width: 23px; height: 23px; }
+
+  .room-form-panel { padding: 26px; margin-bottom: 26px; }
+  .room-form-section-title h2 { font-size: 21px; }
+  .room-field, .room-field-hint, .room-form-help { font-size: 13px; }
+  .room-field input, .room-add-player input { min-height: 52px; font-size: 16px; }
+  .room-roster-row { min-height: 70px; }
+  .room-roster-row b { font-size: 16px; }
+  .room-roster-controls button { min-width: 40px; min-height: 40px; }
+  .room-app-shell .room-button { min-height: 54px; font-size: 15px; }
+  .room-detail-hero h1 { font-size: 44px; }
+  .room-detail-hero p { font-size: 15px; }
+  .room-standing { min-height: 80px; padding: 16px 20px; }
+  .room-standing b { font-size: 18px; }
+  .room-standing strong { font-size: 30px; }
+  .room-setting-row { min-height: 82px; padding: 20px; }
+  .room-setting-row b { font-size: 15px; }
+  .room-setting-row small { font-size: 13px; }
+  .info-heading h1 { font-size: 44px; }
+  .info-heading p { max-width: 640px; font-size: 16px; }
+  .info-page-tabs a { min-height: 50px; font-size: 14px; }
+
+  /* Games fill the tablet instead of retaining the desktop's phone-width column. */
+  .app-shell:is(.banker-shell, .demo-shell) { display: block; }
+  :is(.banker-shell, .demo-shell) .desktop-marquee { display: none; }
+  :is(.banker-shell, .demo-shell) .game-shell { width: 100%; max-width: 1040px; margin-inline: auto; border: 0; box-shadow: none; }
+  :is(.banker-shell, .demo-shell) .topbar { padding-inline: 32px !important; min-height: calc(88px + env(safe-area-inset-top, 0px)) !important; }
+  .banker-shell .game-topbar-brand img { width: 160px; height: 58px; max-height: 58px; }
+  .demo-shell .demo-topbar .brand-logo { width: 160px !important; height: 58px !important; max-height: 58px; }
+  .demo-shell .demo-intro { margin-inline: 32px; padding: 26px; }
+  .demo-shell .demo-intro h1 { font-size: 36px; }
+  .demo-shell .demo-intro p { font-size: 14px; }
+  :is(.banker-shell, .demo-shell) .match-strip { margin-inline: 32px !important; min-height: 88px !important; }
+  :is(.banker-shell, .demo-shell) .match-strip span { font-size: 11px !important; }
+  :is(.banker-shell, .demo-shell) .match-strip b { font-size: 28px !important; }
+  :is(.banker-shell, .demo-shell) .banker-turn-callout { margin-inline: 32px !important; min-height: 48px !important; }
+  :is(.banker-shell, .demo-shell) .banker-turn-callout > b { font-size: 17px !important; }
+  :is(.banker-shell, .demo-shell) .banker-turn-callout > span { font-size: 11px !important; }
+  :is(.banker-shell, .demo-shell) .banker-player-strip { padding: 22px 32px !important; gap: 14px !important; scroll-padding-inline: 32px !important; }
+  :is(.banker-shell, .demo-shell) .banker-player-tab { flex-basis: 165px; min-width: 165px; min-height: 82px !important; padding: 12px !important; }
+  :is(.banker-shell, .demo-shell) .banker-player-tab .opponent-copy b { font-size: 15px; }
+  :is(.banker-shell, .demo-shell) .banker-player-tab .opponent-copy small { font-size: 11px; }
+  :is(.banker-shell, .demo-shell) .banker-player-tab > strong { font-size: 21px; }
+  :is(.banker-shell, .demo-shell) .table-area { padding: 28px 32px !important; min-height: 380px; }
+  :is(.banker-shell, .demo-shell) .score-display > span { font-size: 15px !important; }
+  :is(.banker-shell, .demo-shell) .score-display > b { font-size: 32px !important; }
+  :is(.banker-shell, .demo-shell) .organize-button { min-height: 44px; padding-inline: 12px; font-size: 11px; }
+  :is(.banker-shell, .demo-shell) .card-table { padding-top: 32px; min-height: 290px; }
+  :is(.banker-shell, .demo-shell) .card-row { min-height: clamp(156px, 25vw, 200px); }
+  :is(.banker-shell, .demo-shell) .card-table .table-card { flex-basis: clamp(108px, 16vw, 140px); width: clamp(108px, 16vw, 140px); height: clamp(152px, 22.4vw, 196px); }
+  :is(.banker-shell, .demo-shell) .card-table .add-card-card { width: 76px; height: 106px; flex-basis: 106px; margin-top: 24px; }
+  :is(.banker-shell, .demo-shell) .actions { padding: 20px 32px calc(24px + env(safe-area-inset-bottom, 0px)) !important; gap: 16px; }
+  :is(.banker-shell, .demo-shell) .actions button { min-height: 60px; font-size: 15px !important; }
+  :is(.banker-shell, .demo-shell) .actions .stay-action { min-height: 64px; font-size: 16px !important; }
+
+  .banker-shell .banker-results-back { font-size: 15px; }
+  .banker-shell .banker-results-topbar .banker-results-share { width: 44px; height: 44px; flex-basis: 44px; }
+  .banker-shell .banker-results .results-hero { margin-inline: 32px !important; padding: 32px; border-radius: 20px; }
+  .banker-shell .banker-results .results-hero h1 { font-size: 44px; }
+  .banker-shell .banker-results .results-hero p { font-size: 16px; }
+  .banker-shell .banker-results .results-card { margin: 28px 32px; padding: 26px; }
+  .banker-results .results-heading h2 { font-size: 30px; }
+  .banker-results .results-player { grid-template-columns: 32px 48px minmax(0, 1fr) auto; gap: 14px; min-height: 96px; padding: 16px; }
+  .banker-results .results-player .mini-avatar { width: 48px; height: 48px; }
+  .banker-results .results-player-name b { font-size: 18px; }
+  .banker-results .round-score { font-size: 12px; }
+  .banker-results .results-total strong { font-size: 32px; }
+  .banker-results .results-total small { font-size: 11px; }
+  .banker-results .results-actions { padding: 0 32px 32px; }
+  .banker-results .results-actions > p { font-size: 15px; }
+  .banker-results-actions button { min-height: 56px; font-size: 15px; }
+
+  /* Sheets stay bounded and scroll internally, with enough room for larger cards. */
+  :is(.banker-shell, .demo-shell) .picker-backdrop { align-items: center; padding: 32px; }
+  :is(.banker-shell, .demo-shell) .card-picker { width: min(100%, 680px); }
+  :is(.banker-shell, .demo-shell) .action-target-picker { width: min(100%, 600px) !important; }
+  :is(.banker-shell, .demo-shell) .card-focus-panel { width: min(100%, 440px) !important; }
+  .room-dialog { max-width: 560px; padding: 28px; }
+  .room-dialog-heading h2 { font-size: 28px; }
+  .room-dialog > p { font-size: 14px; }
+  .banker-menu-dialog .banker-menu-item { min-height: 76px; padding: 16px; }
+  .banker-menu-dialog .banker-menu-item-text strong { font-size: 16px; }
+  .banker-menu-dialog .banker-menu-item-text > span { font-size: 13px; }
+  :is(.banker-shell, .demo-shell) :is(.physical-picker-header, .info-panel-header) { padding: 26px 24px 18px !important; }
+  :is(.banker-shell, .demo-shell) :is(.physical-picker-scroll, .info-panel-scroll) { padding: 22px 24px 26px !important; }
+  :is(.banker-shell, .demo-shell) .physical-picker-scroll .picker-grid { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; gap: 14px !important; }
+  :is(.banker-shell, .demo-shell) .picker-heading h2 { font-size: 30px !important; }
+  :is(.banker-shell, .demo-shell) :is(.physical-picker-header, .info-panel-header) > p { font-size: 14px !important; }
+}
+
+@media (min-width: 760px) {
+  .room-list, .room-player-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .room-list > .room-empty, .room-player-list > .room-empty { grid-column: 1 / -1; }
+}
