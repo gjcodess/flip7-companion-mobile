@@ -56,6 +56,7 @@ import { TargetScorePicker } from '../mobile/TargetScorePicker'
 import { RoomCharacterDialog } from '../mobile/MobileApp'
 import { BrutalSkullIcon } from '../../components/BrutalSkullIcon'
 import { GameTable } from './GameTable'
+import { ResultsShareDialog } from './ResultsShareDialog'
 import './VengeanceScreen.css'
 
 const demoColors = ['#e93234', '#193c89', '#da8736', '#257878', '#802e80', '#63439b', '#b33973', '#2e7d32']
@@ -111,14 +112,12 @@ function organizeVengeanceEntries(entries: VEntry[]): VEntry[] {
 }
 
 function VengeanceResults({
-  roomName,
   players,
   history,
   targetScore,
   onNewGame,
   onExit,
 }: {
-  roomName: string
   players: VPlayer[]
   history: VState['history']
   targetScore: number
@@ -128,23 +127,6 @@ function VengeanceResults({
   const ordered = [...players].sort((a, b) => b.totalScore - a.totalScore)
   const winnerScore = ordered[0]?.totalScore ?? 0
   const winners = ordered.filter((p) => p.totalScore === winnerScore)
-  const [shareNotice, setShareNotice] = useState('')
-
-  const share = async () => {
-    const text = `Flip 7: With a Vengeance · ${roomName}\n${ordered
-      .map((p, i) => `${i + 1}. ${p.name} — ${p.totalScore} pts`)
-      .join('\n')}`
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: 'Vengeance Results', text })
-      } else {
-        await navigator.clipboard.writeText(text)
-        setShareNotice('Results copied to clipboard.')
-      }
-    } catch (e) {
-      if ((e as Error).name !== 'AbortError') setShareNotice('Sharing is unavailable on this device.')
-    }
-  }
 
   return (
     <div className="banker-results">
@@ -200,18 +182,12 @@ function VengeanceResults({
       </section>
       <section className="results-actions">
         <p>Your final scores and round cards are saved in this room on your device.</p>
-        {shareNotice && <p className="results-share-status" role="status">{shareNotice}</p>}
         <div className="banker-results-actions">
-          <button className="secondary-action" onClick={() => void share()}>
-            <Share2 size={16} /> Share results
+          <button type="button" className="secondary-action" onClick={onNewGame}>
+            <RotateCcw size={16} /> New game
           </button>
-          <button className="primary-wide" onClick={onExit}>
+          <button type="button" className="primary-wide" onClick={onExit}>
             <ArrowLeft size={16} /> View room
-          </button>
-        </div>
-        <div style={{ marginTop: '8px' }}>
-          <button className="secondary-action" style={{ width: '100%' }} onClick={onNewGame}>
-            <RotateCcw size={16} /> Start new game
           </button>
         </div>
       </section>
@@ -661,6 +637,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
   const [rulesOpen, setRulesOpen] = useState(false)
   const [roundSummaryOpen, setRoundSummaryOpen] = useState(false)
   const [newGamePromptOpen, setNewGamePromptOpen] = useState(false)
+  const [resultsShareOpen, setResultsShareOpen] = useState(false)
   const [tvOpen, setTvOpen] = useState(false)
 
   const playerTabRefs = useRef<Record<string, HTMLButtonElement | null>>({})
@@ -787,15 +764,28 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
             <button type="button" className="banker-results-back" onClick={exit}>
               <ArrowLeft size={18} /> {demo ? 'Exit practice' : 'Back to room'}
             </button>
+            <button type="button" className="brand-button banker-results-share" aria-label="Share game results" title="Share game results" onClick={() => setResultsShareOpen(true)}>
+              <Share2 size={18} />
+            </button>
           </header>
           <VengeanceResults
-            roomName={room?.name ?? 'Practice Match'}
             players={state.players}
             history={state.history}
             targetScore={state.targetScore}
             onNewGame={() => setNewGamePromptOpen(true)}
             onExit={exit}
           />
+          {resultsShareOpen && (
+            <ResultsShareDialog
+              roomName={room?.name ?? 'Practice Match'}
+              players={state.players}
+              history={state.history}
+              targetScore={state.targetScore}
+              edition="vengeance"
+              variant={state.variant}
+              onClose={() => setResultsShareOpen(false)}
+            />
+          )}
           {newGamePromptOpen && (
             <ConfirmationModal
               edition="vengeance"

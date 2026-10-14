@@ -8,6 +8,12 @@
 
 ---
 
+## Phone and tablet layouts
+
+The companion uses the existing phone layout below 600 CSS pixels. At 600px and above, `src/styles/tablet.css` expands the home, setup, gameplay, results, and dialogs for portrait tablets. Room and player lists use two columns from 760px. The TV scoreboard retains its separate layout.
+
+Android requests portrait orientation for phones and tablets. While targeting API 36, the activity opts into `PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY` so Android 16 tablets can honor that request. Revisit this when raising the target to API 37, which removes this opt-out; device/user overrides can also take precedence. The web app manifest requests portrait for installed web apps, but ordinary browser tabs follow the browser/device orientation.
+
 ## What it does
 
 **Flip7 Companion Mobile** is an offline digital companion for the physical **Flip 7** card game. It features dedicated game spaces for both the **Classic** game and **With a Vengeance** expansion, running entirely on-device without needing internet, backend servers, or user accounts.

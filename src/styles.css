@@ -9,6 +9,7 @@
 @import './pages/mobile/InfoPage.css';
 @import './pages/game/MobileGame.css';
 @import './pages/mobile/VengeanceTheme.css';
+@import './styles/tablet.css';
 
 /* Keep every page, modal, dialog, and scrollable container usable without a visible scroll indicator. */
 html,

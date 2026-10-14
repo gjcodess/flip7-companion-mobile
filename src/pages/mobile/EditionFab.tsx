@@ -11,7 +11,7 @@ const DEFAULT_DOCK: Dock = { side: 'right', bottom: 96 }
 function badgeSize() { return window.innerWidth <= 360 ? 70 : 80 }
 function dockLeft(side: Dock['side']) {
   const width = window.innerWidth
-  const inset = width >= 600 ? Math.max(14, width / 2 - 320) : width <= 360 ? 14 : Math.max(16, width / 2 - 246)
+  const inset = width >= 600 ? Math.max(24, (width - 1040) / 2 + 32) : width <= 360 ? 14 : Math.max(16, width / 2 - 246)
   return side === 'left' ? inset : width - inset - badgeSize()
 }
 function clampBottom(bottom: number) {

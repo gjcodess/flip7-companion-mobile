@@ -1,11 +1,27 @@
-import type { BankerPlayer, BankerRoundResult } from '../game/bankerGame'
-import { playerAvatarSrc } from './player-avatars'
+import { playerAvatarSrc, type PlayerAvatarId } from './player-avatars'
+import type { Edition, RoomVariant } from './room-store'
+
+export type ResultsPlayer = { id: string; name: string; color: string; avatar?: PlayerAvatarId; totalScore: number }
+export type ResultsRound = { round: number; scores: Record<string, number> }
+export type ResultsMode = { edition?: Edition; variant?: RoomVariant }
 
 const ink = '#132d67'
-const paper = '#fff9df'
-const yellow = '#ffe05c'
-const pink = '#ed4f7e'
 const width = 1080
+
+function resultsTheme({ edition = 'classic', variant = 'standard' }: ResultsMode) {
+  const vengeance = edition === 'vengeance'
+  const brutal = vengeance && variant === 'brutal'
+  return {
+    label: vengeance ? (brutal ? 'VENGEANCE · BRUTAL' : 'VENGEANCE MODE') : 'CLASSIC MODE',
+    background: vengeance ? '#ebd7be' : '#f8ecc7',
+    paper: vengeance ? '#fff7da' : '#fff9df',
+    yellow: vengeance ? '#f7c244' : '#ffe05c',
+    accent: vengeance ? '#e83239' : '#ed4f7e',
+    rank: vengeance ? '#bcdbf8' : '#dceef0',
+    badge: vengeance ? '#e83239' : '#ed4f7e',
+    badgeText: '#fffdf5',
+  }
+}
 
 function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, radius: number, fill: string, stroke = ink) {
   ctx.beginPath()
@@ -44,24 +60,29 @@ function loadImage(src: string): Promise<HTMLImageElement | null> {
   })
 }
 
-export function resultsShareText(roomName: string, players: BankerPlayer[], targetScore: number) {
+export function resultsShareText(roomName: string, players: ResultsPlayer[], targetScore: number, mode: ResultsMode = {}) {
   const ordered = [...players].sort((a, b) => b.totalScore - a.totalScore)
   const leaders = ordered.filter(player => player.totalScore === ordered[0]?.totalScore).map(player => player.name)
-  return `Flip7 Companion · ${roomName}\n${leaders.join(' & ')} ${leaders.length === 1 ? 'won with' : 'tied at'} ${ordered[0]?.totalScore ?? 0} points (first to ${targetScore}).\n${ordered.map(player => `${ordered.findIndex(entry => entry.totalScore === player.totalScore) + 1}. ${player.name} — ${player.totalScore} pts`).join('\n')}`
+  return `Flip7 Companion · ${roomName}\n${resultsTheme(mode).label}\n${leaders.join(' & ')} ${leaders.length === 1 ? 'won with' : 'tied at'} ${ordered[0]?.totalScore ?? 0} points (first to ${targetScore}).\n${ordered.map(player => `${ordered.findIndex(entry => entry.totalScore === player.totalScore) + 1}. ${player.name} — ${player.totalScore} pts`).join('\n')}`
 }
 
-export async function createResultsImage(roomName: string, players: BankerPlayer[], history: BankerRoundResult[], targetScore: number): Promise<Blob> {
+export async function createResultsImage(roomName: string, players: ResultsPlayer[], history: ResultsRound[], targetScore: number, mode: ResultsMode = {}): Promise<Blob> {
+  const theme = resultsTheme(mode)
   const ordered = [...players].sort((a, b) => b.totalScore - a.totalScore)
   const leaders = ordered.filter(player => player.totalScore === ordered[0]?.totalScore)
   const rowHeight = 110
+  const cardY = 422
+  const cardHeight = 115 + ordered.length * rowHeight
+  const cardShadow = 9
+  const footerHeight = 108
   const canvas = document.createElement('canvas')
   canvas.width = width
-  canvas.height = 585 + ordered.length * rowHeight
+  canvas.height = cardY + cardHeight + cardShadow + footerHeight
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('Could not create the results image on this device.')
   await document.fonts?.ready
 
-  ctx.fillStyle = '#f8ecc7'
+  ctx.fillStyle = theme.background
   ctx.fillRect(0, 0, width, canvas.height)
   dots(ctx, 10, 10, width, canvas.height, '#132d6718')
   const [logo, ...avatars] = await Promise.all([
@@ -73,13 +94,20 @@ export async function createResultsImage(roomName: string, players: BankerPlayer
   ctx.textAlign = 'right'
   ctx.fillStyle = ink
   ctx.font = '900 22px Inter, sans-serif'
-  ctx.fillText('GAME NIGHT RESULTS', 1024, 87)
+  ctx.fillText('GAME NIGHT RESULTS', 1024, 69)
+  ctx.font = '900 20px Inter, sans-serif'
+  const badgeWidth = ctx.measureText(theme.label).width + 40
+  const badgeX = 1024 - badgeWidth
+  roundedRect(ctx, badgeX + 4, 105, badgeWidth, 42, 12, ink)
+  roundedRect(ctx, badgeX, 101, badgeWidth, 42, 12, theme.badge)
+  ctx.fillStyle = theme.badgeText
+  ctx.fillText(theme.label, 1004, 129)
   ctx.textAlign = 'left'
 
   roundedRect(ctx, 61, 173, 972, 219, 28, ink)
-  roundedRect(ctx, 52, 164, 972, 219, 28, yellow)
+  roundedRect(ctx, 52, 164, 972, 219, 28, theme.yellow)
   dots(ctx, 820, 184, 180, 175)
-  ctx.fillStyle = pink
+  ctx.fillStyle = theme.accent
   ctx.font = '900 22px Inter, sans-serif'
   ctx.fillText('MATCH COMPLETE', 90, 218)
   ctx.fillStyle = ink
@@ -91,12 +119,10 @@ export async function createResultsImage(roomName: string, players: BankerPlayer
   ctx.font = '800 20px Inter, sans-serif'
   ctx.fillText(`FIRST TO ${targetScore}   ·   ${history.length} ${history.length === 1 ? 'ROUND' : 'ROUNDS'}   ·   ${ordered.length} ${ordered.length === 1 ? 'PLAYER' : 'PLAYERS'}`, 90, 354)
 
-  const cardY = 422
-  const cardHeight = 115 + ordered.length * rowHeight
-  roundedRect(ctx, 61, cardY + 9, 972, cardHeight, 28, ink)
-  roundedRect(ctx, 52, cardY, 972, cardHeight, 28, paper)
+  roundedRect(ctx, 61, cardY + cardShadow, 972, cardHeight, 28, mode.edition === 'vengeance' ? theme.accent : ink)
+  roundedRect(ctx, 52, cardY, 972, cardHeight, 28, theme.paper)
   dots(ctx, 790, cardY + 15, 210, 135)
-  ctx.fillStyle = pink
+  ctx.fillStyle = theme.accent
   ctx.font = '900 20px Inter, sans-serif'
   ctx.fillText('FINAL SCORES', 87, cardY + 46)
   ctx.fillStyle = ink
@@ -108,8 +134,8 @@ export async function createResultsImage(roomName: string, players: BankerPlayer
     const rank = ordered.findIndex(entry => entry.totalScore === player.totalScore) + 1
     const winner = rank === 1
     roundedRect(ctx, 88, y + 5, 899, 93, 17, ink)
-    roundedRect(ctx, 83, y, 899, 93, 17, winner ? yellow : '#fffdf5')
-    roundedRect(ctx, 100, y + 27, 38, 38, 9, winner ? pink : '#dceef0')
+    roundedRect(ctx, 83, y, 899, 93, 17, winner ? theme.yellow : '#fffdf5')
+    roundedRect(ctx, 100, y + 27, 38, 38, 9, winner ? theme.accent : theme.rank)
     ctx.fillStyle = winner ? '#fffdf5' : ink
     ctx.textAlign = 'center'
     ctx.font = '900 22px Inter, sans-serif'
@@ -139,8 +165,14 @@ export async function createResultsImage(roomName: string, players: BankerPlayer
     ctx.textAlign = 'left'
   })
 
+  ctx.strokeStyle = '#132d6733'
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  ctx.moveTo(56, canvas.height - 80)
+  ctx.lineTo(1024, canvas.height - 80)
+  ctx.stroke()
   ctx.fillStyle = ink
   ctx.font = '800 17px Inter, sans-serif'
-  ctx.fillText('FLIP7 COMPANION  ·  THE PHONE CONTROLS THE GAME', 56, canvas.height - 21)
+  ctx.fillText('FLIP7 COMPANION  ·  THE PHONE CONTROLS THE GAME', 56, canvas.height - 42)
   return new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Could not save the results image.')), 'image/png'))
 }
