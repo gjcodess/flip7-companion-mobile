@@ -1,3 +1,4 @@
+import { RestartDialog } from './RestartDialog'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import {
@@ -275,7 +276,7 @@ function VengeanceMenuDialog({
           </div>
           <ChevronRight size={18} className="banker-menu-item-chevron" />
         </button>
-        {demo && onRestart && (
+        {onRestart && (
           <button
             type="button"
             className="banker-menu-item"
@@ -288,8 +289,8 @@ function VengeanceMenuDialog({
               <RotateCcw size={20} />
             </div>
             <div className="banker-menu-item-text">
-              <strong>Restart practice table</strong>
-              <span>Reset scores and reconfigure players</span>
+              <strong>Restart</strong>
+              <span>Restart the current round or the whole game</span>
             </div>
             <ChevronRight size={18} className="banker-menu-item-chevron" />
           </button>
@@ -640,6 +641,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
   const [playersOpen, setPlayersOpen] = useState(false)
   const [rulesOpen, setRulesOpen] = useState(false)
   const [roundSummaryOpen, setRoundSummaryOpen] = useState(false)
+  const [restartOpen, setRestartOpen] = useState(false)
   const [newGamePromptOpen, setNewGamePromptOpen] = useState(false)
   const [resultsShareOpen, setResultsShareOpen] = useState(false)
   const [tvOpen, setTvOpen] = useState(false)
@@ -1521,9 +1523,6 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
               </div>
               <p>Confirm these scores to finish the match or start the next round.</p>
               <div className="banker-results-actions">
-                <button className="secondary-action" onClick={() => setNewGamePromptOpen(true)}>
-                  <RotateCcw size={16} /> New game
-                </button>
                 <button
                   className="primary-wide"
                   disabled={Boolean(saveError) || Boolean(state.pendingFlipSeven)}
@@ -1706,11 +1705,15 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
           onOpenPlayers={() => setPlayersOpen(true)}
           onOpenRules={() => setRulesOpen(true)}
           onOpenTvShare={() => setTvOpen(true)}
-          onRestart={demo ? () => setState(null) : undefined}
+          onRestart={() => setRestartOpen(true)}
           onExit={exit}
         />
       )}
 
+      {restartOpen && <RestartDialog edition="vengeance" disabled={Boolean(saveError)} onClose={() => setRestartOpen(false)} onRestart={scope => {
+        dispatch({ type: 'restart', scope }); setRestartOpen(false); setRoundSummaryOpen(false);
+        setOrganizedPlayers({}); setSelectedCardIndex(null); setEditingCardInstanceId(null);
+      }} />}
       {tvOpen && roomId && <TvShareDialog roomId={roomId} onClose={() => setTvOpen(false)} />}
     </div>
   )

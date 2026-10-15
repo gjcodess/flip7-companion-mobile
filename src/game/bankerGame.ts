@@ -76,6 +76,7 @@ export type BankerAction =
   | { type: 'move-player'; playerId: string; direction: -1 | 1 }
   | { type: 'advance-round' }
   | { type: 'reset' }
+  | { type: 'restart'; scope: 'game' | 'round' }
 
 export const bankerInitialState = (): BankerState => ({
   phase: 'setup', targetScore: 200, roundNumber: 1, dealerId: null,
@@ -207,6 +208,16 @@ function revealAction(state: BankerState, sourcePlayerId: string, card: Card): B
 }
 
 export function bankerReducer(state: BankerState, action: BankerAction): BankerState {
+  if (action.type === 'restart') {
+    if (!state.players.length || (action.scope === 'round' && state.phase !== 'round')) return state
+    const wholeGame = action.scope === 'game'
+    const starterId = wholeGame ? state.players[0].id : state.dealerId ?? state.players[0].id
+    return { ...state, phase: 'round', roundNumber: wholeGame ? 1 : state.roundNumber,
+      dealerId: starterId, selectedPlayerId: starterId, turnPlayerId: starterId,
+      roundFinisherId: null, forcedTurns: [], pendingAction: null,
+      players: state.players.map(player => ({ ...player, totalScore: wholeGame ? 0 : player.totalScore, round: { ...demoInitialState(), externalForces: true } })),
+      history: wholeGame ? [] : state.history, winnerIds: [], past: [], future: [] }
+  }
   if (action.type === 'reset') return bankerInitialState()
   if (action.type === 'undo') return undoBankerState(state)
   if (action.type === 'redo') return redoBankerState(state)

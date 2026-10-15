@@ -42,6 +42,7 @@ export type VAction = (
   | { type: 'choose-card'; instanceId: string }
   | { type: 'confirm' }
   | { type: 'stay' }
+  | { type: 'restart'; scope: 'game' | 'round' }
   | { type: 'advance-round' }
   | { type: 'undo' }
   | { type: 'redo' }
@@ -299,6 +300,14 @@ export function vengeancePendingKey(state: VState): string | null {
 }
 
 export function vengeanceReducer(state: VState, action: VAction): VState {
+  if (action.type === 'restart') {
+    if (!state.players.length || (action.scope === 'round' && state.phase === 'results')) return state
+    const fresh = vengeanceInitialState(state.players, state.targetScore,
+      action.scope === 'game' ? state.players[0].id : state.dealerId, state.variant)
+    return action.scope === 'game' ? fresh : { ...fresh, roundNumber: state.roundNumber,
+      history: state.history, players: fresh.players.map(player => ({ ...player,
+        totalScore: state.players.find(previous => previous.id === player.id)!.totalScore })) }
+  }
   // Target clicks and confirmations belong to the effect displayed when they were made.
   if (action.expectedPendingKey !== undefined && action.expectedPendingKey !== vengeancePendingKey(state)) return state
   if (action.type === 'select-player') return state.players.some(player => player.id === action.playerId) ? { ...state, selectedPlayerId: action.playerId } : state
