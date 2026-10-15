@@ -28,6 +28,8 @@ async function completedFixture(tied = false) {
     state = bankerReducer(state, { type: 'player', playerId: p.id, action: { type: 'stay' } })
   }
   state = bankerReducer(state, { type: 'advance-round' })
+  // Imported historical matches may legitimately contain old shared-winner results.
+  if (tied) state = { ...state, phase: 'results', winnerIds: state.players.map(player => player.id) }
   result.store.saveRoomState(result.room.id, state)
   return { ...result, room: result.store.getLibrary().rooms[0] }
 }
@@ -191,7 +193,7 @@ describe('offline room saves', () => {
     }
     store.saveRoomState(room.id, bankerReducer(state, { type: 'advance-round' }))
     const current = store.getLibrary().rooms[0]
-    expect(current.state?.turnPlayerId).toBe(roster[0].id)
+    expect(current.state?.turnPlayerId).toBe(roster[1].id)
 
     store.editRoom(current, current.name, current.targetScore, [roster[1], roster[2], extra])
     const updated = store.decodeLibrary(saved.get(store.STORAGE_KEY)!).rooms[0]
@@ -204,7 +206,7 @@ describe('offline room saves', () => {
     expect(store.getLibrary().players.some(player => player.id === roster[0].id)).toBe(true)
   })
 
-  it('retains tied winners and derives player stats from completed matches', async () => {
+  it('keeps tied games in progress and records stats only after a single winner emerges', async () => {
     const { store, room, roster } = await fixture(50)
     let state = room.state!
     for (const p of roster) {
@@ -213,9 +215,19 @@ describe('offline room saves', () => {
     }
     state = bankerReducer(state, { type: 'advance-round' })
     store.saveRoomState(room.id, state)
+    expect(state.phase).toBe('round')
+    expect(state.winnerIds).toEqual([])
+    expect(store.playerStats(roster[0].id).matches).toBe(0)
+    for (const [i, p] of roster.entries()) {
+      state = bankerReducer(state, { type: 'player', playerId: p.id, action: { type: 'add', card: card(`number-${i + 1}`) } })
+      state = bankerReducer(state, { type: 'player', playerId: p.id, action: { type: 'stay' } })
+    }
+    state = bankerReducer(state, { type: 'advance-round' })
+    store.saveRoomState(room.id, state)
     expect(state.phase).toBe('results')
-    expect(state.winnerIds).toEqual(roster.map(p => p.id))
-    expect(store.playerStats(roster[0].id)).toEqual({ matches: 1, wins: 1, best: 50 })
+    expect(state.winnerIds).toEqual([roster[2].id])
+    expect(store.playerStats(roster[2].id)).toEqual({ matches: 1, wins: 1, best: 53 })
+    expect(store.playerStats(roster[0].id)).toEqual({ matches: 1, wins: 0, best: 51 })
     expect(store.decodeLibrary(saved.get(store.STORAGE_KEY)!).rooms[0].state?.history[0].hands?.[roster[0].id].entries).toHaveLength(5)
   })
 
@@ -413,5 +425,83 @@ describe('offline room saves', () => {
     const decodedRoom = decoded.rooms.find(r => r.id === brutalRoom.id)!
     expect(decodedRoom.variant).toBe('brutal')
     expect(decodedRoom.vengeanceState?.history[0].scores[roster[0].id]).toBe(-10)
+  })
+})
+
+
+describe('Classic Action queue saves', () => {
+  it('restores a queued Freeze after all three reveals and allows choosing a different player', async () => {
+    const { store, room, roster } = await fixture()
+    const [a, b, c] = roster.map(p => p.id)
+    let state = bankerReducer(room.state!, { type: 'record-action', sourcePlayerId: a, targetPlayerId: b, card: card('action-flip-three') })
+    state = bankerReducer(state, { type: 'reveal-action', sourcePlayerId: b, card: card('action-freeze') })
+    state = bankerReducer(state, { type: 'record-card', playerId: b, card: card('number-1') })
+    state = bankerReducer(state, { type: 'record-card', playerId: b, card: card('number-2') })
+    store.saveRoomState(room.id, state)
+    vi.resetModules()
+    const reloaded = await import('./room-store')
+    expect(reloaded.getStorageError()).toBe('')
+    state = reloaded.getLibrary().rooms[0].state!
+    expect(state.forcedTurns[0].remaining).toBe(0)
+    expect(state.pendingAction?.card.id).toBe('action-freeze')
+    state = bankerReducer(state, { type: 'record-action', sourcePlayerId: b, targetPlayerId: c, card: card('action-freeze') })
+    expect(state.players[2].round.status).toBe('frozen')
+    expect(state.turnPlayerId).toBe(b)
+    expect(state.forcedTurns).toHaveLength(0)
+    reloaded.saveRoomState(room.id, state)
+    expect(reloaded.decodeLibrary(saved.get(reloaded.STORAGE_KEY)!).rooms[0].state?.players[1].round.entries[0].resolved).toBe(true)
+  })
+
+  it('restores a partly completed sequence with a deferred Action', async () => {
+    const { store, room, roster } = await fixture()
+    const [a, b] = roster.map(p => p.id)
+    let state = bankerReducer(room.state!, { type: 'record-action', sourcePlayerId: a, targetPlayerId: b, card: card('action-flip-three') })
+    state = bankerReducer(state, { type: 'reveal-action', sourcePlayerId: b, card: card('action-flip-three') })
+    store.saveRoomState(room.id, state)
+    const restored = store.decodeLibrary(saved.get(store.STORAGE_KEY)!).rooms[0].state!
+    expect(restored.forcedTurns[0].remaining).toBe(2)
+    expect(restored.forcedTurns[0].deferred?.[0].card.id).toBe('action-flip-three')
+    state = bankerReducer(restored, { type: 'record-card', playerId: b, card: card('number-1') })
+    state = bankerReducer(state, { type: 'record-card', playerId: b, card: card('number-2') })
+    expect(state.pendingAction?.card.id).toBe('action-flip-three')
+  })
+
+  it('restores an unresolved normal Action and excludes its empty hand from roster editing', async () => {
+    const { store, room, roster } = await fixture()
+    const state = bankerReducer(room.state!, { type: 'reveal-action', sourcePlayerId: roster[0].id, card: card('action-second-chance') })
+    store.saveRoomState(room.id, state)
+    const restored = store.decodeLibrary(saved.get(store.STORAGE_KEY)!).rooms[0]
+    expect(restored.state?.pendingAction?.card.id).toBe('action-second-chance')
+    expect(store.canEditRoster(restored)).toBe(false)
+  })
+
+  it('accepts legacy saves without new queue fields', async () => {
+    const { store } = await fixture()
+    const legacy = JSON.parse(saved.get(store.STORAGE_KEY)!)
+    const state = legacy.rooms[0].state
+    delete state.pendingAction
+    for (const player of state.players) delete player.round.externalForces
+    expect(store.decodeLibrary(JSON.stringify(legacy)).rooms[0].state?.players).toHaveLength(3)
+  })
+})
+
+
+describe('legacy Classic forced draws', () => {
+  it('keeps the saved table counter and migrates old per-hand counters', async () => {
+    const { store, room, roster } = await fixture()
+    const [a, b] = roster.map(p => p.id)
+    let state = bankerReducer(room.state!, { type: 'record-action', sourcePlayerId: a, targetPlayerId: b, card: card('action-flip-three') })
+    store.saveRoomState(room.id, state)
+    const legacy = JSON.parse(saved.get(store.STORAGE_KEY)!)
+    const old = legacy.rooms[0].state
+    delete old.forcedTurns[0].deferred
+    delete old.forcedTurns[0].actionInstanceId
+    for (const player of old.players) { delete player.round.externalForces; player.round.flipThreeRemaining = player.id === b ? 3 : 0 }
+    state = store.decodeLibrary(JSON.stringify(legacy)).rooms[0].state!
+    expect(state.forcedTurns[0].remaining).toBe(3)
+    for (const n of [1, 2, 3]) state = bankerReducer(state, { type: 'record-card', playerId: b, card: card(`number-${n}`) })
+    expect(state.forcedTurns).toHaveLength(0)
+    expect(state.players[1].round.entries[0].voided).toBe(true)
+    expect(bankerReducer(state, { type: 'settle-player', playerId: b }).players[1].round.status).toBe('stayed')
   })
 })

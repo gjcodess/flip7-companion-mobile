@@ -26,7 +26,7 @@ While players shuffle, deal, and reveal cards from the physical deck at the tabl
 
 ### 1. Dual Game Spaces: Classic & With a Vengeance
 - **Classic Edition:** Full support for original Flip 7 scoring, bust thresholds, second chances, freezes, and points modifiers with the signature carnival table styling.
-- **With a Vengeance Edition:** Complete implementation of the Vengeance rules engine — featuring interactive player-targeting actions (Freeze, Discard, Steal, Flip Three, Dealer Freeze), stayed hand score adjustments, and dealer rotations with a dedicated navy, crimson, and gold aesthetic.
+- **With a Vengeance Edition:** Complete implementation of the Vengeance rules engine — featuring interactive player-targeting actions (Just One More, Flip Four, Steal, Swap, Discard), attacks on stayed hands, deferred Flip Four effects, and rotating starting seats with a dedicated navy, crimson, and gold aesthetic.
 - **Quick Edition Switcher:** A floating Action Button (FAB) lets you instantly toggle between Classic and Vengeance modes. Each edition maintains independent player rosters, active rooms, match history, and lifetime stats.
 
 ### 2. Brutal Mode Variant (Vengeance)

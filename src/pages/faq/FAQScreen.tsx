@@ -71,17 +71,18 @@ const faqGroups = [
         "question": "How is a round scored?",
         "answer": "Add the Number cards, apply ×2 if you have it, add any +2 through +10 Modifier points, then add the +15 Flip 7 bonus if you revealed seven unique Number cards."
       },
+      { "question": "When can I stay?", "answer": "On your normal turn, you may stay with a card in front of you, even a Modifier with no Number cards. There is no two-Number minimum. Finish forced draws first." },
       {
         "question": "Do Modifier cards count toward Flip 7?",
         "answer": "No. Modifier cards change the score but do not count as unique Number cards. You cannot bust on a Modifier card."
       },
       {
         "question": "What does Second Chance do?",
-        "answer": "It cancels one duplicate Number card. Discard the Second Chance card with the duplicate and keep the rest of your round."
+        "answer": "It cancels one duplicate Number card. Discard Second Chance with the duplicate. Each player may hold only one; give an extra to another active player without one, or discard it if nobody qualifies."
       },
       {
         "question": "What do Freeze and Flip Three do?",
-        "answer": "Freeze banks an active player. Flip Three makes an active player accept three cards one at a time."
+        "answer": "Freeze banks an active player. Flip Three forces three reveals, stopping on a bust or Flip 7. A revealed Freeze or another Flip Three waits until those three reveals finish; Second Chance can protect immediately."
       }
     ]
   },
@@ -92,7 +93,7 @@ const faqGroups = [
     "items": [
       {
         "question": "Who can start the next round?",
-        "answer": "The banker can proceed once every player is banked, frozen, or busted. The next round starts after the current scores are settled."
+        "answer": "The banker can proceed once every player is banked, frozen, or busted. After scoring, the starting seat moves one position around the table, regardless of who finished last."
       },
       {
         "question": "Can I fix a recording mistake?",
@@ -108,7 +109,7 @@ const faqGroups = [
       },
       {
         "question": "What happens when someone reaches 200 points?",
-        "answer": "The game ends after the round is settled. The player with the most total points wins."
+        "answer": "The game ends after the round is settled. The player with the most total points wins. If the highest scores are tied, everyone continues playing additional rounds until there is one winner."
       },
       {
         "question": "How do I cast the scoreboard to a TV?",
@@ -137,10 +138,11 @@ const vengeanceFaqGroups = [
     { question: 'Can I play with two people?', answer: 'The app allows a two-person saved match; the printed game is marked for three or more players and also mentions a challenge for two or fewer.' },
   ] },
   { id: 'cards', title: 'The cards fight back.', label: 'Cards & actions', items: [
-    { question: 'Can I affect someone who stayed?', answer: 'Yes. Players who stayed can receive Actions and Modifiers and can lose or exchange face-up cards. Their score remains provisional until the round ends.' },
+    { question: 'Can I affect someone who stayed?', answer: 'Yes. Players who stayed can receive Actions and Modifiers and can lose or exchange face-up cards. Their score remains provisional until the round ends. Forced draws can bust them; if they survive, they remain stayed.' },
+    { question: 'When can I stay?', answer: 'There is no two-Number minimum. Choose Stay on your normal turn unless you hold The Zero. Finish forced draws first; staying leaves your hand vulnerable to attacks.' },
     { question: 'Must I use an Action card?', answer: 'Yes, when a valid target exists. If a Swap, Steal, or Discard has no valid card to target, discard that Action.' },
     { question: 'Can Swap bust players?', answer: 'Yes. Recheck both hands after the exchange; it can bust both players.' },
-    { question: 'How does Flip Four resolve?', answer: 'Reveal up to four physical cards one at a time. Stop at a bust or Flip 7. If all four finish without a bust, resolve queued Actions and Modifiers in reveal order. A later Just One More bust does not cancel the remaining queued Actions.' },
+    { question: 'How does Flip Four resolve?', answer: 'Reveal up to four physical cards one at a time. Stop at a bust or Flip 7. A bust during the four reveals discards the queued effects. If all four finish without a bust, resolve queued Actions and Modifiers in reveal order. A later Just One More bust does not cancel the remaining queued Actions.' },
     { question: 'What if I receive Unlucky 7 while holding a 7?', answer: 'Discard your previous Number and Modifier cards first. Keep Unlucky 7 without immediately busting. A later 7 can bust you.' },
   ] },
   { id: 'score', title: 'Count what remains.', label: 'Scoring', items: [

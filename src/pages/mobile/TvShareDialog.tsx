@@ -33,7 +33,7 @@ export function TvShareDialog({ roomId, onClose }: { roomId: string; onClose: ()
     try { await navigator.clipboard.writeText(session.url); setCopied(true) }
     catch { setError('Could not copy the address. You can type it on the TV instead.') }
   }
-  return <dialog ref={dialog} className="room-dialog tv-share-dialog" onCancel={onClose} onClick={event => { if (event.target === event.currentTarget) onClose() }}>
+  return <dialog ref={dialog} className={`room-dialog tv-share-dialog${room?.edition === 'vengeance' ? ' edition-vengeance' : ''}`} onCancel={onClose} onClick={event => { if (event.target === event.currentTarget) onClose() }}>
     <div className="room-dialog-heading"><div><span className="room-kicker">LIVE TV SCOREBOARD</span><h2>Show this room on TV</h2></div><button className="room-icon-button" aria-label="Close TV sharing" onClick={onClose}><X size={20} /></button></div>
     <p>Everyone can follow the scores. Only this phone controls the game.</p>
     {sharingThisRoom && session ? <div className="tv-share-active"><span><Radio size={16} /> SHARING ON YOUR LOCAL NETWORK</span><p>Open your TV’s web browser and enter this address:</p><code>{session.url}</code><button type="button" onClick={copy}><Copy size={15} /> {copied ? 'Copied' : 'Copy address'}</button></div> : <div className="tv-share-instructions"><Monitor size={33} /><p>Connect your phone and TV to the same local network, by Wi-Fi or Ethernet. Open the address in the TV’s web browser. Internet and mobile data are not needed.</p></div>}

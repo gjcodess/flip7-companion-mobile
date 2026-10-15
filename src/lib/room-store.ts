@@ -77,10 +77,17 @@ export function decodeLibrary(raw: string): RoomLibrary {
     if (room.state) {
       const state = room.state
       if (!['round', 'results'].includes(state.phase) || !Number.isInteger(state.roundNumber) || state.roundNumber < 1 || state.targetScore !== room.targetScore || !Array.isArray(state.players) || state.players.length !== room.roster.length || !Array.isArray(state.history) || !Array.isArray(state.forcedTurns) || !Array.isArray(state.winnerIds)) throw new Error('Invalid saved match.')
-      if (new Set(state.players.map(p => p.id)).size !== state.players.length || ![state.dealerId, state.selectedPlayerId, state.turnPlayerId, state.roundFinisherId, ...state.winnerIds].every(id => id === null || state.players.some(p => p.id === id)) || !state.forcedTurns.every(turn => state.players.some(p => p.id === turn.targetPlayerId) && state.players.some(p => p.id === turn.resumeAfterPlayerId) && Number.isInteger(turn.remaining) && turn.remaining >= 1 && turn.remaining <= 3)) throw new Error('Invalid saved turn order.')
+      const validClassicPending = (pending: NonNullable<BankerState['pendingAction']>) => pending && pickerCards.some(card => card.id === pending.card?.id && card.kind === 'action') && state.players.some(player => player.id === pending.sourcePlayerId) && (pending.consumesForcedDraw === undefined || typeof pending.consumesForcedDraw === 'boolean')
+      if (state.pendingAction && !validClassicPending(state.pendingAction)) throw new Error('Invalid pending Classic action.')
+      if (new Set(state.players.map(p => p.id)).size !== state.players.length || ![state.dealerId, state.selectedPlayerId, state.turnPlayerId, state.roundFinisherId, ...state.winnerIds].every(id => id === null || state.players.some(p => p.id === id)) || !state.forcedTurns.every(turn => state.players.some(p => p.id === turn.targetPlayerId) && state.players.some(p => p.id === turn.resumeAfterPlayerId) && Number.isInteger(turn.remaining) && turn.remaining >= 0 && turn.remaining <= 3 && (turn.actionInstanceId === undefined || typeof turn.actionInstanceId === 'string') && (turn.deferred === undefined || (Array.isArray(turn.deferred) && turn.deferred.every(validClassicPending))))) throw new Error('Invalid saved turn order.')
       for (const player of state.players) {
-        if (!validProfile(player) || !room.roster.some(p => p.id === player.id) || !Number.isFinite(player.totalScore) || !player.round || !Array.isArray(player.round.entries) || !['active', 'stayed', 'busted', 'frozen', 'flip-seven'].includes(player.round.status) || !Number.isInteger(player.round.nextId) || !Number.isFinite(player.round.flipThreeRemaining)) throw new Error('Invalid saved hand.')
-        if (!player.round.entries.every(e => typeof e.instanceId === 'string' && typeof e.voided === 'boolean' && e.card)) throw new Error('Invalid saved card.')
+        if (!validProfile(player) || !room.roster.some(p => p.id === player.id) || !Number.isFinite(player.totalScore) || !player.round || !Array.isArray(player.round.entries) || !['active', 'stayed', 'busted', 'frozen', 'flip-seven'].includes(player.round.status) || !Number.isInteger(player.round.nextId) || !Number.isFinite(player.round.flipThreeRemaining) || (player.round.externalForces !== undefined && typeof player.round.externalForces !== 'boolean')) throw new Error('Invalid saved hand.')
+        if (!player.round.entries.every(e => typeof e.instanceId === 'string' && typeof e.voided === 'boolean' && (e.discarded === undefined || typeof e.discarded === 'boolean') && (e.resolved === undefined || typeof e.resolved === 'boolean') && e.card)) throw new Error('Invalid saved card.')
+        if (!player.round.externalForces) {
+          player.round.externalForces = true
+          player.round.flipThreeRemaining = 0
+          player.round.entries = player.round.entries.map(entry => entry.card.id === 'action-flip-three' && entry.voided ? { ...entry, resolved: true } : entry)
+        }
         player.round.past = []; player.round.future = []
       }
       if (!state.history.every(h => Number.isInteger(h.round) && h.round >= 1 && h.scores && Object.values(h.scores).every(score => Number.isInteger(score) && score >= 0) && (!h.hands || Object.values(h.hands).every(hand => typeof hand.name === 'string' && hand.name.length <= 24 && /^#[0-9a-f]{6}$/i.test(hand.color) && (hand.avatar === undefined || isPlayerAvatarId(hand.avatar)) && ['active', 'stayed', 'busted', 'frozen', 'flip-seven'].includes(hand.status) && Array.isArray(hand.entries) && hand.entries.every(e => e.card && typeof e.instanceId === 'string' && typeof e.voided === 'boolean'))))) throw new Error('Invalid match history.')
@@ -188,7 +195,7 @@ export function startRoom(room: Room) {
   const state: BankerState = { ...started, players: started.players.map((p, i) => ({ ...p, ...room.roster[i] })), dealerId: firstId, selectedPlayerId: firstId, turnPlayerId: firstId }
   saveRoom({ ...room, state })
 }
-export function canEditRoster(room: Room) { return room.edition === 'vengeance' ? !room.vengeanceState || (room.vengeanceState.phase === 'deal' && room.vengeanceState.events.length === 0) : !room.state || (room.state.phase === 'round' && room.state.forcedTurns.length === 0 && room.state.players.every(p => p.round.status === 'active' && p.round.entries.length === 0)) }
+export function canEditRoster(room: Room) { return room.edition === 'vengeance' ? !room.vengeanceState || (room.vengeanceState.phase === 'deal' && room.vengeanceState.events.length === 0) : !room.state || (room.state.phase === 'round' && !room.state.pendingAction && room.state.forcedTurns.length === 0 && room.state.players.every(p => p.round.status === 'active' && p.round.entries.length === 0)) }
 export function editRoom(room: Room, name: string, targetScore: number, roster: PlayerProfile[], vengeanceDealerId?: string, variant?: RoomVariant) {
   if (!canEditRoster(room)) throw new Error('Change players before the first card of a round.')
   if (roster.length < 2 || roster.length > 18) throw new Error('A room needs 2–18 players.')
@@ -202,7 +209,7 @@ export function editRoom(room: Room, name: string, targetScore: number, roster: 
     updateLibrary(current => ({ ...current, rooms: current.rooms.map(item => item.id === room.id ? { ...room, name: name.trim(), targetScore, roster, variant: nextVariant, vengeanceDealerId: selectedDealer, vengeanceState, updatedAt: Date.now() } : item), vengeancePlayers: [...current.vengeancePlayers, ...roster.filter(player => !current.vengeancePlayers.some(existing => existing.id === player.id))] }))
     return
   }
-  if (room.state && targetScore <= Math.max(...room.state.players.map(p => p.totalScore))) throw new Error('The new target must be higher than the current leading score.')
+  if (room.state && targetScore !== room.targetScore && targetScore <= Math.max(...room.state.players.map(p => p.totalScore))) throw new Error('The new target must be higher than the current leading score.')
   const currentState = room.state
   const state = currentState ? (() => {
     const retainedIds = new Set(roster.map(player => player.id))
