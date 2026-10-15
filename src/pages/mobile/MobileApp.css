@@ -1029,6 +1029,8 @@
 
 .tv-share-dialog { --ink: #132d67; --cream: #fff7da; --yellow: #ffe05c; --pink: #ed4f7e; color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
 .tv-share-dialog .room-dialog-heading .room-kicker { display: block; margin-bottom: 6px; color: #c53264; font-size: 8px; font-weight: 900; letter-spacing: .1em; }
+.tv-share-dialog.edition-vengeance { --pink: #e83239; --yellow: #f7c244; background: var(--cream); }
+.tv-share-dialog.edition-vengeance .room-dialog-heading .room-kicker { color: var(--pink); }
 .tv-share-dialog .room-dialog-heading h2 { line-height: 1.15; }
 .tv-share-instructions { display: flex; align-items: center; gap: 16px; padding: 18px; border: 1.5px dashed #9aa5b7; border-radius: 12px; background: #fffdf3; }
 .tv-share-instructions svg { flex: 0 0 auto; }
