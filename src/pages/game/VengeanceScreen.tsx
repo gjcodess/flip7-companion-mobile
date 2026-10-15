@@ -27,8 +27,12 @@ import {
   X,
 } from 'lucide-react'
 import type { Card } from '../../game/cards'
+import { ForcedDrawStatus } from './ForcedDrawStatus'
+import { vengeanceTableEntries, type VTableEntry } from '../../game/tableEntries'
 import { vengeanceCards, type VengeanceCard } from '../../game/vengeanceCards'
 import {
+  vengeancePendingKey,
+  vengeancePending,
   vengeanceEligibleActors,
   vengeanceEligibleCards,
   vengeanceInitialState,
@@ -704,7 +708,18 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
   const forcedTurn = state?.forced[0] ?? null
   const turnPlayerId = forcedTurn?.targetId ?? (state?.phase === 'deal' || state?.phase === 'turn' ? state.turnPlayerId : null)
   const drawing = state ? state.players.find((p) => p.id === turnPlayerId) : null
-  const pending = state?.pending ?? null
+  const pending = state ? vengeancePending(state) : null
+  const pendingKey = state ? vengeancePendingKey(state) : null
+  const [readyPendingKey, setReadyPendingKey] = useState<string | null>(null)
+  useEffect(() => {
+    const timer = window.setTimeout(() => setReadyPendingKey(pendingKey), 300)
+    return () => window.clearTimeout(timer)
+  }, [pendingKey])
+  const pendingReady = pendingKey !== null && readyPendingKey === pendingKey
+  const dispatchPending = (action: VAction) => {
+    if (!pendingKey || (action.type !== 'cancel-pending' && !pendingReady)) return
+    dispatch({ ...action, expectedPendingKey: pendingKey })
+  }
   const eligibleActors = state ? vengeanceEligibleActors(state) : []
   const eligibleCards = state ? vengeanceEligibleCards(state) : []
 
@@ -714,7 +729,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
 
   const canRecord = (state?.phase === 'deal' || state?.phase === 'turn') && !pending && Boolean(drawing) && !saveError
 
-  // Auto-scroll active player tab into view
+  // Auto-scroll non-busted player tab into view
   useEffect(() => {
     if (!turnPlayerId) return
     playerTabRefs.current[turnPlayerId]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
@@ -837,18 +852,16 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
     }))
   }
 
-  const displayedEntries = selected
-    ? isCurrentOrganized
-      ? organizeVengeanceEntries(selected.entries)
-      : selected.entries
-    : []
+  const tableEntries = selected ? vengeanceTableEntries(state, selected.id) : []
+  const displayedEntries: VTableEntry[] = selected && isCurrentOrganized
+    ? [...organizeVengeanceEntries(selected.entries), ...tableEntries.filter(entry => entry.resolution)]
+    : tableEntries
 
   const tableCards: Card[] = displayedEntries.map((e) => e.card)
   const tableCardIds: string[] = displayedEntries.map((e) => e.instanceId)
   const selectedScore = selected ? vengeanceScore(selected, state.variant, state.flipSevenChoice) : 0
   const isSelectedTurn = selected?.id === turnPlayerId
   const interactionLocked = pickerOpen || Boolean(pending) || roundSummaryOpen || Boolean(saveError)
-  const numberCount = selected?.entries.filter((e) => !e.voided && e.card.kind === 'number').length ?? 0
   const hasZero = Boolean(selected?.entries.some((e) => !e.voided && e.card.id === 'v-number-zero'))
   const canStay =
     state.phase === 'turn' &&
@@ -856,7 +869,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
     !forcedTurn &&
     !hasZero &&
     selected?.status === 'active' &&
-    numberCount >= 2
+    !pending
 
   let stayActionLabel = 'STAY / BANK'
   let stayActionClass = ''
@@ -950,6 +963,8 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
           <b>{drawing?.name || '—'}</b>
         </div>
 
+        {forcedTurn && forcedTurn.remaining > 0 && <ForcedDrawStatus label={forcedTurn.kind === 'four' ? 'Flip Four' : 'Just One More'} remaining={forcedTurn.remaining} total={forcedTurn.kind === 'four' ? 4 : 1} />}
+
         <section className="banker-player-strip vengeance-player-strip" aria-label="Player tables">
           {state.players.map((player) => (
             <button
@@ -981,6 +996,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
           table={tableCards}
           tableCardIds={tableCardIds}
           isVoidedCard={(index) => Boolean(displayedEntries[index]?.voided)}
+          cardResolution={(index) => displayedEntries[index]?.resolution}
           score={selectedScore}
           flipSevenBonus={selected?.status === 'flip-seven' ? (state.variant === 'brutal' ? (state.flipSevenChoice?.choice === 'self' ? 15 : 0) : 15) : 0}
           busted={selected?.status === 'busted'}
@@ -989,6 +1005,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
           interactionLocked={interactionLocked}
           canEditCards={canRecord}
           canAddCards={canRecord && isSelectedTurn}
+          canDrawWhileStayed={Boolean(forcedTurn && forcedTurn.remaining > 0 && isSelectedTurn)}
           confirmedAt={selected?.status === 'stayed' ? 'stayed' : selected?.status === 'frozen' ? 'frozen' : null}
           isStaying={selected?.status === 'stayed' || selected?.status === 'frozen'}
           isOrganized={isCurrentOrganized}
@@ -1148,12 +1165,12 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
         {/* Action Card Resolution Dialog */}
         {pending && (
           <motion.div
-            key="action-resolution-backdrop"
+            key={`action-resolution-${pendingKey}`}
             className="picker-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, pointerEvents: 'none' }}
-            onClick={() => dispatch({ type: 'cancel-pending' })}
+            onClick={() => dispatchPending({ type: 'cancel-pending' })}
           >
             <motion.section
               className="card-picker physical-card-picker vengeance-action-modal"
@@ -1193,34 +1210,34 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
 
                 let title = `Who gets ${pending.card.label}?`
                 if (isSteal && pending.actorId) {
-                  title = `Steal a card into ${actor?.name}'s hand`
+                  title = 'Choose a card to steal'
                 } else if (isSwap && pending.actorId) {
-                  title = `Swap 2 cards between tables`
+                  title = 'Choose two cards to swap'
                 } else if (isDiscard && pending.actorId) {
-                  title = `Discard a card from table`
+                  title = 'Choose a card to discard'
                 } else if (isForced && pending.actorId) {
                   title = `${actor?.name} flips ${pending.card.id === 'v-action-flip-four' ? 'four cards' : 'one card'}`
                 }
 
-                let subtitle = `Choose which active player table receives this ${pending.card.label} action.`
+                let subtitle = `Choose which non-busted player table receives this ${pending.card.label} action.`
                 if (isModifier) {
-                  subtitle = `Choose which active player table receives this ${pending.card.label} modifier.`
+                  subtitle = state.variant === 'brutal' ? 'Choose any player, including stayed or busted players.' : 'Choose any non-busted player, including players who stayed.'
                 } else if (isForced) {
                   subtitle = pending.actorId
-                    ? `${actor?.name} must flip cards, then immediately freeze unless they bust or reach Flip 7.`
-                    : `Choose which active player table resolves this ${pending.card.label} action.`
+                    ? pending.card.id === 'v-action-just-one-more' ? `${actor?.name} flips once, resolves any effect, then stays unless they bust or reach Flip 7.` : `${actor?.name} flips up to four cards. A player who already stayed remains stayed afterward.`
+                    : `Choose which non-busted player table resolves this ${pending.card.label} action.`
                 } else if (isSteal) {
                   subtitle = pending.actorId
-                    ? `Select 1 card from an active opponent's table to steal into ${actor?.name}'s hand.`
-                    : `Choose which active player gets Steal to take a card.`
+                    ? `Select 1 card from a non-busted opponent's table to steal into ${actor?.name}'s hand.`
+                    : `Choose which non-busted player gets Steal to take a card.`
                 } else if (isSwap) {
                   subtitle = pending.actorId
-                    ? 'Select 1 card from each of 2 different active players to swap between them.'
-                    : `Choose which active player gets Swap to exchange cards.`
+                    ? 'Choose one face-up card from each of two players who have not busted. You may include your own hand and stayed hands.'
+                    : `Choose which non-busted player gets Swap to exchange cards.`
                 } else if (isDiscard) {
                   subtitle = pending.actorId
-                    ? 'Select 1 card from any active player table to discard from the round.'
-                    : `Choose which active player gets Discard to remove a card.`
+                    ? 'Choose any face-up Number or Modifier card to discard, including your own card or one from a player who stayed.'
+                    : `Choose which non-busted player gets Discard to remove a card.`
                 }
 
                 return (
@@ -1235,12 +1252,13 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                           className="close-button"
                           aria-label="Cancel action"
                           title="Cancel"
-                          onClick={() => dispatch({ type: 'cancel-pending' })}
+                          onClick={() => dispatchPending({ type: 'cancel-pending' })}
                         >
                           <X size={19} />
                         </button>
                       </div>
                       <p>{subtitle}</p>
+                      {state.resolving.length > 0 && <p className="v-queue-context">Resolve {pending.card.label} now · {state.resolving.length} more queued</p>}
 
                       {/* Swap Stepper Status Tracker inside Header */}
                       {isSwap && (
@@ -1258,20 +1276,21 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                       )}
                     </div>
 
-                    <div className={`physical-picker-scroll v-action-scroll ${needsCards ? 'has-floating-btn' : ''}`}>
+                    <div className={`physical-picker-scroll v-action-scroll ${needsCards || isModifier ? 'has-floating-btn' : ''}`}>
                       {/* Step 1: Choose Actor (for actions) or Target (for modifiers) */}
-                      {((!pending.actorId && !isModifier) || (isModifier && !pending.targetId)) && (
+                      {((!needsCards && !pending.actorId && !isModifier) || isModifier) && (
                         <div className="target-list banker-target-list v-action-actor-list">
                           {eligibleActors.map((player) => (
                             <button
                               key={player.id}
                               type="button"
-                              className="v-actor-select-btn"
+                              className={`v-actor-select-btn ${isModifier && pending.targetId === player.id ? 'v-target-selected' : ''}`}
+                              disabled={!pendingReady || Boolean(saveError)}
+                              aria-pressed={isModifier ? pending.targetId === player.id : undefined}
                               onClick={() =>
-                                dispatch({
-                                  type: isModifier ? 'choose-target' : 'choose-actor',
-                                  playerId: player.id,
-                                })
+                                dispatchPending(isModifier
+                                  ? { type: 'choose-target', playerId: player.id, preview: true }
+                                  : { type: 'choose-actor', playerId: player.id })
                               }
                             >
                               <PlayerAvatar player={player} className="mini-avatar" />
@@ -1294,7 +1313,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                       {needsCards && pending.actorId && (
                         <div className="v-fan-players-list">
                           {state.players
-                            .filter((player) => player.status === 'active')
+                            .filter((player) => ['active', 'stayed', 'frozen'].includes(player.status))
                             .map((player) => {
                               const isActorHand = player.id === pending.actorId
                               const cannotStealHere = isSteal && isActorHand
@@ -1356,9 +1375,9 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                                                 key={entry.instanceId}
                                                 type="button"
                                                 className={`v-fan-card ${isChosen ? 'chosen' : ''} ${!isEligible ? 'ineligible' : ''}`}
-                                                disabled={!isEligible}
+                                                disabled={!isEligible || !pendingReady || Boolean(saveError)}
                                                 onClick={() =>
-                                                  dispatch({ type: 'choose-card', instanceId: entry.instanceId })
+                                                  dispatchPending({ type: 'choose-card', instanceId: entry.instanceId })
                                                 }
                                                 aria-label={`${entry.card.label} from ${player.name}`}
                                               >
@@ -1382,13 +1401,22 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                       )}
                     </div>
 
+                    {isModifier && (
+                      <div className="v-floating-confirm">
+                        <button type="button" className="v-confirm-btn modifier" disabled={!readyToConfirm || !pendingReady || Boolean(saveError)} onClick={() => dispatchPending({ type: 'confirm' })}>
+                          {target ? `Give ${pending.card.label} to ${target.name}` : 'Choose a player'}
+                        </button>
+                      </div>
+                    )}
+
                     {/* Floating Confirmation Buttons for Steal, Swap, Discard */}
                     {isSteal && pending.actorId && selectedFaces[0] && (
                       <div className="v-floating-confirm">
                         <button
                           type="button"
                           className="v-confirm-btn steal"
-                          onClick={() => dispatch({ type: 'confirm' })}
+                          disabled={!pendingReady || Boolean(saveError)}
+                          onClick={() => dispatchPending({ type: 'confirm' })}
                         >
                           Confirm Steal
                         </button>
@@ -1400,7 +1428,8 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                         <button
                           type="button"
                           className="v-confirm-btn swap"
-                          onClick={() => dispatch({ type: 'confirm' })}
+                          disabled={!pendingReady || Boolean(saveError)}
+                          onClick={() => dispatchPending({ type: 'confirm' })}
                         >
                           Confirm Swap
                         </button>
@@ -1412,7 +1441,8 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                         <button
                           type="button"
                           className="v-confirm-btn discard"
-                          onClick={() => dispatch({ type: 'confirm' })}
+                          disabled={!pendingReady || Boolean(saveError)}
+                          onClick={() => dispatchPending({ type: 'confirm' })}
                         >
                           Confirm Discard
                         </button>
@@ -1617,7 +1647,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                   <section>
                     <h3>Initial Deal & Turns</h3>
                     <p>
-                      Every player receives 1 face-up card clockwise starting after the dealer. Then players take turns hitting or staying until everyone busts or banks.
+                      Each player receives one face-up card in table order. The starting seat moves one position each round. Then players take turns hitting or staying until everyone busts or banks.
                     </p>
                   </section>
                   <section>

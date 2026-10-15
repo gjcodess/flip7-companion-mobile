@@ -1769,3 +1769,6 @@
   box-shadow: 1px 2px 0 #132d67 !important;
 }
 
+.v-actor-select-btn.v-target-selected { background: #ffe05c !important; box-shadow: inset 0 0 0 2px #132d67; }
+.v-actor-select-btn:disabled, .v-confirm-btn:disabled { cursor: default; opacity: .55; }
+.vengeance-action-modal .physical-picker-header .v-queue-context { margin: 8px 0 0; padding: 6px 9px; border-radius: 6px; background: #f3e6b8; color: #132d67; font-size: 11px; font-weight: 700; }

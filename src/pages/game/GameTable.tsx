@@ -2,6 +2,8 @@ import { useEffect } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { Crown, ListOrdered, LoaderCircle, Plus } from 'lucide-react'
 import type { Card } from '../../game/cards'
+import type { CardResolution } from '../../game/tableEntries'
+import './QueuedTableCards.css'
 import { preloadCardArtwork } from '../../game/cardArtworkPreloader'
 import { CardArtwork } from '../../components/CardArtwork'
 
@@ -9,6 +11,7 @@ type GameTableProps = {
   table: Card[]
   tableCardIds: string[]
   isVoidedCard: (index: number) => boolean
+  cardResolution?: (index: number) => CardResolution | undefined
   score: number
   flipSevenBonus: number
   busted: boolean
@@ -17,6 +20,7 @@ type GameTableProps = {
   interactionLocked: boolean
   canEditCards: boolean | undefined
   canAddCards?: boolean
+  canDrawWhileStayed?: boolean
   confirmedAt: string | null | undefined
   isStaying: boolean
   isOrganized: boolean
@@ -27,7 +31,7 @@ type GameTableProps = {
   onSelectCard: (index: number, card: Card) => void
 }
 
-export function GameTable({ table, tableCardIds, isVoidedCard, score, flipSevenBonus, busted, frozen, submitting, interactionLocked, canEditCards, canAddCards = true, confirmedAt, isStaying, isOrganized, playerName, isHost, onOrganize, onOpenPicker, onSelectCard }: GameTableProps) {
+export function GameTable({ table, tableCardIds, isVoidedCard, cardResolution, score, flipSevenBonus, busted, frozen, submitting, interactionLocked, canEditCards, canAddCards = true, canDrawWhileStayed = false, confirmedAt, isStaying, isOrganized, playerName, isHost, onOrganize, onOpenPicker, onSelectCard }: GameTableProps) {
   useEffect(() => {
     void preloadCardArtwork()
   }, [])
@@ -61,22 +65,24 @@ export function GameTable({ table, tableCardIds, isVoidedCard, score, flipSevenB
               {row.map((card, rowCardIndex) => {
                 const index = rowIndex * 5 + rowCardIndex
                 const cardVoided = isVoidedCard(index)
+                const resolution = cardResolution?.(index)
                 return <motion.button
-                  className={`table-card ${card.kind} ${cardVoided ? 'card-voided' : ''} ${busted ? 'card-busted' : ''}`}
+                  className={`table-card ${card.kind} ${cardVoided ? 'card-voided' : ''} ${busted ? 'card-busted' : ''} ${resolution ? 'card-pending-effect' : ''}`}
+                  aria-label={resolution ? `${card.label}, ${resolution === 'queued' ? 'queued' : 'resolving'}, effect not applied` : undefined}
                   key={tableCardIds[index] || card.id}
                   layout
                   initial={{ opacity: 0, y: -32, rotate: rowCardIndex % 2 ? 3 : -3 }}
                   animate={{ opacity: cardVoided || busted ? .42 : 1, y: 0, rotate: rowCardIndex % 2 ? 2 : -2 }}
                   exit={{ opacity: 0, y: -28 }}
                   transition={{ type: 'spring', stiffness: 380, damping: 22 }}
-                  disabled={interactionLocked}
-                  onClick={() => onSelectCard(index, card)}
-                ><CardArtwork card={card} /></motion.button>
+                  disabled={interactionLocked || Boolean(resolution)}
+                  onClick={() => { if (!resolution) onSelectCard(index, card) }}
+                ><CardArtwork card={card} />{resolution && <span className="card-resolution-badge">{resolution === 'queued' ? 'Queued' : 'Resolving'}</span>}</motion.button>
               })}
             </AnimatePresence>
           </div>)}
         </div>
-        {!confirmedAt && !isStaying && !busted && !frozen && <button className="add-card-card" disabled={submitting || interactionLocked || !canEditCards || !canAddCards} onClick={() => { if (submitting || interactionLocked || !canEditCards || !canAddCards) return; onOpenPicker() }} aria-label="Record a physical card"><Plus size={30} /></button>}
+        {!busted && (canDrawWhileStayed || (!confirmedAt && !isStaying && !frozen)) && <button className="add-card-card" disabled={submitting || interactionLocked || !canEditCards || !canAddCards} onClick={() => { if (submitting || interactionLocked || !canEditCards || !canAddCards) return; onOpenPicker() }} aria-label="Record a physical card"><Plus size={30} /></button>}
       </AnimatePresence>
     </div>
   </section>

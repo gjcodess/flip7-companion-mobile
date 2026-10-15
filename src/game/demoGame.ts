@@ -6,6 +6,9 @@ export type DemoEntry = {
   instanceId: string
   card: Card
   voided: boolean
+  /** Permanent disposition of a physical card, separate from replayed bust protection. */
+  discarded?: boolean
+  resolved?: boolean
 }
 
 export type DemoSnapshot = {
@@ -13,6 +16,8 @@ export type DemoSnapshot = {
   status: DemoStatus
   flipThreeRemaining: number
   nextId: number
+  /** Multiplayer forced draws are managed by the table engine. */
+  externalForces?: boolean
 }
 
 export type DemoState = DemoSnapshot & {
@@ -83,78 +88,73 @@ export function scoreDemoEntries(entries: DemoEntry[], status: DemoStatus = 'act
   return numberTotal * multiplier + modifiers + flipSevenBonus
 }
 
-export function deriveDemoState(entries: DemoEntry[]): Pick<DemoSnapshot, 'entries' | 'status' | 'flipThreeRemaining'> {
-  const nextEntries = entries.map((entry) => ({ ...entry, voided: false }))
-  const evaluationEntries = [...nextEntries].sort((a, b) => Number(a.instanceId.replace('demo-card-', '')) - Number(b.instanceId.replace('demo-card-', '')))
+export function deriveDemoState(entries: DemoEntry[], externalForces = false): Pick<DemoSnapshot, 'entries' | 'status' | 'flipThreeRemaining'> {
+  const nextEntries = entries.map(entry => ({ ...entry, voided: Boolean(entry.discarded) }))
+  const ordered = [...nextEntries].sort((a, b) => entrySequence(a) - entrySequence(b))
   const seenNumbers = new Set<string>()
-  let secondChanceCount = 0
-  const activeFlipThrees: { entry: DemoEntry; remaining: number }[] = []
-  let flipThreeRemaining = 0
+  let secondChance: DemoEntry | undefined
+  let force: { entry: DemoEntry; remaining: number; deferred: DemoEntry[] } | undefined
+  let queued: DemoEntry[] = []
   let status: DemoStatus = 'active'
 
-  for (const entry of evaluationEntries) {
-    const { card } = entry
-    const wasForcedCard = flipThreeRemaining > 0
-    if (card.kind === 'action') {
-      if (card.id === 'action-second-chance') secondChanceCount += 1
-      if (card.id === 'action-flip-three') {
-        if (wasForcedCard && activeFlipThrees.length > 0) {
-          activeFlipThrees[0].remaining -= 1
-          if (activeFlipThrees[0].remaining <= 0) {
-            activeFlipThrees[0].entry.voided = true
-            activeFlipThrees.shift()
-          }
-          flipThreeRemaining -= 1
-        }
-        flipThreeRemaining += 3
-        activeFlipThrees.push({ entry, remaining: 3 })
-      }
-      if (card.id === 'action-freeze') {
-        status = 'frozen'
-        flipThreeRemaining = 0
+  const resolveQueued = () => {
+    while (!force && queued.length) {
+      const entry = queued.shift()!
+      if (status !== 'active') { entry.voided = true; continue }
+      if (entry.card.id === 'action-freeze') {
         entry.voided = true
-        for (const ft of activeFlipThrees) ft.entry.voided = true
-        activeFlipThrees.length = 0
+        status = 'frozen'
+      } else {
+        force = { entry, remaining: 3, deferred: [] }
+      }
+    }
+  }
+
+  for (const entry of ordered) {
+    if (entry.discarded) continue
+    if (status !== 'active') break
+    const currentForce = force
+    const { card } = entry
+    if (card.id === 'action-second-chance') {
+      if (secondChance) entry.voided = true
+      else secondChance = entry
+    } else if (card.id === 'action-freeze' || card.id === 'action-flip-three') {
+      if (externalForces && card.id === 'action-flip-three') {
+        entry.voided = Boolean(entry.resolved)
+      } else if (currentForce) {
+        currentForce.deferred.push(entry)
+      } else {
+        queued.push(entry)
+        resolveQueued()
       }
     } else if (card.kind === 'number') {
       if (seenNumbers.has(card.id)) {
-        if (secondChanceCount > 0) {
-          const consumedSecondChance = evaluationEntries.slice(0, evaluationEntries.indexOf(entry)).reverse().find((candidate) => !candidate.voided && candidate.card.id === 'action-second-chance')
-          if (consumedSecondChance) consumedSecondChance.voided = true
+        if (secondChance) {
+          secondChance.voided = true
+          secondChance = undefined
           entry.voided = true
-          secondChanceCount -= 1
-        } else {
-          status = 'busted'
-          break
-        }
+        } else status = 'busted'
       } else {
         seenNumbers.add(card.id)
-        if (seenNumbers.size >= 7) {
-          status = 'flip-seven'
-          flipThreeRemaining = 0
-          for (const ft of activeFlipThrees) ft.entry.voided = true
-          activeFlipThrees.length = 0
-          break
-        }
+        if (seenNumbers.size >= 7) status = 'flip-seven'
       }
     }
-    if (wasForcedCard && card.id !== 'action-flip-three' && status === 'active') {
-      flipThreeRemaining -= 1
-      if (activeFlipThrees.length > 0) {
-        activeFlipThrees[0].remaining -= 1
-        if (activeFlipThrees[0].remaining <= 0) {
-          activeFlipThrees[0].entry.voided = true
-          activeFlipThrees.shift()
-        }
+    if (currentForce) {
+      currentForce.remaining -= 1
+      if (status !== 'active' || currentForce.remaining === 0) {
+        currentForce.entry.voided = true
+        force = undefined
+        if (status === 'active') queued = [...currentForce.deferred, ...queued]
+        else currentForce.deferred.forEach(card => { card.voided = true })
+        resolveQueued()
       }
     }
+    if (status !== 'active') {
+      queued.forEach(card => { card.voided = true })
+      queued = []
+    }
   }
-
-  if (status === 'busted') {
-    for (const ft of activeFlipThrees) ft.entry.voided = true
-  }
-
-  return { entries: nextEntries, status, flipThreeRemaining }
+  return { entries: nextEntries, status, flipThreeRemaining: force?.remaining ?? 0 }
 }
 
 export function demoDerived(state: DemoState): DemoDerived {
@@ -162,20 +162,20 @@ export function demoDerived(state: DemoState): DemoDerived {
   const numbers = entries.filter((entry) => entry.card.kind === 'number')
   const secondChanceCount = entries.filter((entry) => entry.card.id === 'action-second-chance').length
   const flipSevenBonus = new Set(numbers.map((entry) => entry.card.id)).size >= 7 ? 15 : 0
-  return { score: scoreDemoEntries(state.entries, state.status), numberCardCount: numbers.length, flipSevenBonus, secondChanceCount, flipThreeRemaining: state.flipThreeRemaining, canStay: state.status === 'active' && state.flipThreeRemaining === 0 && numbers.length >= 2 }
+  return { score: scoreDemoEntries(state.entries, state.status), numberCardCount: numbers.length, flipSevenBonus, secondChanceCount, flipThreeRemaining: state.flipThreeRemaining, canStay: state.status === 'active' && state.flipThreeRemaining === 0 && entries.length > 0 }
 }
 
 function snapshot(state: DemoState): DemoSnapshot {
-  return { entries: state.entries, status: state.status, flipThreeRemaining: state.flipThreeRemaining, nextId: state.nextId }
+  return { entries: state.entries, status: state.status, flipThreeRemaining: state.flipThreeRemaining, nextId: state.nextId, externalForces: state.externalForces }
 }
 
 function commit(state: DemoState, next: DemoSnapshot): DemoState {
   return { ...next, past: [...state.past, snapshot(state)].slice(-30), future: [] }
 }
 
-function rebuild(entries: DemoEntry[], nextId: number) {
-  const derived = deriveDemoState(entries)
-  return { ...derived, nextId }
+function rebuild(entries: DemoEntry[], nextId: number, externalForces?: boolean) {
+  const derived = deriveDemoState(entries, externalForces)
+  return { ...derived, nextId, externalForces }
 }
 
 export function demoReducer(state: DemoState, action: DemoAction): DemoState {
@@ -199,13 +199,13 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
   if (action.type === 'remove') {
     if (state.status !== 'active' && state.status !== 'busted') return state
     if (!state.entries[action.index]) return state
-    return commit(state, rebuild(state.entries.filter((_, index) => index !== action.index), state.nextId))
+    return commit(state, rebuild(state.entries.filter((_, index) => index !== action.index), state.nextId, state.externalForces))
   }
   if (action.type === 'replace') {
     if (state.status !== 'active' && state.status !== 'busted') return state
     if (!state.entries[action.index]) return state
-    const entries = state.entries.map((entry, index) => index === action.index ? { ...entry, card: action.card, voided: false } : entry)
-    return commit(state, rebuild(entries, state.nextId))
+    const entries = state.entries.map((entry, index) => index === action.index ? { ...entry, card: action.card, voided: false, discarded: undefined, resolved: undefined } : entry)
+    return commit(state, rebuild(entries, state.nextId, state.externalForces))
   }
   if (action.type === 'reorder') {
     if (state.status !== 'active') return state
@@ -213,5 +213,5 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
   }
   if (state.status !== 'active') return state
   const entry: DemoEntry = { instanceId: `demo-card-${state.nextId}`, card: action.card, voided: false }
-  return commit(state, rebuild([...state.entries, entry], state.nextId + 1))
+  return commit(state, rebuild([...state.entries, entry], state.nextId + 1, state.externalForces))
 }

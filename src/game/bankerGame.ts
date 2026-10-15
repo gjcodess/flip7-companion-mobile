@@ -22,10 +22,14 @@ export type BankerRoundResult = {
   hands?: Record<string, { name: string; color: string; avatar?: PlayerAvatarId; status: DemoStatus; entries: DemoState['entries'] }>
 }
 
+export type BankerPendingAction = { card: Card; sourcePlayerId: string; consumesForcedDraw?: boolean }
+
 export type BankerForcedTurn = {
   targetPlayerId: string
   remaining: number
   resumeAfterPlayerId: string
+  actionInstanceId?: string
+  deferred?: BankerPendingAction[]
 }
 
 export type BankerSnapshot = {
@@ -33,6 +37,7 @@ export type BankerSnapshot = {
   turnPlayerId: string | null
   roundFinisherId: string | null
   forcedTurns: BankerForcedTurn[]
+  pendingAction?: BankerPendingAction | null
   players: BankerPlayer[]
 }
 
@@ -40,12 +45,13 @@ export type BankerState = {
   phase: 'setup' | 'round' | 'results'
   targetScore: number
   roundNumber: number
-  /** Kept as a compatibility alias for the old Banker state shape. */
+  /** First seat of this round; retained under its legacy save key. */
   dealerId: string | null
   selectedPlayerId: string | null
   turnPlayerId: string | null
   roundFinisherId: string | null
   forcedTurns: BankerForcedTurn[]
+  pendingAction?: BankerPendingAction | null
   players: BankerPlayer[]
   history: BankerRoundResult[]
   winnerIds: string[]
@@ -60,7 +66,8 @@ export type BankerAction =
   | { type: 'player'; playerId: string; action: DemoAction }
   /** Records a newly flipped non-action card for the current Banker turn. */
   | { type: 'record-card'; playerId: string; card: Card }
-  /** Records an action card after its active target has been selected. */
+  | { type: 'reveal-action'; sourcePlayerId: string; card: Card }
+  /** Resolves an action after choosing a legal active recipient. */
   | { type: 'record-action'; sourcePlayerId: string; targetPlayerId: string; card: Card }
   /** Banks the current turn player and advances normal play. */
   | { type: 'settle-player'; playerId: string }
@@ -80,11 +87,11 @@ export const bankerInitialState = (): BankerState => ({
 export function bankerPlayerDerived(player: BankerPlayer) { return demoDerived(player.round) }
 export function isBankerTerminal(status: DemoStatus) { return status !== 'active' }
 export function allBankerPlayersSettled(state: BankerState) {
-  return state.phase === 'round' && state.players.length > 0 && state.players.every((player) => isBankerTerminal(player.round.status))
+  return state.phase === 'round' && state.players.length > 0 && !state.pendingAction && state.forcedTurns.length === 0 && state.players.every((player) => isBankerTerminal(player.round.status))
 }
 
 function createPlayers(names: string[]): BankerPlayer[] {
-  return names.map((name, index) => ({ id: `banker-player-${index + 1}`, name, color: bankerPlayerColors[index % bankerPlayerColors.length], totalScore: 0, round: demoInitialState() }))
+  return names.map((name, index) => ({ id: `banker-player-${index + 1}`, name, color: bankerPlayerColors[index % bankerPlayerColors.length], totalScore: 0, round: { ...demoInitialState(), externalForces: true } }))
 }
 
 function nextActivePlayerId(players: BankerPlayer[], afterPlayerId: string | null) {
@@ -104,7 +111,7 @@ function replacePlayerRound(players: BankerPlayer[], playerId: string, round: De
 }
 
 function bankerSnapshot(state: BankerState): BankerSnapshot {
-  return { selectedPlayerId: state.selectedPlayerId, turnPlayerId: state.turnPlayerId, roundFinisherId: state.roundFinisherId, forcedTurns: state.forcedTurns, players: state.players }
+  return { selectedPlayerId: state.selectedPlayerId, turnPlayerId: state.turnPlayerId, roundFinisherId: state.roundFinisherId, forcedTurns: state.forcedTurns, pendingAction: state.pendingAction, players: state.players }
 }
 
 function commitBankerState(previous: BankerState, next: BankerState): BankerState {
@@ -127,33 +134,76 @@ function forceBankActivePlayers(players: BankerPlayer[], preservePlayerId: strin
   return players.map((player) => player.id !== preservePlayerId && player.round.status === 'active' ? { ...player, round: { ...player.round, status: 'stayed' as const } } : player)
 }
 
-function normalizeForcedTurns(state: BankerState, players: BankerPlayer[], forcedTurns: BankerForcedTurn[]) {
-  let remainingTurns = [...forcedTurns]
-  let resumeAfterPlayerId: string | null = null
-  while (remainingTurns.length > 0) {
-    const current = remainingTurns[0]
-    const target = players.find((player) => player.id === current.targetPlayerId)
-    if (target && !isBankerTerminal(target.round.status) && current.remaining > 0) break
-    resumeAfterPlayerId = current.resumeAfterPlayerId
-    remainingTurns = remainingTurns.slice(1)
-  }
-  if (remainingTurns.length > 0) return { players, forcedTurns: remainingTurns, turnPlayerId: remainingTurns[0].targetPlayerId }
-  return { players, forcedTurns: [], turnPlayerId: nextActivePlayerId(players, resumeAfterPlayerId ?? state.turnPlayerId) }
+export function bankerEligibleActionTargets(state: BankerState, card: Card): BankerPlayer[] {
+  return state.players.filter(player => player.round.status === 'active' &&
+    (card.id !== 'action-second-chance' || bankerPlayerDerived(player).secondChanceCount === 0))
 }
 
-function completeCardTurn(state: BankerState, players: BankerPlayer[], sourcePlayerId: string, forcedTurns: BankerForcedTurn[]) {
-  const source = players.find((player) => player.id === sourcePlayerId)
-  if (!source) return state
-  if (source.round.status === 'flip-seven') {
-    return { ...state, players: forceBankActivePlayers(players, sourcePlayerId), turnPlayerId: sourcePlayerId, forcedTurns: [], selectedPlayerId: sourcePlayerId, roundFinisherId: sourcePlayerId }
-  }
-  const normalized = normalizeForcedTurns(state, players, forcedTurns)
-  return { ...state, players: normalized.players, forcedTurns: normalized.forcedTurns, turnPlayerId: normalized.turnPlayerId, selectedPlayerId: normalized.turnPlayerId, roundFinisherId: sourcePlayerId }
+function addCard(player: BankerPlayer, card: Card, discarded = false): BankerPlayer {
+  const round = { ...player.round, externalForces: true }
+  if (!discarded) return { ...player, round: demoReducer(round, { type: 'add', card }) }
+  return { ...player, round: { ...round, nextId: round.nextId + 1,
+    entries: [...round.entries, { instanceId: `demo-card-${round.nextId}`, card, voided: true, discarded: true }] } }
 }
 
-function validActiveTarget(state: BankerState, playerId: string) {
-  const player = state.players.find((candidate) => candidate.id === playerId)
-  return player && player.round.status === 'active' ? player : null
+function finishForce(players: BankerPlayer[], force: BankerForcedTurn): BankerPlayer[] {
+  return players.map(player => {
+    if (player.id !== force.targetPlayerId) return player
+    const instanceId = force.actionInstanceId ?? [...player.round.entries].reverse().find(entry => entry.card.id === 'action-flip-three' && !entry.voided)?.instanceId
+    return { ...player, round: { ...player.round, flipThreeRemaining: 0,
+      entries: player.round.entries.map(entry => entry.instanceId === instanceId ? { ...entry, resolved: true, voided: true } : entry) } }
+  })
+}
+
+function normalizeBanker(state: BankerState): BankerState {
+  let next = state
+  for (let guard = 0; guard < 100; guard++) {
+    const finisher = next.players.find(player => player.round.status === 'flip-seven')
+    if (finisher) {
+      let players = next.players
+      for (const force of next.forcedTurns) players = finishForce(players, force)
+      return { ...next, players: forceBankActivePlayers(players, finisher.id), pendingAction: null,
+        forcedTurns: [], turnPlayerId: finisher.id, selectedPlayerId: finisher.id, roundFinisherId: finisher.id }
+    }
+    if (next.pendingAction) {
+      if (bankerEligibleActionTargets(next, next.pendingAction.card).length) return next
+      const pending = next.pendingAction
+      next = { ...next, pendingAction: null,
+        players: next.players.map(player => player.id === pending.sourcePlayerId ? addCard(player, pending.card, true) : player) }
+      if (pending.consumesForcedDraw && next.forcedTurns[0]) {
+        next = { ...next, forcedTurns: [{ ...next.forcedTurns[0], remaining: next.forcedTurns[0].remaining - 1 }, ...next.forcedTurns.slice(1)] }
+      }
+      continue
+    }
+    const force = next.forcedTurns[0]
+    if (force) {
+      const target = next.players.find(player => player.id === force.targetPlayerId)
+      if (force.remaining > 0 && target?.round.status === 'active') {
+        return { ...next, turnPlayerId: target.id, selectedPlayerId: target.id }
+      }
+      next = { ...next, players: finishForce(next.players, force) }
+      // Only a completed, surviving sequence releases its deferred actions.
+      if (force.remaining === 0 && force.deferred?.length) {
+        next = { ...next, pendingAction: force.deferred[0],
+          forcedTurns: [{ ...force, deferred: force.deferred.slice(1) }, ...next.forcedTurns.slice(1)] }
+        continue
+      }
+      next = { ...next, forcedTurns: next.forcedTurns.slice(1), turnPlayerId: force.resumeAfterPlayerId }
+      continue
+    }
+    const turnPlayerId = nextActivePlayerId(next.players, next.turnPlayerId)
+    return { ...next, turnPlayerId, selectedPlayerId: turnPlayerId }
+  }
+  throw new Error('Classic action chain exceeded its safe limit.')
+}
+
+function revealAction(state: BankerState, sourcePlayerId: string, card: Card): BankerState {
+  const force = state.forcedTurns[0]
+  if (force && force.remaining > 0 && card.id !== 'action-second-chance') {
+    return normalizeBanker({ ...state, forcedTurns: [{ ...force, remaining: force.remaining - 1,
+      deferred: [...(force.deferred ?? []), { card, sourcePlayerId }] }, ...state.forcedTurns.slice(1)] })
+  }
+  return normalizeBanker({ ...state, pendingAction: { card, sourcePlayerId, consumesForcedDraw: Boolean(force && force.remaining > 0) } })
 }
 
 export function bankerReducer(state: BankerState, action: BankerAction): BankerState {
@@ -184,55 +234,61 @@ export function bankerReducer(state: BankerState, action: BankerAction): BankerS
     if (state.phase !== 'round') return state
     if (action.action.type === 'undo') return undoBankerState(state)
     if (action.action.type === 'redo') return redoBankerState(state)
-    const player = state.players.find((candidate) => candidate.id === action.playerId)
+    const player = state.players.find(candidate => candidate.id === action.playerId)
     if (!player) return state
-    const nextRound = demoReducer(player.round, action.action)
-    if (nextRound === player.round) return state
+    const currentRound = player.round.externalForces ? player.round : { ...player.round, externalForces: true }
+    const nextRound = demoReducer(currentRound, action.action)
+    if (nextRound === currentRound) return state
     const players = replacePlayerRound(state.players, player.id, nextRound)
-    if (state.forcedTurns.length === 0) return commitBankerState(state, { ...state, players })
-    const normalized = normalizeForcedTurns(state, players, state.forcedTurns)
-    const forcedTargetRemainsValid = normalized.forcedTurns[0]?.targetPlayerId === state.forcedTurns[0]?.targetPlayerId
-    return commitBankerState(state, { ...state, ...normalized, selectedPlayerId: forcedTargetRemainsValid ? state.selectedPlayerId : normalized.turnPlayerId })
+    if (!state.forcedTurns.length && !state.pendingAction) return commitBankerState(state, { ...state, players })
+    const next = normalizeBanker({ ...state, players })
+    return commitBankerState(state, { ...next, selectedPlayerId: next.turnPlayerId === state.turnPlayerId ? state.selectedPlayerId : next.selectedPlayerId })
   }
 
-  if (action.type === 'record-card') {
-    if (state.phase !== 'round' || currentTurnId(state) !== action.playerId) return state
-    const player = state.players.find((candidate) => candidate.id === action.playerId)
-    if (!player || player.round.status !== 'active' || action.card.kind === 'action') return state
-    const nextRound = demoReducer(player.round, { type: 'add', card: action.card })
-    if (nextRound === player.round) return state
-    const players = replacePlayerRound(state.players, player.id, nextRound)
-    const forcedTurns = state.forcedTurns.length > 0 ? [{ ...state.forcedTurns[0], remaining: state.forcedTurns[0].remaining - 1 }, ...state.forcedTurns.slice(1)] : state.forcedTurns
-    return commitBankerState(state, completeCardTurn({ ...state, players }, players, player.id, forcedTurns))
+  if (action.type === 'record-card' || action.type === 'reveal-action') {
+    const sourceId = action.type === 'record-card' ? action.playerId : action.sourcePlayerId
+    if (state.phase !== 'round' || state.pendingAction || currentTurnId(state) !== sourceId) return state
+    const player = state.players.find(candidate => candidate.id === sourceId)
+    if (!player || player.round.status !== 'active') return state
+    if (action.type === 'reveal-action') {
+      if (action.card.kind !== 'action') return state
+      return commitBankerState(state, revealAction(state, sourceId, action.card))
+    }
+    if (action.card.kind === 'action') return state
+    const players = state.players.map(p => p.id === player.id ? addCard(p, action.card) : p)
+    const busted = players.find(p => p.id === player.id)?.round.status === 'busted'
+    const forcedTurns = state.forcedTurns.length ? [{ ...state.forcedTurns[0], remaining: state.forcedTurns[0].remaining - 1, deferred: busted ? [] : state.forcedTurns[0].deferred }, ...state.forcedTurns.slice(1)] : []
+    return commitBankerState(state, normalizeBanker({ ...state, players, forcedTurns, roundFinisherId: player.id }))
   }
 
   if (action.type === 'record-action') {
-    if (state.phase !== 'round' || currentTurnId(state) !== action.sourcePlayerId || action.card.kind !== 'action') return state
-    const source = state.players.find((player) => player.id === action.sourcePlayerId)
-    const target = validActiveTarget(state, action.targetPlayerId)
+    if (state.phase !== 'round' || action.card.kind !== 'action') return state
+    const pending = state.pendingAction
+    if (pending ? pending.sourcePlayerId !== action.sourcePlayerId || pending.card.id !== action.card.id
+      : currentTurnId(state) !== action.sourcePlayerId) return state
+    if (!pending && state.forcedTurns[0]?.remaining > 0 && action.card.id !== 'action-second-chance') {
+      return commitBankerState(state, revealAction(state, action.sourcePlayerId, action.card))
+    }
+    const source = state.players.find(player => player.id === action.sourcePlayerId)
+    const target = bankerEligibleActionTargets(state, action.card).find(player => player.id === action.targetPlayerId)
     if (!source || !target) return state
-    const targetRound = demoReducer(target.round, { type: 'add', card: action.card })
-    if (targetRound === target.round) return state
-    let players = replacePlayerRound(state.players, target.id, targetRound)
+    const targetPlayer = addCard(target, action.card)
     let forcedTurns = state.forcedTurns
-    if (forcedTurns.length > 0) {
-      if (source.id !== target.id) {
-        const consumedSource = demoReducer(source.round, { type: 'consume-flip-three' })
-        players = replacePlayerRound(players, source.id, consumedSource)
-      }
+    const consumesForcedDraw = pending ? pending.consumesForcedDraw : Boolean(forcedTurns[0]?.remaining > 0)
+    if (consumesForcedDraw && forcedTurns[0]) {
       forcedTurns = [{ ...forcedTurns[0], remaining: forcedTurns[0].remaining - 1 }, ...forcedTurns.slice(1)]
     }
-    if (action.card.id === 'action-flip-three' && target.round.status === 'active') {
-      const parentResumeId = forcedTurns[0]?.resumeAfterPlayerId ?? action.sourcePlayerId
-      forcedTurns = [{ targetPlayerId: target.id, remaining: 3, resumeAfterPlayerId: parentResumeId }, ...forcedTurns]
+    if (action.card.id === 'action-flip-three') {
+      forcedTurns = [{ targetPlayerId: target.id, remaining: 3,
+        resumeAfterPlayerId: forcedTurns[0]?.resumeAfterPlayerId ?? action.sourcePlayerId,
+        actionInstanceId: `demo-card-${target.round.nextId}`, deferred: [] }, ...forcedTurns]
     }
-    const nextState = { ...state, players, roundFinisherId: target.id }
-    const completed = completeCardTurn(nextState, players, action.sourcePlayerId, forcedTurns)
-    return commitBankerState(state, { ...completed, roundFinisherId: target.id })
+    const players = state.players.map(player => player.id === target.id ? targetPlayer : player)
+    return commitBankerState(state, normalizeBanker({ ...state, players, forcedTurns, pendingAction: null, roundFinisherId: target.id }))
   }
 
   if (action.type === 'settle-player') {
-    if (state.phase !== 'round' || currentTurnId(state) !== action.playerId || state.forcedTurns.length > 0) return state
+    if (state.phase !== 'round' || currentTurnId(state) !== action.playerId || state.forcedTurns.length > 0 || state.pendingAction) return state
     const player = state.players.find((candidate) => candidate.id === action.playerId)
     if (!player || player.round.status !== 'active') return state
     const nextRound = demoReducer(player.round, { type: 'stay' })
@@ -249,13 +305,14 @@ export function bankerReducer(state: BankerState, action: BankerAction): BankerS
     const hands = Object.fromEntries(state.players.map((player) => [player.id, { name: player.name, color: player.color, avatar: player.avatar, status: player.round.status, entries: player.round.entries }]))
     const history = [...state.history, { round: state.roundNumber, scores, hands }]
     const reachedTarget = players.some((player) => player.totalScore >= state.targetScore)
-    if (reachedTarget) {
-      const highestScore = Math.max(...players.map((player) => player.totalScore))
+    const highestScore = Math.max(...players.map(player => player.totalScore))
+    const leaders = players.filter(player => player.totalScore === highestScore)
+    if (reachedTarget && leaders.length === 1) {
       return { ...state, phase: 'results', players, history, winnerIds: players.filter((player) => player.totalScore === highestScore).map((player) => player.id), forcedTurns: [], past: [], future: [] }
     }
-    const starterId = state.roundFinisherId && players.some((player) => player.id === state.roundFinisherId) ? state.roundFinisherId : players[0]?.id ?? null
-    const nextPlayers = players.map((player) => ({ ...player, round: demoInitialState() }))
-    return { ...state, players: nextPlayers, history, roundNumber: state.roundNumber + 1, dealerId: starterId, turnPlayerId: starterId, roundFinisherId: null, forcedTurns: [], selectedPlayerId: starterId, past: [], future: [] }
+    const starterId = players[(Math.max(0, players.findIndex(player => player.id === state.dealerId)) + 1) % players.length]?.id ?? null
+    const nextPlayers = players.map((player) => ({ ...player, round: { ...demoInitialState(), externalForces: true } }))
+    return { ...state, players: nextPlayers, history, roundNumber: state.roundNumber + 1, dealerId: starterId, turnPlayerId: starterId, roundFinisherId: null, forcedTurns: [], pendingAction: null, selectedPlayerId: starterId, past: [], future: [] }
   }
 
   return state

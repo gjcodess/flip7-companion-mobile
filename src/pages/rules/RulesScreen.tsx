@@ -50,7 +50,7 @@ function VengeanceRules() {
       <div>
         <span className="room-kicker">NO ONE'S SAFE</span>
         <h2>Steal, swap,<br />and strike back.</h2>
-        <p>Target active rivals with actions.<br />Seven unique numbers earn +15.</p>
+        <p>Target rivals, even after they stay.<br />Seven unique numbers earn +15.</p>
       </div>
       <AssetCardFan cards={['vengeance/v-action-steal', 'vengeance/v-number-lucky-13', 'vengeance/v-action-flip-four']} />
     </section>
@@ -103,7 +103,7 @@ function VengeanceRules() {
           <li>
             <div className="guide-step-copy">
               <b>Set up the table.</b>
-              <span>Create a room, add your players, and choose a dealer. Or open Demo Mode to practice the moves on your own.</span>
+              <span>Create a room, add your players in table order, and choose the starting seat. Or open Demo Mode to practice the moves on your own.</span>
             </div>
           </li>
           <li>
@@ -115,13 +115,13 @@ function VengeanceRules() {
           <li>
             <div className="guide-step-copy">
               <b>Hit or stay.</b>
-              <span>On your turn, choose <strong>HIT</strong> to reveal another card, or choose <strong>STAY</strong> to protect your current hand from further actions.</span>
+              <span>On your turn, choose <strong>HIT</strong> to reveal another card, or choose <strong>STAY</strong> to stop normal draws. Your hand remains vulnerable until the round ends.</span>
             </div>
           </li>
           <li>
             <div className="guide-step-copy">
               <b>Unleash actions and modifiers.</b>
-              <span>Whenever an Action or Modifier is revealed, you must give it to an active player who has not stayed, frozen, or busted.</span>
+              <span>For Steal, Swap, and Discard, the player who flipped the Action chooses the cards directly. For Just One More, Flip Four, and Modifiers, choose a target who has not busted, including someone who stayed. During Flip Four, queue Actions and Modifiers until all four reveals finish.</span>
             </div>
           </li>
           <li>
@@ -144,7 +144,7 @@ function VengeanceRules() {
         <div className="guide-action-list">
           <div>
             <img src="/cards/vengeance/v-number-zero.webp" alt="The Zero card" />
-            <p><b>The Zero</b>Scores 0 points and counts as a unique number toward Flip 7. However, its holder is cursed and must continue hitting on every turn until they bust or achieve Flip 7.</p>
+            <p><b>The Zero</b>Scores 0 points and counts as a unique number toward Flip 7. However, its holder cannot voluntarily stay while holding it. Just One More can still force them to stay.</p>
           </div>
           <div>
             <img src="/cards/vengeance/v-number-unlucky-7.webp" alt="Unlucky 7 card" />
@@ -163,35 +163,35 @@ function VengeanceRules() {
         <div className="guide-action-list">
           <div>
             <img src="/cards/vengeance/v-action-steal.webp" alt="Steal card" />
-            <p><b>Steal</b> takes one face-up card from any active opponent's hand and adds it into your own hand.</p>
+            <p><b>Steal</b> takes one face-up card from any non-busted opponent's hand and adds it into your own hand.</p>
           </div>
           <div>
             <img src="/cards/vengeance/v-action-swap.webp" alt="Swap card" />
-            <p><b>Swap</b> forces two different active players to exchange one face-up card each.</p>
+            <p><b>Swap</b> forces two different non-busted players to exchange one face-up card each.</p>
           </div>
           <div>
             <img src="/cards/vengeance/v-action-discard.webp" alt="Discard card" />
-            <p><b>Discard</b> removes and discards one chosen face-up card from any active player.</p>
+            <p><b>Discard</b> removes and discards one chosen face-up card from any non-busted player, including someone who stayed.</p>
           </div>
           <div>
             <img src="/cards/vengeance/v-action-just-one-more.webp" alt="Just One More card" />
-            <p><b>Just One More</b> forces an active target to reveal exactly one more card and then freezes them for the remainder of the round.</p>
+            <p><b>Just One More</b> forces a non-busted target, including someone who stayed, to reveal exactly one more card and then freezes them for the remainder of the round.</p>
           </div>
           <div>
             <img src="/cards/vengeance/v-action-flip-four.webp" alt="Flip Four card" />
-            <p><b>Flip Four</b> forces an active target to reveal up to 4 cards one by one (stopping on bust or Flip 7). Any Actions and Modifiers revealed are resolved in order afterward.</p>
+            <p><b>Flip Four</b> forces a non-busted target, including someone who stayed, to reveal up to 4 cards one by one (stopping on bust or Flip 7). If all four reveals finish without a bust, resolve Actions and Modifiers in reveal order. A bust during the four reveals discards them; a later bust while resolving an Action does not cancel remaining queued Actions.</p>
           </div>
         </div>
         <div className="guide-callout guide-callout-pale">
           <b>Mandatory play rule</b>
-          <span>Actions must be played if there is at least one valid active player. If you are the only active player left, you must play the action on yourself!</span>
+          <span>Use Actions when valid targets exist. Steal, Swap, and Discard open card selection for the player who flipped them. Just One More and Flip Four let you choose a player, including yourself or someone who stayed.</span>
         </div>
       </section>
 
       <section id="v-guide-modifiers" className="guide-card guide-card-wide guide-card-modifiers">
         <div className="guide-card-heading"><span className="eyebrow">MODIFIER CARDS</span><b className="guide-number">05</b></div>
         <h2>Halve totals and deduct points.</h2>
-        <p>Modifier cards are given to any active player who has not stayed, frozen, or busted. Modifiers do not count toward the seven unique cards for Flip 7, and you cannot bust on a Modifier card.</p>
+        <p>Modifier cards can be given to any player who has not busted, including players who stayed. In Brutal Mode, even busted players can receive Modifiers. Modifiers do not count toward the seven unique cards for Flip 7, and you cannot bust on a Modifier card.</p>
         <div className="guide-deck-details">
           <div>
             <b>÷2 Half Modifier</b>
@@ -216,17 +216,17 @@ function VengeanceRules() {
         />
         <div className="guide-callout">
           <b>Score floor</b>
-          <span>Negative modifiers can never reduce your round score below zero.</span>
+          <span>In standard mode, negative modifiers cannot reduce your round score below zero. Brutal Mode allows negative scores.</span>
         </div>
       </section>
 
       <section id="v-guide-active" className="guide-card guide-card-active">
         <div className="guide-card-heading"><span className="eyebrow">ACTIVE PLAYERS</span><b className="guide-number">06</b></div>
         <h2>Who is eligible for an action?</h2>
-        <p>An active player has not busted and has not chosen to stay or been frozen. Actions and Modifiers can be played on any active player, including yourself. Once a player stays or busts, they are protected and cannot be targeted by further attacks.</p>
+        <p>Staying ends your normal turns, but your cards and score remain at risk until the round ends. Actions can target any player who has not busted, including players who chose or were forced to stay. After forced draws, a stayed player remains stayed unless they bust or reach Flip 7. Modifiers follow the same targeting rule; Brutal Mode also allows Modifiers on busted players.</p>
         <div className="guide-callout guide-callout-pink">
           <b>Stayed hands remain visible</b>
-          <span>Stayed hands stay face up on the table until the round settles, preserving their points.</span>
+          <span>Stayed hands stay face up on the table until the round settles, and can still be stolen, swapped, or discarded.</span>
         </div>
       </section>
 
@@ -280,7 +280,7 @@ function VengeanceRules() {
           </div>
           <div>
             <b>Deal the next round</b>
-            <p>Set all cards from the round aside into the discard pile. Pass the physical deck to the left to rotate the dealer.</p>
+            <p>Set all cards from the round aside into the discard pile. Move the starting seat one position around the table for the next round, regardless of who finished last. If using a physical dealer, pass the deck left and start dealing to their left.</p>
           </div>
           <div>
             <b>Win the match</b>
@@ -355,7 +355,7 @@ export function RulesScreen() {
             <li><div className="guide-step-copy"><b>Set up the table.</b><span>Create a room, add your players, and choose a target. Or open Demo Mode to practice by yourself.</span></div></li>
             <li><div className="guide-step-copy"><b>Deal the round.</b><span>The dealer deals cards one at a time, moving around the table so every player gets a turn.</span></div></li>
             <li><div className="guide-step-copy"><b>Flip and record.</b><span>On your turn, record the physical card you reveal in your table.</span></div></li>
-            <li><div className="guide-step-copy"><b>Choose your risk.</b><span>Hit to keep going, or choose <strong>STAY / BANK</strong> to lock in your score once you have at least two Number cards.</span></div></li>
+            <li><div className="guide-step-copy"><b>Choose your risk.</b><span>Hit to keep going, or choose <strong>STAY / BANK</strong> to lock in your score once you have a card in front of you and no forced draws remain.</span></div></li>
             <li><div className="guide-step-copy"><b>Move together.</b><span>The round ends when everyone is banked, frozen, or busted, or someone flips seven unique numbers.</span></div></li>
           </ol>
           <div className="guide-callout guide-callout-cyan"><b>Before the first deal</b><span>Shuffle your physical deck and choose a dealer. Your room keeps the cards and scores together on this device.</span></div>
@@ -393,9 +393,9 @@ export function RulesScreen() {
           <div className="guide-card-heading"><span className="eyebrow">ACTION CARDS</span><b className="guide-number">06</b></div>
           <h2>Change the table.</h2>
           <div className="guide-action-list">
-            <div><img src="/cards/SECOND CHANCE.webp" alt="Second Chance card" /><p><b>Second Chance</b> cancels one duplicate. Discard it with the duplicate card and keep the rest of your round.</p></div>
+            <div><img src="/cards/SECOND CHANCE.webp" alt="Second Chance card" /><p><b>Second Chance</b> cancels one duplicate. Discard it with the duplicate card. Hold only one; give an extra to another active player without one, or discard it if nobody qualifies.</p></div>
             <div><img src="/cards/FREEZE.webp" alt="Freeze card" /><p><b>Freeze</b> banks a player and locks in all points collected that round.</p></div>
-            <div><img src="/cards/FLIP THREE.webp" alt="Flip Three card" /><p><b>Flip Three</b> makes the chosen active player accept three cards one at a time.</p></div>
+            <div><img src="/cards/FLIP THREE.webp" alt="Flip Three card" /><p><b>Flip Three</b> makes the chosen active player accept three cards one at a time. Stop on a bust or Flip 7. Freeze and another Flip Three wait until the original three reveals finish successfully; Second Chance can protect immediately.</p></div>
           </div>
           <div className="guide-callout guide-callout-pale"><b>Active player rule</b><span>Action cards can target any active player, including the person who played the card. If only one player is active, that player must be chosen.</span></div>
         </section>
@@ -445,7 +445,7 @@ export function RulesScreen() {
         <section id="guide-end" className="guide-card guide-card-wide guide-card-end">
           <div className="guide-card-heading"><span className="eyebrow">END OF A ROUND</span><b className="guide-number">09</b></div>
           <h2>Settle the table, then deal again.</h2>
-          <div className="guide-end-grid"><div><b>End the round</b><p>The round ends when there are no active players because everyone has banked, frozen, or busted, or when a player flips seven unique number cards and earns the bonus.</p></div><div><b>Start the next round</b><p>Set every card from the round aside; do not shuffle those cards back in. Pass the remaining deck to the left so the next player becomes the dealer. If the deck runs out, shuffle the discarded cards to form a new deck.</p></div><div><b>End the game</b><p>When a round ends with at least one player at 200 points or more, the player with the most points wins.</p></div></div>
+          <div className="guide-end-grid"><div><b>End the round</b><p>The round ends when there are no active players because everyone has banked, frozen, or busted, or when a player flips seven unique number cards and earns the bonus.</p></div><div><b>Start the next round</b><p>Set every card from the round aside; do not shuffle those cards back in. The starting seat moves one position around the table each round. If using a physical dealer, pass the remaining deck left. If the deck runs out, shuffle the discarded cards to form a new deck.</p></div><div><b>End the game</b><p>When a round ends with at least one player at 200 points or more, the player with the most points wins. If the highest scores are tied, everyone plays additional rounds until there is one winner.</p></div></div>
         </section>
       </div>
 
