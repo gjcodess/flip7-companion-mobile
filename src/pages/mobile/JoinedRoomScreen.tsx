@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import jsQR from 'jsqr'
-import { ArrowLeft, Camera, Check, ChevronRight, ClipboardPaste, Clock3, ImagePlus, QrCode, RefreshCw, Users, Wifi, X } from 'lucide-react'
+import { ArrowLeft, Camera, Check, ChevronDown, ChevronRight, ClipboardPaste, Clock3, ImagePlus, QrCode, RefreshCw, Users, Wifi, X } from 'lucide-react'
 import { PlayerAvatar } from '../../components/PlayerAvatar'
 import { ConfirmationModal } from '../../components/ConfirmationModal'
+import { isPlayerAvatarId } from '../../lib/player-avatars'
 import { getLibrary, newProfile, savePlayerProfile, updateLibrary, useLibrary } from '../../lib/room-store'
 import { useAppNavigation, useNavigationGuard } from '../../lib/navigation'
 import { connectInvitation, formatRoomCode, invitationCode, localRoomsAvailable, normalizeRoomCode, parseInvitation, readJoinedSession, requestJoined, resolveInvitation, submitJoined } from '../../lib/shared-room'
@@ -308,13 +309,101 @@ export function JoinedRoomScreen({ historyId }: { historyId?: string }) {
       {live && !online && <section className="shared-waiting-card" role="status"><span className="shared-feature-icon"><RefreshCw size={27} className="spin" /></span><h2>Connecting to the host</h2><p>Check that both phones are on the same Wi-Fi or hotspot.</p><button className="room-button secondary" onClick={() => { setLive(false); setScanner(false) }}>Use another code or QR</button></section>}
       {live && online && reply?.status === 'pending' && <section className="shared-waiting-card" role="status"><span className="shared-feature-icon"><Clock3 size={30} /></span><h2>Waiting for host approval</h2><p>{reply.seats?.find(player => player.id === seat)?.name ?? 'Your seat'}</p><div className="shared-waiting-dots" aria-hidden="true"><i /><i /><i /></div><button className="room-button secondary" disabled={busy || pendingAction} onClick={() => void leaveSeat()}>Cancel seat request</button></section>}
       {live && online && reply?.status !== 'approved' && reply?.status !== 'pending' && <section className="shared-join-card shared-claim-card">
-        <span className="shared-step-label">02 · TAKE YOUR SEAT</span><h2>Who’s playing?</h2>
+        <div className="shared-card-top">
+          <div>
+            <span className="shared-step-label">02 · TAKE YOUR SEAT</span>
+            <h2>Who’s playing?</h2>
+          </div>
+          <span className="shared-card-badge"><Users size={20} /></span>
+        </div>
+
         {reply?.status === 'rejected' && <p className="shared-notice">Your request was declined or your seat was released. Check with the host before trying again.</p>}
-        <label className="room-field">YOUR SAVED PROFILE<select value={profile} onChange={event => setProfile(event.target.value)}><option value="">Use my name</option>{profiles.map(player => <option key={player.id} value={player.id}>{player.name}</option>)}</select></label>
-        {!profile && <label className="room-field">YOUR NAME<input value={name} maxLength={24} placeholder="What should we call you?" onChange={event => setName(event.target.value)} /></label>}
-        <div className="shared-seat-heading"><Users size={17} /><h3>Choose your table</h3><span>{reply?.seats?.filter(player => !player.occupied).length ?? 0} available</span></div>
-        <div className="shared-seat-grid">{reply?.seats?.map((player, index) => <button key={player.id} aria-pressed={seat === player.id} disabled={player.occupied || busy} onClick={() => setSeat(player.id)}><PlayerAvatar player={{ ...player, color: ['#ed4f7e', '#57b8d7', '#ffe05c', '#97c844'][index % 4] }} className="mini-avatar" /><span><b>{player.name}</b><small>{player.occupied ? 'Seat taken' : 'Available'}</small></span>{seat === player.id && <Check size={18} />}</button>)}</div>
-        <button className="room-button" disabled={!seat || busy || !profile && !name.trim() || Boolean(reply?.seats?.find(player => player.id === seat)?.occupied)} onClick={() => void claim()}>{busy ? 'Requesting…' : 'Request this seat'} <ChevronRight size={17} /></button>
+
+        <div className="shared-identity-section">
+          {profiles.length > 0 && <div className="shared-form-field">
+            <label className="shared-field-label" htmlFor="shared-profile-select">YOUR SAVED PROFILE</label>
+            <div className="shared-select-wrap">
+              <select id="shared-profile-select" value={profile} onChange={event => setProfile(event.target.value)}>
+                <option value="">Type custom name…</option>
+                {profiles.map(player => <option key={player.id} value={player.id}>{player.name}</option>)}
+              </select>
+              <ChevronDown size={17} className="shared-select-chevron" aria-hidden="true" />
+            </div>
+          </div>}
+
+          {!profile && <div className="shared-form-field">
+            <label className="shared-field-label" htmlFor="shared-name-input">YOUR DISPLAY NAME</label>
+            <input
+              id="shared-name-input"
+              value={name}
+              maxLength={24}
+              placeholder="What should we call you?"
+              onChange={event => setName(event.target.value)}
+              autoComplete="name"
+            />
+          </div>}
+        </div>
+
+        <div className="shared-seat-section-header">
+          <div className="shared-seat-title-group">
+            <h3>Choose your seat</h3>
+            <p>Pick your spot at the table</p>
+          </div>
+          <span className="shared-seat-count-badge">
+            {reply?.seats?.filter(player => !player.occupied).length ?? 0} available
+          </span>
+        </div>
+
+        <div className="shared-seat-grid">
+          {reply?.seats?.map((player, index) => {
+            const isSelected = seat === player.id
+            const isOccupied = player.occupied
+            return (
+              <button
+                key={player.id}
+                type="button"
+                className={`shared-seat-card ${isSelected ? 'is-selected' : ''} ${isOccupied ? 'is-occupied' : ''}`}
+                aria-pressed={isSelected}
+                disabled={isOccupied || busy}
+                onClick={() => {
+                  setSeat(player.id)
+                  if (!name.trim() && !profile) setName(player.name)
+                }}
+              >
+                <div className="shared-seat-avatar-wrap">
+                  <PlayerAvatar
+                    player={{
+                      ...player,
+                      avatar: isPlayerAvatarId(player.avatar) ? player.avatar : undefined,
+                      color: player.color || ['#ed4f7e', '#57b8d7', '#ffe05c', '#97c844'][index % 4]
+                    }}
+                    className="shared-seat-avatar"
+                  />
+                </div>
+                <div className="shared-seat-info">
+                  <b className="shared-seat-name">{player.name}</b>
+                  <span className={`shared-seat-status ${isOccupied ? 'status-occupied' : isSelected ? 'status-selected' : 'status-available'}`}>
+                    {isOccupied ? 'Seat taken' : isSelected ? 'Selected' : 'Available'}
+                  </span>
+                </div>
+                {isSelected && (
+                  <span className="shared-seat-check-badge" aria-hidden="true">
+                    <Check size={13} strokeWidth={3} />
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+
+        <button
+          type="button"
+          className="room-button shared-claim-button"
+          disabled={!seat || busy || (!profile && !name.trim()) || Boolean(reply?.seats?.find(player => player.id === seat)?.occupied)}
+          onClick={() => void claim()}
+        >
+          {busy ? <><RefreshCw size={17} className="spin" /> Requesting seat…</> : <>Request this seat <ChevronRight size={17} /></>}
+        </button>
       </section>}
       {notice && <p className="shared-notice" role="status">{notice}</p>}{error && <p className="room-error" role="alert">{error}</p>}
     </main></div>}

@@ -186,7 +186,7 @@ export function AppNavigationProvider({ navigate, onPopState, children }: { navi
       confirmLabel={pendingNavigation.guard.confirmLabel}
       cancelLabel={pendingNavigation.guard.cancelLabel}
       edition={pendingNavigation.guard.edition}
-      variant={pendingNavigation.guard.variant}
+      variant={pendingNavigation.guard.variant ?? 'floating'}
       confirming={confirming}
       onCancel={() => { if (!confirming) setPendingNavigation(null) }}
       onConfirm={() => void confirmNavigation()}

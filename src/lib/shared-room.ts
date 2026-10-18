@@ -4,6 +4,7 @@ import { Capacitor, registerPlugin } from '@capacitor/core'
 import { getLibrary, saveJoinedRoom, saveRoom, type Room } from './room-store'
 import { emptySharedHost, processRoomRequest, publicRoom, reconcileApprovedSeatNames, SHARED_PROTOCOL, type ParticipantCommand, type RoomReply, type RoomRequest } from './shared-room-protocol'
 import { clearRoomPresence, expireRoomPresence, forgetRoomDevice, noteRoomRequest } from './shared-room-presence'
+import { generateId } from './uuid'
 
 export type RoomInvitation = { protocol: number; roomId: string; url: string; publicKey: string; invitationSecret: string; code?: string }
 type NativeRoom = {
@@ -144,7 +145,7 @@ export function connectInvitation(invitation: RoomInvitation, localProfileId?: s
   const previous = readJoinedSession()
   if (previous?.pending && previous.invitation.roomId !== invitation.roomId) throw new Error('Reconnect to the previous room to resolve its unconfirmed action first.')
   const sameRoom = previous?.invitation.roomId === invitation.roomId
-  const next: JoinedSession = { invitation, deviceId: sameRoom ? previous.deviceId : crypto.randomUUID(), secret: sameRoom ? previous.secret : `${crypto.randomUUID()}${crypto.randomUUID()}`, localProfileId: sameRoom ? previous.localProfileId ?? localProfileId : localProfileId, pending: sameRoom ? previous.pending : undefined }
+  const next: JoinedSession = { invitation, deviceId: sameRoom ? previous.deviceId : generateId(), secret: sameRoom ? previous.secret : `${generateId()}${generateId()}`, localProfileId: sameRoom ? previous.localProfileId ?? localProfileId : localProfileId, pending: sameRoom ? previous.pending : undefined }
   writeSession(next); return next
 }
 let requestTail: Promise<unknown> = Promise.resolve()
@@ -175,7 +176,7 @@ async function performJoinedRequest(request: Partial<RoomRequest>): Promise<Room
 export async function submitJoined(command?: ParticipantCommand, revision?: number) {
   const session = readJoinedSession()
   if (!session) throw new Error('Join a room first.')
-  const pending = session.pending ?? (command && revision !== undefined ? { operationId: crypto.randomUUID(), revision, command } : undefined)
+  const pending = session.pending ?? (command && revision !== undefined ? { operationId: generateId(), revision, command } : undefined)
   if (!pending) throw new Error('There is no action to retry.')
   // Preserve a request across timeouts/restarts. Retry its ID before accepting a new action.
   writeSession({ ...session, pending })

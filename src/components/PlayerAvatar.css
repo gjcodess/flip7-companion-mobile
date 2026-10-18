@@ -1,2 +1,3 @@
-.player-avatar-art { overflow: hidden; }
+.player-avatar-art { display: inline-flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 50%; aspect-ratio: 1 / 1; flex-shrink: 0; }
 .player-avatar-art img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center bottom; transform: scale(1.08); transform-origin: center bottom; }
+

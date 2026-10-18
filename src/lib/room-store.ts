@@ -7,6 +7,7 @@ import { vengeanceCards } from '../game/vengeanceCards'
 import { vengeanceInitialState, type VState } from '../game/vengeanceGame'
 import { defaultPlayerAvatarFor, isPlayerAvatarId, type PlayerAvatarId } from './player-avatars'
 import type { JoinedCopy, SharedHost } from './shared-room-protocol'
+import { generateId } from './uuid'
 
 type NativeBackupPlugin = {
   shareBackup(options: { data: string; fileName: string; text?: string }): Promise<{ success: boolean }>
@@ -157,7 +158,7 @@ export function updateLibrary(change: (current: RoomLibrary) => RoomLibrary) {
   listeners.forEach(listener => listener())
 }
 export function newProfile(name: string, index = getLibrary().players.length): PlayerProfile {
-  return { id: crypto.randomUUID(), name: name.trim(), color: bankerPlayerColors[index % bankerPlayerColors.length], avatar: defaultPlayerAvatarFor(undefined, index) }
+  return { id: generateId(), name: name.trim(), color: bankerPlayerColors[index % bankerPlayerColors.length], avatar: defaultPlayerAvatarFor(undefined, index) }
 }
 export function savePlayerProfile(profile: PlayerProfile, edition: Edition = 'classic') {
   updateLibrary(current => {
@@ -192,7 +193,7 @@ export function savePlayerProfile(profile: PlayerProfile, edition: Edition = 'cl
   })
 }
 export function createRoom(name: string, targetScore: number, roster: PlayerProfile[], edition: Edition = 'classic', vengeanceDealerId?: string, variant: RoomVariant = 'standard') {
-  const room: Room = { id: crypto.randomUUID(), name: name.trim(), targetScore, roster, createdAt: Date.now(), updatedAt: Date.now(), pinned: false, state: null, edition, vengeanceState: null, vengeanceDealerId, variant }
+  const room: Room = { id: generateId(), name: name.trim(), targetScore, roster, createdAt: Date.now(), updatedAt: Date.now(), pinned: false, state: null, edition, vengeanceState: null, vengeanceDealerId, variant }
   updateLibrary(current => { const key = edition === 'vengeance' ? 'vengeancePlayers' : 'players'; return { ...current, rooms: [room, ...current.rooms], [key]: [...current[key], ...roster.filter(p => !current[key].some(existing => existing.id === p.id))] } })
   return room
 }

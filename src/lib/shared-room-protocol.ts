@@ -2,6 +2,7 @@ import { bankerEligibleActionTargets, bankerReducer, type BankerAction } from '.
 import { pickerCards } from '../game/cards'
 import { vengeancePending, vengeancePendingKey, vengeanceReducer, type VAction } from '../game/vengeanceGame'
 import type { Room } from './room-store'
+import type { PlayerAvatarId } from './player-avatars'
 
 // Bump whenever commands or game-rule compatibility change, independently of marketing versions.
 export const SHARED_PROTOCOL = 1
@@ -18,7 +19,7 @@ export type ParticipantCommand =
   | { type: 'confirm' }
   | { type: 'flip-seven'; choice: 'self' | 'penalize'; playerId?: string }
 export type RoomRequest = { protocol: number; deviceId: string; secret: string; type: 'claim' | 'poll' | 'action' | 'leave'; name?: string; playerId?: string; operationId?: string; revision?: number; command?: ParticipantCommand }
-export type RoomReply = { ok: boolean; error?: string; status?: SeatGrant['status']; room?: Room; revision?: number; playerId?: string; seats?: { id: string; name: string; occupied: boolean }[]; roomName?: string; roomEdition?: 'classic' | 'vengeance' }
+export type RoomReply = { ok: boolean; error?: string; status?: SeatGrant['status']; room?: Room; revision?: number; playerId?: string; seats?: { id: string; name: string; occupied: boolean; color?: string; avatar?: PlayerAvatarId }[]; roomName?: string; roomEdition?: 'classic' | 'vengeance' }
 
 export function emptySharedHost(): SharedHost { return { revision: 0, grants: {}, receipts: [] } }
 export function publicRoom(room: Room): Room {
@@ -128,7 +129,7 @@ export function processRoomRequest(room: Room, request: RoomRequest): { next: Ro
   } else if (request.type !== 'poll') throw new Error('Unknown room request.')
   const currentGrant = next.sharedHost?.grants[request.deviceId]
   const reply: RoomReply = { ok: true, roomName: next.name, roomEdition: next.edition ?? 'classic', status: currentGrant?.status, playerId: currentGrant?.playerId,
-    seats: next.roster.map(player => ({ id: player.id, name: player.name, occupied: Object.values(next.sharedHost?.grants ?? {}).some(g => g.status === 'approved' && g.playerId === player.id) })) }
+    seats: next.roster.map(player => ({ id: player.id, name: player.name, color: player.color, avatar: player.avatar, occupied: Object.values(next.sharedHost?.grants ?? {}).some(g => g.status === 'approved' && g.playerId === player.id) })) }
   if (currentGrant?.status === 'approved') {
     reply.revision = next.sharedHost?.revision ?? 0
     if (request.type !== 'poll' || request.revision !== reply.revision) reply.room = publicRoom(next)
