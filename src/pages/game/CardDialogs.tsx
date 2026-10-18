@@ -19,17 +19,18 @@ export function CardActionsPanel({ card, cardVoided = false, submitting, onClose
 }
 
 type CardPickerPanelProps = {
+  cards?: readonly Card[]
   submitting: boolean
   onClose: () => void
   onSelect: (card: Card) => void
 }
 
-export function CardPickerPanel({ submitting, onClose, onSelect }: CardPickerPanelProps) {
+export function CardPickerPanel({ cards = pickerCards, submitting, onClose, onSelect }: CardPickerPanelProps) {
   return <motion.section className="card-picker physical-card-picker" role="dialog" aria-modal="true" aria-labelledby="physical-card-picker-title" initial={{ y: 80 }} animate={{ y: 0 }} exit={{ y: 80 }} transition={{ type: 'spring', damping: 26 }} onClick={(event) => event.stopPropagation()}>
     <div className="physical-picker-header">
       <div className="picker-heading"><div><span>PHYSICAL CARD</span><h2 id="physical-card-picker-title">What did you flip?</h2></div><button className="close-button" aria-label="Close card picker" title="Close" onClick={onClose}><X size={19} /></button></div>
       <p>Select the card in front of you. The app never draws a card for you.</p>
     </div>
-    <div className="physical-picker-scroll"><div className="picker-grid">{pickerCards.map((card) => <button key={card.id} disabled={submitting} onClick={() => onSelect(card)} aria-label={`Record ${card.label}`}><PickerCardArtwork card={card} /></button>)}</div></div>
+    <div className="physical-picker-scroll"><div className="picker-grid">{cards.map((card) => <button key={card.id} disabled={submitting} onClick={() => onSelect(card)} aria-label={`Record ${card.label}`}><PickerCardArtwork card={card} /></button>)}</div></div>
   </motion.section>
 }

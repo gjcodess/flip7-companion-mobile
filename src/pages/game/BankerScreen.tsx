@@ -1,12 +1,14 @@
+import { RoomSharingButton, SharedRoomDialog } from '../mobile/SharedRoomControls'
 import { RestartDialog } from './RestartDialog'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, Cast, Check, ChevronRight, CircleHelp, ClipboardList, LogOut, Menu, Monitor, Play, RotateCcw, Share2, Users, X } from 'lucide-react'
+import { ArrowLeft, Check, ChevronRight, CircleHelp, ClipboardList, LogOut, Menu, Monitor, Play, RotateCcw, Share2, Users, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import type { Card } from '../../game/cards'
 import { ForcedDrawStatus } from './ForcedDrawStatus'
 import { bankerTableEntries } from '../../game/tableEntries'
 import { allBankerPlayersSettled, bankerEligibleActionTargets, bankerInitialState, bankerPlayerDerived, bankerReducer, isBankerTerminal, type BankerAction, type BankerPlayer, type BankerState } from '../../game/bankerGame'
-import { getLibrary, saveRoomState } from '../../lib/room-store'
+import { getLibrary, saveRoomState, useLibrary } from '../../lib/room-store'
+import { blockSharedHost } from '../../lib/shared-room'
 import { organizeDemoEntries } from '../../game/demoGame'
 import { pointLabel } from '../../lib/app-utils'
 import { useAppNavigation, useNavigationGuard } from '../../lib/navigation'
@@ -14,8 +16,7 @@ import { ConfirmationModal } from '../../components/ConfirmationModal'
 import { CardActionsPanel, CardPickerPanel } from './CardDialogs'
 import { GameControls } from './GameControls'
 import { GameTable } from './GameTable'
-import { tvSharingAvailable, useTvSession } from '../../lib/tv-share'
-import { TvShareDialog } from '../mobile/TvShareDialog'
+import { tvSharingAvailable } from '../../lib/tv-share'
 import { PlayerAvatar } from '../../components/PlayerAvatar'
 import { ResultsShareDialog } from './ResultsShareDialog'
 
@@ -83,7 +84,7 @@ function BankerMenuDialog({ onClose, onOpenPlayers, onOpenRules, onOpenTvShare, 
       </button>
       {tvSharingAvailable() && <button type="button" className="banker-menu-item" onClick={() => { onClose(); onOpenTvShare() }}>
         <div className="banker-menu-item-icon"><Monitor size={20} /></div>
-        <div className="banker-menu-item-text"><strong>TV Scoreboard</strong><span>Cast live scores to a TV or web browser</span></div>
+        <div className="banker-menu-item-text"><strong>Share & connect</strong><span>Invite players, manage seats, or show scores on TV</span></div>
         <ChevronRight size={18} className="banker-menu-item-chevron" />
       </button>}
       <button type="button" className="banker-menu-item banker-menu-item-danger" onClick={() => { onClose(); onExit() }}>
@@ -97,20 +98,25 @@ function BankerMenuDialog({ onClose, onOpenPlayers, onOpenRules, onOpenTvShare, 
 
 export function BankerScreen({ roomId }: { roomId: string }) {
   const navigate = useAppNavigation()
-  const room = getLibrary().rooms.find(r => r.id === roomId)
+  const room = useLibrary().rooms.find(r => r.id === roomId)
   const [state, setState] = useState(() => room?.state ?? bankerInitialState())
   const stateRef = useRef(state)
   const pendingSaveRef = useRef<BankerState | null>(null)
   const [saveError, setSaveError] = useState('')
+  useEffect(() => {
+    if (room?.state && !pendingSaveRef.current) { stateRef.current = room.state; setState(room.state) }
+  }, [room?.state])
+  useEffect(() => { blockSharedHost(roomId, Boolean(saveError)); return () => blockSharedHost(roomId, false) }, [roomId, saveError])
   const persist = useCallback((next: BankerState) => {
-    try { saveRoomState(roomId, next); stateRef.current = next; pendingSaveRef.current = null; setState(next); setSaveError('') }
-    catch (error) { pendingSaveRef.current = next; setSaveError(`${(error as Error).message} The last action is waiting to be saved. Retry before continuing.`) }
+    try { saveRoomState(roomId, next); blockSharedHost(roomId, false); stateRef.current = next; pendingSaveRef.current = null; setState(next); setSaveError('') }
+    catch (error) { blockSharedHost(roomId, true); pendingSaveRef.current = next; setSaveError(`${(error as Error).message} The last action is waiting to be saved. Retry before continuing.`) }
   }, [roomId])
   const dispatch = useCallback((action: BankerAction) => {
     if (action.type === 'reset') { navigate('/new'); return }
     if (pendingSaveRef.current) return
-    const next = bankerReducer(stateRef.current, action)
-    if (next !== stateRef.current) persist(next)
+    const current = getLibrary().rooms.find(r => r.id === roomId)?.state ?? stateRef.current
+    const next = bankerReducer(current, action)
+    if (next !== current) persist(next)
   }, [navigate, persist])
   const [restartOpen, setRestartOpen] = useState(false)
   const [newGamePromptOpen, setNewGamePromptOpen] = useState(false)
@@ -127,8 +133,6 @@ export function BankerScreen({ roomId }: { roomId: string }) {
   const [showMenu, setShowMenu] = useState(false)
   const [tvShareOpen, setTvShareOpen] = useState(false)
   const [resultsShareOpen, setResultsShareOpen] = useState(false)
-  const tvSession = useTvSession()
-  const isSharing = tvSession?.roomId === roomId
   const cardSelectionRef = useRef(false)
   const pickerSessionRef = useRef(0)
   const activePickerSessionRef = useRef<number | null>(null)
@@ -238,7 +242,7 @@ export function BankerScreen({ roomId }: { roomId: string }) {
   }
   const playerStatus = selectedPlayer?.round.status === 'flip-seven' ? 'stayed' : selectedPlayer?.round.status
   return <div className="app-shell banker-shell saved-room-game"><aside className="desktop-marquee left"><div>FLIP<br />7</div></aside><main className="game-shell">
-    <header className="topbar banker-topbar"><button className={`brand-button cast-button ${isSharing ? 'is-sharing' : ''}`} aria-label="TV scoreboard" title="TV scoreboard" onClick={() => setTvShareOpen(true)}><Cast size={20} />{isSharing && <span className="cast-live-dot" />}</button><span className="game-topbar-brand"><img src="/assets/flip7-title-logo.webp" alt="Flip 7" /></span><button className="brand-button menu-button" aria-label="Open game menu" title="Menu" onClick={() => setShowMenu(true)}><Menu size={20} /></button></header>
+    <header className="topbar banker-topbar"><RoomSharingButton roomId={roomId} onClick={() => setTvShareOpen(true)} /><span className="game-topbar-brand"><img src="/assets/flip7-title-logo.webp" alt="Flip 7" /></span><button className="brand-button menu-button" aria-label="Open game menu" title="Menu" onClick={() => setShowMenu(true)}><Menu size={20} /></button></header>
     {saveError && <div className="room-game-save-error" role="alert"><span>{saveError}</span><button onClick={() => { if (pendingSaveRef.current) persist(pendingSaveRef.current) }}>Retry save</button></div>}
     <section className="match-strip"><div><span>ROUND</span><b>{String(state.roundNumber).padStart(2, '0')}</b></div><div className="target"><span>FIRST TO</span><b>{state.targetScore}</b></div><div><span>VIEWING</span><b>{selectedPlayer?.name || '—'}</b></div></section>
     <div className="banker-turn-callout" role="status"><span>CURRENT TURN</span><b>{turnPlayer?.name || '—'}</b></div>
@@ -348,6 +352,6 @@ export function BankerScreen({ roomId }: { roomId: string }) {
       dispatch({ type: 'restart', scope }); setRestartOpen(false); setRoundSummaryOpen(false);
       setOrganized(false); setSelectedCardIndex(null); setEditingIndex(null); setPendingAction(null); setPendingActionSourceId(null);
     }} />}
-    {tvShareOpen && <TvShareDialog roomId={roomId} onClose={() => setTvShareOpen(false)} />}
+    {tvShareOpen && <SharedRoomDialog roomId={roomId} onClose={() => setTvShareOpen(false)} />}
   </div>
 }

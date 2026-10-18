@@ -1,4 +1,4 @@
-import { useCallback, useEffect, type ReactNode, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, type ReactNode, useState } from 'react'
 import { App as CapacitorApp } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
 import { MotionConfig } from 'motion/react'
@@ -15,6 +15,8 @@ import { MobileApp } from './pages/mobile/MobileApp'
 import { useLibrary } from './lib/room-store'
 import { preloadCardArtwork } from './game/cardArtworkPreloader'
 import { syncTvSharing } from './lib/tv-share'
+import { useHostRoomPump } from './lib/shared-room'
+const JoinedRoomScreen = lazy(() => import('./pages/mobile/JoinedRoomScreen').then(module => ({ default: module.JoinedRoomScreen })))
 
 const viewTransitionPaths = new Set(['/landing', '/play', '/rules', '/faq', '/privacy', '/terms', '/contact'])
 
@@ -91,6 +93,10 @@ export default function App() {
   }, [])
 
   const isRulesPage = location.pathname === '/rules'
+  useHostRoomPump(location.pathname, location.search)
+  const params = new URLSearchParams(location.search)
+  const routeRoomId = location.pathname === '/room' ? params.get('id') : location.pathname === '/banker' || location.pathname === '/vengeance' ? params.get('room') : null
+  const joinedHistory = library.rooms.find(room => room.id === routeRoomId && room.joinedCopy)
   const isFAQPage = location.pathname === '/faq'
   const isPrivacyPage = location.pathname === '/privacy'
   const isTermsPage = location.pathname === '/terms'
@@ -111,7 +117,8 @@ export default function App() {
   }, [location.pathname, location.search, location.hash])
 
   let content: ReactNode
-  if (isRulesPage) content = <RulesScreen />
+  if (location.pathname === '/join' || joinedHistory) content = <Suspense fallback={<main className="shared-room-page" role="status">Opening shared room…</main>}><JoinedRoomScreen key={joinedHistory?.id ?? params.get('history') ?? 'join'} historyId={joinedHistory?.id ?? params.get('history') ?? undefined} /></Suspense>
+  else if (isRulesPage) content = <RulesScreen />
   else if (isFAQPage) content = <FAQScreen />
   else if (isPrivacyPage) content = <LegalScreen kind="privacy" />
   else if (isTermsPage) content = <LegalScreen kind="terms" />

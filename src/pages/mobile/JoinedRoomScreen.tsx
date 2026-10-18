@@ -1,0 +1,190 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
+import jsQR from 'jsqr'
+import { ArrowLeft, Camera, Check, ChevronRight, Clock3, ImagePlus, QrCode, RefreshCw, ShieldCheck, Users, Wifi } from 'lucide-react'
+import { PlayerAvatar } from '../../components/PlayerAvatar'
+import { ConfirmationModal } from '../../components/ConfirmationModal'
+import { getLibrary, newProfile, savePlayerProfile, updateLibrary, useLibrary, type Room } from '../../lib/room-store'
+import { useAppNavigation, useNavigationGuard } from '../../lib/navigation'
+import { connectInvitation, localRoomsAvailable, parseInvitation, readJoinedSession, requestJoined, submitJoined } from '../../lib/shared-room'
+import { type ParticipantCommand, type RoomReply } from '../../lib/shared-room-protocol'
+import { JoinedGameView } from './JoinedGameView'
+import './SharedRooms.css'
+
+function CameraScanner({ onRead, onClose }: { onRead: (value: string) => void; onClose: () => void }) {
+  const video = useRef<HTMLVideoElement>(null)
+  const [error, setError] = useState('')
+  useEffect(() => {
+    let stopped = false, stream: MediaStream | undefined, frame = 0, lastScan = 0
+    const canvas = document.createElement('canvas')
+    if (!navigator.mediaDevices?.getUserMedia) { setError('Camera unavailable. Use a QR photo or paste the invitation.'); return }
+    const tick = (time: number) => {
+      if (stopped) return
+      const element = video.current
+      if (element?.readyState === 4 && time - lastScan > 160) {
+        lastScan = time
+        const scale = Math.min(1, 1000 / element.videoWidth)
+        canvas.width = element.videoWidth * scale; canvas.height = element.videoHeight * scale
+        const context = canvas.getContext('2d', { willReadFrequently: true })!
+        context.drawImage(element, 0, 0, canvas.width, canvas.height)
+        const pixels = context.getImageData(0, 0, canvas.width, canvas.height)
+        const result = jsQR(pixels.data, pixels.width, pixels.height)
+        if (result) { stopped = true; stream?.getTracks().forEach(track => track.stop()); onRead(result.data); return }
+      }
+      frame = requestAnimationFrame(tick)
+    }
+    void navigator.mediaDevices?.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 } }, audio: false }).then(async camera => {
+      stream = camera
+      if (stopped) { camera.getTracks().forEach(track => track.stop()); return }
+      if (video.current) { video.current.srcObject = camera; await video.current.play(); frame = requestAnimationFrame(tick) }
+    }).catch(() => setError('Camera unavailable. Allow camera access, use a QR photo, or paste the invitation.'))
+    return () => { stopped = true; cancelAnimationFrame(frame); stream?.getTracks().forEach(track => track.stop()) }
+  }, [onRead])
+  return <div><video className="shared-scan-video" ref={video} playsInline muted aria-label="Room QR scanner" />{error && <p role="alert">{error}</p>}<button className="room-button secondary" onClick={onClose}>Close camera</button></div>
+}
+
+export function JoinedRoomScreen({ historyId }: { historyId?: string }) {
+  const library = useLibrary(), navigate = useAppNavigation()
+  const initialSession = useRef(readJoinedSession())
+  const savedRoom = historyId ? library.rooms.find(room => room.id === historyId && room.joinedCopy) : undefined
+  const [raw, setRaw] = useState(''), [name, setName] = useState(''), [profile, setProfile] = useState(''), [seat, setSeat] = useState('')
+  const [live, setLive] = useState(false), [busy, setBusy] = useState(false), [online, setOnline] = useState(false), [error, setError] = useState(''), [notice, setNotice] = useState('')
+  const [reply, setReply] = useState<RoomReply | null>(null), [scanner, setScanner] = useState(false)
+  const [pendingAction, setPendingAction] = useState(Boolean(initialSession.current?.pending))
+  const [deletePrompt, setDeletePrompt] = useState(false)
+  const operation = useRef(false), pollBusy = useRef(false), mounted = useRef(true)
+  const file = useRef<HTMLInputElement>(null)
+  const lastGood = useRef(0)
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
+  useNavigationGuard(live ? { title: 'Leave this room?', message: 'Your received history stays on this phone. Reconnect to continue; the host can record your hand while you are away.', confirmLabel: 'Leave room', cancelLabel: 'Stay', shouldBlock: () => true } : null)
+  const acceptReply = useCallback((next: RoomReply) => {
+    if (!mounted.current) return
+    if (!next.ok) { setOnline(false); setError(next.error ?? 'The host could not accept this request.'); return }
+    lastGood.current = Date.now(); setOnline(true); setReply(next); setError('')
+  }, [])
+  useEffect(() => {
+    if (!live) return
+    let cancelled = false
+    const poll = async () => {
+      if (operation.current || pollBusy.current || cancelled) return
+      pollBusy.current = true
+      try { const next = await requestJoined({ type: 'poll' }); if (!cancelled) acceptReply(next) }
+      catch (error) { if (!cancelled) { setOnline(false); setError((error as Error).message) } }
+      finally { pollBusy.current = false }
+    }
+    void poll()
+    const timer = window.setInterval(() => { if (Date.now() - lastGood.current > 3500) setOnline(false); void poll() }, 900)
+    return () => { cancelled = true; clearInterval(timer) }
+  }, [live, acceptReply])
+  const readQR = useCallback((text: string) => {
+    setScanner(false)
+    try { parseInvitation(text); setRaw(text); setError(''); setNotice('Invitation scanned. Connect to the host’s network, then open the room.') }
+    catch (error) { setError((error as Error).message) }
+  }, [])
+  const readPhoto = async (image?: File) => {
+    if (!image) return
+    let bitmap: ImageBitmap | undefined
+    try {
+      bitmap = await createImageBitmap(image)
+      const scale = Math.min(1, 1800 / Math.max(bitmap.width, bitmap.height)), canvas = document.createElement('canvas')
+      canvas.width = bitmap.width * scale; canvas.height = bitmap.height * scale
+      const context = canvas.getContext('2d', { willReadFrequently: true })!; context.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+      const data = context.getImageData(0, 0, canvas.width, canvas.height), result = jsQR(data.data, data.width, data.height)
+      if (!result) throw new Error('No QR code found. Try a clearer photo or paste the invitation.')
+      readQR(result.data)
+    } catch (error) { setError((error as Error).message) }
+    finally { bitmap?.close(); if (file.current) file.current.value = '' }
+  }
+  const connect = () => {
+    try {
+      const invitation = raw ? parseInvitation(raw) : readJoinedSession()?.invitation
+      if (!invitation) throw new Error('Scan or paste the host’s invitation first.')
+      if (getLibrary().rooms.some(room => room.id === invitation.roomId && !room.joinedCopy)) throw new Error('You already own this room. Open it as host.')
+      connectInvitation(invitation, profile || undefined); setLive(true); setOnline(false); setReply(null); setError(''); setNotice('')
+    } catch (error) { setError((error as Error).message) }
+  }
+  const claim = async () => {
+    if (operation.current) return
+    operation.current = true; setBusy(true); setError('')
+    try {
+      let profileId = profile
+      const session = readJoinedSession()!
+      // The host returns edition before approval; profiles remain local to their edition.
+      const roomEdition = reply?.roomEdition ?? 'classic'
+      if (!profileId) {
+        if (!name.trim()) throw new Error('Enter your name or select a saved profile.')
+        const profiles = roomEdition === 'vengeance' ? getLibrary().vengeancePlayers : getLibrary().players
+        const existing = profiles.find(p => p.name.toLowerCase() === name.trim().toLowerCase())
+        const player = existing ?? newProfile(name)
+        if (!existing) savePlayerProfile(player, roomEdition)
+        profileId = player.id; setProfile(profileId)
+      }
+      connectInvitation(session.invitation, profileId)
+      const profiles = roomEdition === 'vengeance' ? getLibrary().vengeancePlayers : getLibrary().players
+      const playerName = profiles.find(p => p.id === profileId)?.name ?? name
+      acceptReply(await requestJoined({ type: 'claim', playerId: seat, name: playerName }))
+    } catch (error) { setError((error as Error).message) }
+    finally { operation.current = false; setBusy(false) }
+  }
+  const send = async (command?: ParticipantCommand) => {
+    if (operation.current || !online) return
+    operation.current = true; setBusy(true); setError('')
+    try {
+      const next = await submitJoined(command, reply?.revision)
+      setPendingAction(false)
+      if (!next.ok) { setError(next.error ?? 'Action rejected.'); const latest = await requestJoined({ type: 'poll' }); acceptReply(latest); setError(next.error ?? 'Action rejected. Review the current table.') }
+      else acceptReply(next)
+    } catch (error) { setPendingAction(Boolean(readJoinedSession()?.pending)); setOnline(false); setError((error as Error).message) }
+    finally { operation.current = false; setBusy(false) }
+  }
+  const leaveSeat = async () => {
+    if (operation.current || pendingAction) return
+    operation.current = true; setBusy(true)
+    try { acceptReply(await requestJoined({ type: 'leave' })); setNotice('Your seat is released. The match and your received history are kept.') }
+    catch (error) { setError((error as Error).message) }
+    finally { operation.current = false; setBusy(false) }
+  }
+  const room = live && reply?.room ? reply.room : savedRoom
+  const owner = live ? reply?.playerId : savedRoom?.joinedCopy?.playerId
+  const activeSession = readJoinedSession()
+  const canReconnect = Boolean(activeSession && (!savedRoom || savedRoom.id === `joined-${activeSession.invitation.roomId}`))
+  const profiles = reply?.roomEdition === 'vengeance' ? library.vengeancePlayers : library.players
+  const edition = room?.edition ?? reply?.roomEdition ?? library.settings.edition
+  const removeCopy = () => {
+    if (!savedRoom) return
+    try { updateLibrary(current => ({ ...current, rooms: current.rooms.filter(r => r.id !== savedRoom.id) })); setDeletePrompt(false); navigate('/history') }
+    catch (error) { setDeletePrompt(false); setError((error as Error).message) }
+  }
+
+  return <div className={`room-app-shell edition-${edition}`}>
+    {room && (!live || reply?.status === 'approved') ? <JoinedGameView key={room.id} room={room} owner={owner} live={live} online={online} busy={busy} pendingAction={pendingAction} approved={reply?.status === 'approved'} error={error} canReconnect={canReconnect} onSend={send} onReconnect={connect} onRelease={leaveSeat} onExit={() => navigate('/landing')} onDelete={!live && savedRoom ? () => setDeletePrompt(true) : undefined} /> : <main className="room-app-main shared-join-page">
+      <header className="shared-join-nav"><button className="shared-back" onClick={() => navigate('/landing')}><ArrowLeft size={18} /> Your rooms</button><img src={edition === 'vengeance' ? '/assets/flip7-vengeance-logo.webp' : '/assets/flip7-title-logo.webp'} alt="Flip 7" /></header>
+      <section className="room-welcome shared-join-heading"><span className="room-kicker">PLAY TOGETHER · SAME WI-FI</span><h1>{live ? reply?.roomName ?? 'Finding your room…' : <>One table.<br /><em>Everyone’s invited.</em></>}</h1><p>{live ? 'Choose your seat. Once the host approves, you’re ready to play.' : 'Join your friends, record your own cards, and follow every table as you play.'}</p></section>
+      {!live && <>
+        <div className="shared-network-tip"><Wifi size={20} /><div><b>Start on the same network.</b><p>Connect to the host’s Wi-Fi or hotspot. No internet needed.</p></div></div>
+        {!localRoomsAvailable() ? <div className="shared-notice"><QrCode size={22} /><p>Open the Android app to join a nearby room. You can view saved history here.</p></div> : <section className="shared-join-card">
+          <span className="shared-step-label">01 · FIND YOUR ROOM</span><h2>Got a seat waiting?</h2><p>Ask the host to open Play together, then scan their room QR code.</p>
+          {scanner ? <CameraScanner onRead={readQR} onClose={() => setScanner(false)} /> : <button className="room-button shared-scan-button" onClick={() => setScanner(true)}><Camera size={20} /> Scan room QR <ChevronRight size={18} /></button>}
+          <input hidden ref={file} type="file" accept="image/*" onChange={event => void readPhoto(event.target.files?.[0])} />
+          <div className="shared-invitation-tools"><button onClick={() => file.current?.click()}><ImagePlus size={17} /> Use a QR photo</button><span>or</span><button onClick={() => document.getElementById('shared-invitation-details')?.setAttribute('open', '')}>Paste invitation</button></div>
+          <details id="shared-invitation-details" className="shared-invitation-details" open={raw ? true : undefined}><summary>Have an invitation link?</summary><label className="room-field">ROOM INVITATION<textarea value={raw} onChange={event => setRaw(event.target.value)} placeholder="Paste the invitation from your host" autoCapitalize="off" autoCorrect="off" spellCheck={false} /></label><button className="room-button" disabled={!raw.trim()} onClick={connect}>Open room <ChevronRight size={17} /></button></details>
+          {raw && <div className="shared-scanned-invite"><Check size={18} /><span>Invitation ready</span><button onClick={connect}>Open room <ChevronRight size={15} /></button></div>}
+        </section>}
+        {canReconnect && localRoomsAvailable() && <button className="shared-reconnect-card" onClick={connect}><span className="shared-feature-icon"><RefreshCw size={21} /></span><span><b>Back for another flip?</b><small>Reconnect to your previous room</small></span><ChevronRight size={20} /></button>}
+        <div className="shared-permission-note"><ShieldCheck size={19} /><p>Your cards, your seat. Everyone can view the tables; the host manages the game.</p></div>
+      </>}
+      {live && !online && <section className="shared-waiting-card" role="status"><span className="shared-feature-icon"><RefreshCw size={27} className="spin" /></span><h2>Connecting to the host</h2><p>Keep the host’s room open and check that both phones are on the same Wi-Fi or hotspot.</p><button className="room-button secondary" onClick={() => { setLive(false); setScanner(false) }}>Use another invitation</button></section>}
+      {live && online && reply?.status === 'pending' && <section className="shared-waiting-card" role="status"><span className="shared-feature-icon"><Clock3 size={30} /></span><span className="room-kicker">SEAT REQUEST SENT</span><h2>You’re nearly in.</h2><p>Waiting for the host to approve <strong>{reply.seats?.find(player => player.id === seat)?.name ?? 'your seat'}</strong>. Your table opens automatically once they accept.</p><div className="shared-waiting-dots" aria-hidden="true"><i /><i /><i /></div><button className="room-button secondary" disabled={busy || pendingAction} onClick={() => void leaveSeat()}>Cancel seat request</button></section>}
+      {live && online && reply?.status !== 'approved' && reply?.status !== 'pending' && <section className="shared-join-card shared-claim-card">
+        <span className="shared-step-label">02 · TAKE YOUR SEAT</span><h2>Who’s playing?</h2>
+        {reply?.status === 'rejected' && <p className="shared-notice">Your request was declined or your seat was released. Check with the host before trying again.</p>}
+        <label className="room-field">YOUR SAVED PROFILE<select value={profile} onChange={event => setProfile(event.target.value)}><option value="">Use my name</option>{profiles.map(player => <option key={player.id} value={player.id}>{player.name}</option>)}</select></label>
+        {!profile && <label className="room-field">YOUR NAME<input value={name} maxLength={24} placeholder="What should we call you?" onChange={event => setName(event.target.value)} /></label>}
+        <div className="shared-seat-heading"><Users size={17} /><h3>Choose your table</h3><span>{reply?.seats?.filter(player => !player.occupied).length ?? 0} available</span></div>
+        <div className="shared-seat-grid">{reply?.seats?.map((player, index) => <button key={player.id} aria-pressed={seat === player.id} disabled={player.occupied || busy} onClick={() => setSeat(player.id)}><PlayerAvatar player={{ ...player, color: ['#ed4f7e', '#57b8d7', '#ffe05c', '#97c844'][index % 4] }} className="mini-avatar" /><span><b>{player.name}</b><small>{player.occupied ? 'Seat taken' : 'Available'}</small></span>{seat === player.id && <Check size={18} />}</button>)}</div>
+        <button className="room-button" disabled={!seat || busy || !profile && !name.trim() || Boolean(reply?.seats?.find(player => player.id === seat)?.occupied)} onClick={() => void claim()}>{busy ? 'Requesting…' : 'Request this seat'} <ChevronRight size={17} /></button><p className="shared-field-help">One approval from the host, then your entries go straight to the table.</p>
+      </section>}
+      {notice && <p className="shared-notice" role="status">{notice}</p>}{error && <p className="room-error" role="alert">{error}</p>}
+    </main>}
+    {deletePrompt && savedRoom && <ConfirmationModal variant="floating" eyebrow="REMOVE JOINED HISTORY" title="Remove this history copy?" message="Only the copy on this phone is removed. Lifetime statistics stay. Export a backup first to keep the detailed cards and scores." cancelLabel="Keep history" confirmLabel="Remove copy" onCancel={() => setDeletePrompt(false)} onConfirm={removeCopy} />}
+  </div>
+}

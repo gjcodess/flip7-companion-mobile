@@ -11,6 +11,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(TvServerPlugin.class);
         registerPlugin(ResultsImagePlugin.class);
         registerPlugin(NativeBackupPlugin.class);
+        registerPlugin(SharedRoomPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

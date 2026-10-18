@@ -1,3 +1,4 @@
+import { RoomSharingButton, SharedRoomDialog } from '../mobile/SharedRoomControls'
 import { RestartDialog } from './RestartDialog'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
@@ -6,7 +7,6 @@ import {
   ArrowLeft,
   ArrowRightLeft,
   ArrowUp,
-  Cast,
   Check,
   ChevronDown,
   ChevronRight,
@@ -46,7 +46,8 @@ import {
   type VVariant,
   type VFlipSevenChoice,
 } from '../../game/vengeanceGame'
-import { getLibrary, saveVengeanceState, updateLibrary, type PlayerProfile } from '../../lib/room-store'
+import { getLibrary, saveVengeanceState, updateLibrary, useLibrary, type PlayerProfile } from '../../lib/room-store'
+import { blockSharedHost } from '../../lib/shared-room'
 import { useAppNavigation, useNavigationGuard } from '../../lib/navigation'
 import { ConfirmationModal } from '../../components/ConfirmationModal'
 import { BrutalWarningModal } from '../../components/BrutalWarningModal'
@@ -55,8 +56,7 @@ import { CardArtwork } from '../../components/CardArtwork'
 import { PickerCardArtwork } from '../../components/PickerCardArtwork'
 import { PlayerAvatar } from '../../components/PlayerAvatar'
 import { defaultPlayerAvatarFor, type PlayerAvatarId } from '../../lib/player-avatars'
-import { TvShareDialog } from '../mobile/TvShareDialog'
-import { tvSharingAvailable, useTvSession } from '../../lib/tv-share'
+import { tvSharingAvailable } from '../../lib/tv-share'
 import { TargetScorePicker } from '../mobile/TargetScorePicker'
 import { RoomCharacterDialog } from '../mobile/MobileApp'
 import { BrutalSkullIcon } from '../../components/BrutalSkullIcon'
@@ -308,8 +308,8 @@ function VengeanceMenuDialog({
               <Monitor size={20} />
             </div>
             <div className="banker-menu-item-text">
-              <strong>TV Scoreboard</strong>
-              <span>Cast live scores to a TV or web browser</span>
+              <strong>Share & connect</strong>
+              <span>Invite players, manage seats, or show scores on TV</span>
             </div>
             <ChevronRight size={18} className="banker-menu-item-chevron" />
           </button>
@@ -626,11 +626,16 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
     }
   }, [])
 
-  const room = roomId ? getLibrary().rooms.find((r) => r.id === roomId && r.edition === 'vengeance') : undefined
+  const library = useLibrary()
+  const room = roomId ? library.rooms.find((r) => r.id === roomId && r.edition === 'vengeance') : undefined
   const [state, setState] = useState<VState | null>(() => room?.vengeanceState ?? null)
   const stateRef = useRef<VState | null>(state)
   const pendingSaveRef = useRef<VState | null>(null)
   const [saveError, setSaveError] = useState('')
+  useEffect(() => {
+    if (!demo && room?.vengeanceState && !pendingSaveRef.current) { stateRef.current = room.vengeanceState; setState(room.vengeanceState) }
+  }, [demo, room?.vengeanceState])
+  useEffect(() => { if (roomId) blockSharedHost(roomId, Boolean(saveError)); return () => { if (roomId) blockSharedHost(roomId, false) } }, [roomId, saveError])
 
   const [pickerOpen, setPickerOpen] = useState(false)
   const pickerSessionRef = useRef(0)
@@ -647,8 +652,6 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
   const [tvOpen, setTvOpen] = useState(false)
 
   const playerTabRefs = useRef<Record<string, HTMLButtonElement | null>>({})
-  const tvSession = useTvSession()
-  const isSharing = tvSession?.roomId === roomId
 
   useEffect(() => {
     stateRef.current = state
@@ -685,11 +688,13 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
       if (!roomId) return
       try {
         saveVengeanceState(roomId, next)
+        blockSharedHost(roomId, false)
         stateRef.current = next
         pendingSaveRef.current = null
         setState(next)
         setSaveError('')
       } catch (error) {
+        blockSharedHost(roomId, true)
         pendingSaveRef.current = next
         setSaveError(`${(error as Error).message} Retry before continuing.`)
       }
@@ -700,8 +705,9 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
   const dispatch = useCallback(
     (action: VAction) => {
       if (!stateRef.current || pendingSaveRef.current) return
-      const next = vengeanceReducer(stateRef.current, action)
-      if (next !== stateRef.current) persist(next)
+      const current = !demo && roomId ? getLibrary().rooms.find(r => r.id === roomId)?.vengeanceState ?? stateRef.current : stateRef.current
+      const next = vengeanceReducer(current, action)
+      if (next !== current) persist(next)
     },
     [persist]
   )
@@ -907,15 +913,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
           </header>
         ) : (
           <header className="topbar banker-topbar">
-            <button
-              className={`brand-button cast-button ${isSharing ? 'is-sharing' : ''}`}
-              aria-label="TV scoreboard"
-              title="TV scoreboard"
-              onClick={() => setTvOpen(true)}
-            >
-              <Cast size={20} />
-              {isSharing && <span className="cast-live-dot" />}
-            </button>
+            <RoomSharingButton roomId={roomId} onClick={() => setTvOpen(true)} />
             <span className="game-topbar-brand">
               <img src="/assets/flip7-vengeance-logo.webp" alt="Flip 7 With a Vengeance" />
             </span>
@@ -1714,7 +1712,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
         dispatch({ type: 'restart', scope }); setRestartOpen(false); setRoundSummaryOpen(false);
         setOrganizedPlayers({}); setSelectedCardIndex(null); setEditingCardInstanceId(null);
       }} />}
-      {tvOpen && roomId && <TvShareDialog roomId={roomId} onClose={() => setTvOpen(false)} />}
+      {tvOpen && roomId && <SharedRoomDialog roomId={roomId} onClose={() => setTvOpen(false)} />}
     </div>
   )
 }

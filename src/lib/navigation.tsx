@@ -31,7 +31,7 @@ type AppNavigationContextValue = {
 
 const navigationContext = createContext<AppNavigationContextValue | null>(null)
 
-const publicPaths = new Set(['/','/landing','/play','/demo','/vengeance-demo','/banker','/vengeance','/rules','/faq','/privacy','/terms','/contact','/players','/history','/settings','/new','/room'])
+const publicPaths = new Set(['/','/landing','/play','/demo','/vengeance-demo','/banker','/vengeance','/rules','/faq','/privacy','/terms','/contact','/players','/history','/settings','/new','/room','/join'])
 
 export function readAppLocation(): AppLocation {
   return { pathname: window.location.pathname, search: window.location.search, hash: window.location.hash }
