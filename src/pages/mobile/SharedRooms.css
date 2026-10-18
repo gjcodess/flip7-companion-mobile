@@ -1,9 +1,15 @@
 /* Shared rooms follow the app's paper, navy outlines, and offset shadows. */
-.shared-room-dialog {
+.room-dialog.shared-room-dialog {
   --ink: #132d67; --cream: #fff7da; --yellow: #ffe05c; --pink: #ed4f7e; --cyan: #57b8d7;
+  position: fixed;
+  inset: auto 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px;
+  margin: 0 auto;
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
   max-width: 440px;
+  max-height: min(85dvh, calc(100dvh - 48px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
+  box-shadow: 5px 6px 0 var(--ink);
 }
+.room-dialog.shared-room-dialog.banker-menu-dialog.edition-vengeance { box-shadow: 5px 6px 0 #132d67 !important; }
 .shared-room-dialog *, .shared-join-page * { box-sizing: border-box; }
 .shared-room-dialog button { font-family: inherit; cursor: pointer; }
 .shared-room-dialog button:disabled { opacity: .45; cursor: default; }

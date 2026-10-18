@@ -184,6 +184,6 @@ export function JoinedRoomScreen({ historyId }: { historyId?: string }) {
       </section>}
       {notice && <p className="shared-notice" role="status">{notice}</p>}{error && <p className="room-error" role="alert">{error}</p>}
     </main></div>}
-    {deletePrompt && savedRoom && <ConfirmationModal variant="floating" eyebrow="REMOVE JOINED HISTORY" title="Remove this history copy?" message="Only the copy on this phone is removed. Lifetime statistics stay. Export a backup first to keep the detailed cards and scores." cancelLabel="Keep history" confirmLabel="Remove copy" onCancel={() => setDeletePrompt(false)} onConfirm={removeCopy} />}
+    {deletePrompt && savedRoom && <ConfirmationModal eyebrow="REMOVE JOINED HISTORY" title="Remove this history copy?" message="Only the copy on this phone is removed. Lifetime statistics stay. Export a backup first to keep the detailed cards and scores." cancelLabel="Keep history" confirmLabel="Remove copy" onCancel={() => setDeletePrompt(false)} onConfirm={removeCopy} />}
   </>
 }

@@ -4,13 +4,13 @@
   --sharing-muted: #53607a;
   width: calc(100% - 32px);
   max-width: 448px;
-  max-height: min(90dvh, 820px);
+  max-height: min(85dvh, 820px);
   padding: 0;
   overflow: hidden;
   border: 2px solid var(--ink);
   border-radius: 22px;
   background: var(--cream);
-  box-shadow: 5px 5px 0 var(--yellow);
+  box-shadow: 5px 6px 0 var(--ink);
 }
 .sharing-modal[open] { display: flex; flex-direction: column; }
 .sharing-modal.edition-vengeance { --cream: #fff8e7; --yellow: #f7c244; --pink: #e83239; --cyan: #bcdbf8; }
@@ -135,7 +135,7 @@
   .sharing-modal .sharing-section-heading h3 { font-size: 16px; }
 }
 @media (max-height: 700px) {
-  .room-dialog.sharing-modal { max-height: 92dvh; }
+  .room-dialog.sharing-modal { max-height: min(85dvh, calc(100dvh - 48px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))); }
   .sharing-modal-header { padding-top: 14px; padding-bottom: 13px; }
   .sharing-room-meta { margin: 12px 0; }
   .sharing-modal-footer { padding-top: 11px; padding-bottom: 13px; }
