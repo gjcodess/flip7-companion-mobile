@@ -1,11 +1,15 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { Cast, Check, CheckCircle2, ChevronRight, Clock3, Copy, Link2, Monitor, Power, QrCode, Users, Wifi, X } from 'lucide-react'
+import { motion } from 'motion/react'
+import { Cast, Check, ChevronRight, Copy, Link2, Monitor, Power, QrCode, Users, Wifi, X } from 'lucide-react'
 import { PlayerAvatar } from '../../components/PlayerAvatar'
 import { getLibrary, saveRoom, useLibrary } from '../../lib/room-store'
 import { decideSeat } from '../../lib/shared-room-protocol'
+import { forgetRoomDevice, useRoomPresence } from '../../lib/shared-room-presence'
 import { invitationText, localRoomsAvailable, startHosting, stopHosting, useHostedRoom } from '../../lib/shared-room'
 import { useTvSession } from '../../lib/tv-share'
 import { TvSharePanel } from './TvShareDialog'
+import { useRoomSheetMotion } from '../../lib/use-room-sheet-motion'
+import { SeatConnectionBadge } from './SeatConnectionBadge'
 import './SharedRooms.css'
 import './SharingDialog.css'
 
@@ -20,7 +24,9 @@ export function RoomSharingButton({ roomId, onClick }: { roomId?: string; onClic
 
 export function SharedRoomDialog({ roomId, onClose, initialView }: { roomId: string; onClose: () => void; initialView?: 'invite' | 'players' | 'tv' }) {
   const titleId = useId()
+  const sheetMotion = useRoomSheetMotion()
   const library = useLibrary(), hosted = useHostedRoom()
+  const onlineDevices = useRoomPresence(roomId)
   const [busy, setBusy] = useState(false), [error, setError] = useState(''), [qr, setQr] = useState(''), [copied, setCopied] = useState(false)
   const [tab, setTab] = useState<'invite' | 'players' | 'tv'>(() => initialView ?? (hosted?.roomId === roomId && Object.values(library.rooms.find(item => item.id === roomId)?.sharedHost?.grants ?? {}).some(grant => grant.status === 'pending') ? 'players' : 'invite'))
   const dialog = useRef<HTMLDialogElement>(null), operating = useRef(false)
@@ -28,7 +34,8 @@ export function SharedRoomDialog({ roomId, onClose, initialView }: { roomId: str
   const active = Boolean(hosted && hosted.roomId === roomId)
   const grants = Object.entries(room?.sharedHost?.grants ?? {}).filter(([, grant]) => grant.status !== 'rejected').sort((a, b) => Number(b[1].status === 'pending') - Number(a[1].status === 'pending'))
   const waiting = grants.filter(([, grant]) => grant.status === 'pending').length
-  const connected = grants.filter(([, grant]) => grant.status === 'approved').length
+  const approved = grants.filter(([, grant]) => grant.status === 'approved').length
+  const connected = grants.filter(([device, grant]) => grant.status === 'approved' && onlineDevices.has(device)).length
   useEffect(() => { dialog.current?.showModal() }, [])
   useEffect(() => {
     let cancelled = false
@@ -47,7 +54,7 @@ export function SharedRoomDialog({ roomId, onClose, initialView }: { roomId: str
     if (!current) throw new Error('This room is no longer available.')
     return current
   }
-  return <dialog ref={dialog} className={`room-dialog tv-share-dialog shared-room-dialog sharing-modal edition-${room.edition ?? 'classic'}`} aria-labelledby={titleId} onCancel={onClose} onClick={event => { if (event.target === event.currentTarget) onClose() }}>
+  return <motion.dialog {...sheetMotion} ref={dialog} className={`room-dialog tv-share-dialog shared-room-dialog sharing-modal edition-${room.edition ?? 'classic'}`} aria-labelledby={titleId} onCancel={onClose} onClick={event => { if (event.target === event.currentTarget) onClose() }}>
     <header className="sharing-modal-header">
       <div className="sharing-modal-heading">
         <span className="sharing-title-icon" aria-hidden="true"><Cast size={22} /></span>
@@ -78,19 +85,19 @@ export function SharedRoomDialog({ roomId, onClose, initialView }: { roomId: str
         <span className="sharing-status-text" role="status">{copied ? 'Invitation copied' : ''}</span>
         {waiting > 0 && <button className="sharing-request-notice" onClick={() => setTab('players')}><Users size={17} /><span>{waiting} seat request{waiting === 1 ? '' : 's'} waiting</span><ChevronRight size={17} /></button>}
       </section> : <section aria-label="Seats and requests">
-        <div className="sharing-section-heading"><span className="sharing-section-icon"><Users size={20} /></span><div><h3>Players</h3>{grants.length > 0 && <p>{connected} approved{waiting ? ` · ${waiting} waiting` : ''}</p>}</div></div>
+        <div className="sharing-section-heading"><span className="sharing-section-icon"><Users size={20} /></span><div><h3>Players</h3>{grants.length > 0 && <p>{connected} connected · {approved} approved{waiting ? ` · ${waiting} waiting` : ''}</p>}</div></div>
         {!grants.length && <div className="sharing-empty"><span className="sharing-hero-icon"><Users size={28} /></span><h3>No players yet</h3><button className="sharing-action secondary" onClick={() => setTab('invite')}><QrCode size={17} /> Show room QR</button></div>}
         <div className="sharing-player-cards">{grants.map(([device, grant]) => {
           const player = room.roster.find(p => p.id === (grant.playerId ?? grant.requestedSeat))
           return <article className={`sharing-player-card ${grant.status}`} key={device}>
             <div className="sharing-player-top">{player && <PlayerAvatar player={player} className="mini-avatar" />}<div><strong>{grant.name}</strong><span><Link2 size={12} /> {player ? `${player.name}’s table` : 'Seat removed'}</span></div></div>
-            <div className="sharing-player-bottom"><span className="sharing-player-status">{grant.status === 'approved' ? <CheckCircle2 size={14} /> : <Clock3 size={14} />}{grant.status === 'pending' ? 'Needs your approval' : 'Seat approved'}</span>{grant.status === 'approved' && <button className="sharing-release" disabled={busy} onClick={() => void change(() => saveRoom(decideSeat(currentRoom(), device, false)))}>Release seat</button>}</div>
-            {grant.status === 'pending' && <div className="sharing-approval-actions"><button className="sharing-action secondary" disabled={busy} onClick={() => void change(() => saveRoom(decideSeat(currentRoom(), device, false)))}>Decline</button><button className="sharing-action primary" disabled={busy} onClick={() => void change(() => saveRoom(decideSeat(currentRoom(), device, true)))}><Check size={16} /> Approve</button></div>}
+            <div className="sharing-player-bottom"><SeatConnectionBadge status={grant.status === 'pending' ? 'pending' : onlineDevices.has(device) ? 'connected' : 'away'} />{grant.status === 'approved' && <button className="sharing-release" disabled={busy} onClick={() => void change(() => { saveRoom(decideSeat(currentRoom(), device, false)); forgetRoomDevice(roomId, device) })}>Release seat</button>}</div>
+            {grant.status === 'pending' && <div className="sharing-approval-actions"><button className="sharing-action secondary" disabled={busy} onClick={() => void change(() => { saveRoom(decideSeat(currentRoom(), device, false)); forgetRoomDevice(roomId, device) })}>Decline</button><button className="sharing-action primary" disabled={busy} onClick={() => void change(() => saveRoom(decideSeat(currentRoom(), device, true)))}><Check size={16} /> Approve</button></div>}
           </article>
         })}</div>
       </section>}
       {error && <p className="room-error" role="alert">{error}</p>}
     </div>
     {active && tab !== 'tv' && <footer className="sharing-modal-footer"><button className="sharing-action stop" disabled={busy} onClick={() => void change(async () => { await stopHosting(); setTab('invite') })}><Power size={16} /> Stop hosting</button></footer>}
-  </dialog>
+  </motion.dialog>
 }

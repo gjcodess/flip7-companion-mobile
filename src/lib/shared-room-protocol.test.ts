@@ -52,6 +52,16 @@ describe('shared room seat authorization', () => {
     expect(() => record(released)).toThrow('approve')
     expect(processRoomRequest(released, request('poll')).reply.room).toBeUndefined()
   })
+  it.each([false, true])('uses the approved joiner name at the claimed table (vengeance: %s)', vengeance => {
+    let room = fixture(vengeance)
+    const seat = room.roster[1].id
+    const claim = processRoomRequest(room, request('claim', { name: 'Wang', playerId: seat }))
+    room = decideSeat(claim.next, deviceId, true)
+    expect(room.roster[1].name).toBe('Wang')
+    expect((vengeance ? room.vengeanceState : room.state)?.players[1].name).toBe('Wang')
+    expect((vengeance ? room.vengeanceState : room.state)?.past.every(snapshot => snapshot.players[1].name === 'Wang')).toBe(true)
+    expect(processRoomRequest(room, request('poll')).reply.room?.roster[1].name).toBe('Wang')
+  })
   it('leaving releases control without removing any player or card', () => {
     const room = record(approved()).next
     const result = processRoomRequest(room, request('leave'))

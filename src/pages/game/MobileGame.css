@@ -155,6 +155,13 @@
 .banker-shell .banker-player-tab .mini-avatar { grid-row: 1 / span 2; border-radius: 9px; border-width: 1.5px; box-shadow: 1px 2px 0 #132d6726; }
 .banker-shell .banker-player-tab .opponent-copy { grid-column: 2; grid-row: 1; gap: 2px; padding-bottom: 0; }
 .banker-shell .banker-player-tab > strong { position: static; grid-column: 2; grid-row: 2; }
+.seat-connection-badge { display: inline-flex; align-items: center; gap: 5px; width: max-content; max-width: 100%; padding: 3px 6px; border: 1px solid #317f58; border-radius: 5px; background: #e0f4e6; color: #245b3b; font-size: 9px; font-weight: 850; line-height: 1.1; white-space: nowrap; }
+.seat-connection-badge i { display: block; width: 6px; height: 6px; flex: 0 0 6px; border-radius: 50%; background: currentColor; }
+.seat-connection-badge.away { border-color: #9ba4b1; background: #edf0f2; color: #566173; }
+.seat-connection-badge.pending { border-color: #b98438; background: #fff0ce; color: #805521; }
+.seat-connection-badge.compact { vertical-align: 1px; gap: 3px; padding: 2px 3px; margin-left: 4px; font-size: 7px; letter-spacing: .02em; }
+.seat-connection-badge.compact i { width: 5px; height: 5px; flex-basis: 5px; }
+.banker-player-tab .seat-connection-badge.compact { vertical-align: 1px; }
 :is(.banker-shell, .demo-shell) .table-area { background: none; padding-top: 18px; }
 :is(.banker-shell, .demo-shell) .section-kicker { align-items: center; flex-wrap: wrap; font-size: 10px; letter-spacing: .06em; line-height: 1.6; }
 :is(.banker-shell, .demo-shell) .table-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; }
@@ -256,16 +263,25 @@
 :is(.banker-shell, .demo-shell) .actions .stay-action { min-height: 54px; font-size: 12px; }
 :is(.banker-shell, .demo-shell) .actions button:disabled { opacity: .5; box-shadow: none; }
 
-/* Rounded, compact game menu with the same solid-shadow language as the library. */
-.banker-menu-dialog {
+/* Host game dialogs use the same bottom-sheet position as joined-room dialogs. */
+.room-dialog.banker-menu-dialog {
   --ink: #132d67;
   --cream: #fff7da;
   --yellow: #ffe05c;
   --pink: #ed4f7e;
+  position: fixed;
+  inset: auto 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px;
+  margin: 0 auto;
+  max-height: min(85dvh, calc(100dvh - 48px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
+  overflow-y: auto;
   color: var(--ink);
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-  box-shadow: 5px 5px 0 #ffe05c;
+  box-shadow: 5px 6px 0 var(--ink);
 }
+.room-dialog.banker-menu-dialog:not(.shared-room-dialog)[open]::backdrop { animation: game-sheet-backdrop .28s ease-out both; }
+@keyframes game-sheet-backdrop { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .room-dialog.banker-menu-dialog:not(.shared-room-dialog)[open]::backdrop { animation: none; } }
+html.room-reduced-motion .room-dialog.banker-menu-dialog:not(.shared-room-dialog)[open]::backdrop { animation: none; }
 .banker-menu-dialog .banker-menu-list {
   display: flex;
   flex-direction: column;

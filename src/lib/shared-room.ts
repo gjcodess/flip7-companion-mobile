@@ -3,6 +3,7 @@ import { App } from '@capacitor/app'
 import { Capacitor, registerPlugin } from '@capacitor/core'
 import { getLibrary, saveJoinedRoom, saveRoom, type Room } from './room-store'
 import { emptySharedHost, processRoomRequest, publicRoom, SHARED_PROTOCOL, type ParticipantCommand, type RoomReply, type RoomRequest } from './shared-room-protocol'
+import { clearRoomPresence, expireRoomPresence, forgetRoomDevice, noteRoomRequest } from './shared-room-presence'
 
 export type RoomInvitation = { protocol: number; roomId: string; url: string; publicKey: string; invitationSecret: string }
 type NativeRoom = {
@@ -27,9 +28,10 @@ export async function startHosting(room: Room) {
   if (!room.state && !room.vengeanceState) throw new Error('Start this match before enabling joining.')
   if (!room.sharedHost) saveRoom({ ...room, sharedHost: emptySharedHost() })
   const native = await transport.start({ roomId: room.id })
+  clearRoomPresence(room.id)
   publishHosting({ ...native, protocol: SHARED_PROTOCOL, roomId: room.id })
 }
-export async function stopHosting() { await transport.stop(); publishHosting(null) }
+export async function stopHosting() { await transport.stop(); if (hosting) clearRoomPresence(hosting.roomId); publishHosting(null) }
 export const invitationText = (invitation: RoomInvitation) => `flip7-local:${JSON.stringify(invitation)}`
 export function parseInvitation(raw: string): RoomInvitation {
   const text = raw.trim()
@@ -69,6 +71,8 @@ export function useHostRoomPump(path: string, search: string) {
             // Synchronous durable save occurs before any success response leaves the phone.
             if (transaction.next !== room) saveRoom(transaction.next)
             response = transaction.reply
+            if (message.request.type === 'leave') forgetRoomDevice(invitation.roomId, message.request.deviceId)
+            else if (response.status === 'approved') noteRoomRequest(invitation.roomId, message.request.deviceId)
             if (response.room) response.room = publicRoom(getLibrary().rooms.find(r => r.id === invitation.roomId)!)
           } catch (error) { response = { ok: false, error: error instanceof Error ? error.message : 'Could not accept this action.' } }
           const compact = JSON.parse(JSON.stringify(response, (key, value) => key === 'card' && value?.id ? value.id : value)) as RoomReply
@@ -78,8 +82,9 @@ export function useHostRoomPump(path: string, search: string) {
       finally { busy = false }
     }
     const timer = window.setInterval(() => { void tick() }, 180)
+    const presenceTimer = window.setInterval(() => expireRoomPresence(), 1000)
     void tick()
-    return () => { cancelled = true; clearInterval(timer); void listener?.remove() }
+    return () => { cancelled = true; clearInterval(timer); clearInterval(presenceTimer); void listener?.remove() }
   }, [invitation, path, search])
 }
 

@@ -2,6 +2,7 @@ import { RoomSharingButton, SharedRoomDialog } from '../mobile/SharedRoomControl
 import { RestartDialog } from './RestartDialog'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
+import { useRoomSheetMotion } from '../../lib/use-room-sheet-motion'
 import {
   ArrowDown,
   ArrowLeft,
@@ -13,6 +14,7 @@ import {
   CircleHelp,
   ClipboardList,
   Eye,
+  History,
   LogOut,
   Menu,
   Monitor,
@@ -29,6 +31,7 @@ import {
 } from 'lucide-react'
 import type { Card } from '../../game/cards'
 import { ForcedDrawStatus } from './ForcedDrawStatus'
+import { RoundHistoryDialog } from './RoundHistoryDialog'
 import { vengeanceTableEntries, type VTableEntry } from '../../game/tableEntries'
 import { vengeanceCards, type VengeanceCard } from '../../game/vengeanceCards'
 import {
@@ -48,6 +51,8 @@ import {
 } from '../../game/vengeanceGame'
 import { getLibrary, saveVengeanceState, updateLibrary, useLibrary, type PlayerProfile } from '../../lib/room-store'
 import { blockSharedHost } from '../../lib/shared-room'
+import { useRoomPresence } from '../../lib/shared-room-presence'
+import { SeatConnectionBadge, seatConnection } from '../mobile/SeatConnectionBadge'
 import { useAppNavigation, useNavigationGuard } from '../../lib/navigation'
 import { ConfirmationModal } from '../../components/ConfirmationModal'
 import { BrutalWarningModal } from '../../components/BrutalWarningModal'
@@ -205,6 +210,7 @@ function VengeanceMenuDialog({
   onClose,
   onOpenPlayers,
   onOpenRules,
+  onOpenHistory,
   onOpenTvShare,
   onRestart,
   onExit,
@@ -213,17 +219,20 @@ function VengeanceMenuDialog({
   onClose: () => void
   onOpenPlayers: () => void
   onOpenRules: () => void
+  onOpenHistory: () => void
   onOpenTvShare: () => void
   onRestart?: () => void
   onExit: () => void
 }) {
   const dialog = useRef<HTMLDialogElement>(null)
+  const sheetMotion = useRoomSheetMotion()
   useEffect(() => {
     dialog.current?.showModal()
   }, [])
 
   return (
-    <dialog
+    <motion.dialog
+      {...sheetMotion}
       ref={dialog}
       className="room-dialog banker-menu-dialog tv-share-dialog edition-vengeance"
       onCancel={onClose}
@@ -275,6 +284,11 @@ function VengeanceMenuDialog({
           </div>
           <ChevronRight size={18} className="banker-menu-item-chevron" />
         </button>
+        {!demo && <button type="button" className="banker-menu-item" onClick={() => { onClose(); onOpenHistory() }}>
+          <div className="banker-menu-item-icon"><History size={20} /></div>
+          <div className="banker-menu-item-text"><strong>Round history</strong><span>Cards and scores by round</span></div>
+          <ChevronRight size={18} className="banker-menu-item-chevron" />
+        </button>}
         {onRestart && (
           <button
             type="button"
@@ -331,7 +345,7 @@ function VengeanceMenuDialog({
           <ChevronRight size={18} className="banker-menu-item-chevron" />
         </button>
       </div>
-    </dialog>
+    </motion.dialog>
   )
 }
 
@@ -627,6 +641,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
 
   const library = useLibrary()
   const room = roomId ? library.rooms.find((r) => r.id === roomId && r.edition === 'vengeance') : undefined
+  const onlineDevices = useRoomPresence(roomId)
   const [state, setState] = useState<VState | null>(() => room?.vengeanceState ?? null)
   const stateRef = useRef<VState | null>(state)
   const pendingSaveRef = useRef<VState | null>(null)
@@ -644,6 +659,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
   const [showMenu, setShowMenu] = useState(false)
   const [playersOpen, setPlayersOpen] = useState(false)
   const [rulesOpen, setRulesOpen] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
   const [roundSummaryOpen, setRoundSummaryOpen] = useState(false)
   const [restartOpen, setRestartOpen] = useState(false)
   const [newGamePromptOpen, setNewGamePromptOpen] = useState(false)
@@ -981,7 +997,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
             >
               <PlayerAvatar player={player} className="mini-avatar" />
               <span className="opponent-copy">
-                <b>{player.name}</b>
+                <b>{player.name}<SeatConnectionBadge status={seatConnection(room, player.id, onlineDevices)} compact /></b>
                 <span>{playerTabSummary(player, state.variant, state.flipSevenChoice)}</span>
               </span>
               <strong>
@@ -1587,6 +1603,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                             {player.id === turnPlayerId ? ' (current)' : ''}
                           </b>
                           <small>{playerTabSummary(player, state.variant, state.flipSevenChoice)}</small>
+                          <SeatConnectionBadge status={seatConnection(room, player.id, onlineDevices)} />
                         </div>
                         <span className="info-player-scores">
                           <span>
@@ -1701,11 +1718,13 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
           onClose={() => setShowMenu(false)}
           onOpenPlayers={() => setPlayersOpen(true)}
           onOpenRules={() => setRulesOpen(true)}
+          onOpenHistory={() => setHistoryOpen(true)}
           onOpenTvShare={() => setTvOpen(true)}
           onRestart={() => setRestartOpen(true)}
           onExit={exit}
         />
       )}
+      {historyOpen && room && <RoundHistoryDialog room={room} history={state.history} onClose={() => setHistoryOpen(false)} />}
 
       {restartOpen && <RestartDialog edition="vengeance" disabled={Boolean(saveError)} onClose={() => setRestartOpen(false)} onRestart={scope => {
         dispatch({ type: 'restart', scope }); setRestartOpen(false); setRoundSummaryOpen(false);

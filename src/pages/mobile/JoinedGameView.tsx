@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { Cast, Check, ChevronRight, Clock3, History, LogOut, Menu, RefreshCw, ShieldCheck, Trash2, Trophy, UserRound, Users, Wifi, WifiOff, X } from 'lucide-react'
+import { Cast, Check, ChevronRight, CircleHelp, History, LogOut, Menu, RefreshCw, ShieldCheck, Trash2, Trophy, UserRound, Users, Wifi, WifiOff, X } from 'lucide-react'
 import { bankerEligibleActionTargets, bankerPlayerDerived } from '../../game/bankerGame'
 import { pickerCards, type Card } from '../../game/cards'
 import { bankerTableEntries, vengeanceTableEntries } from '../../game/tableEntries'
@@ -12,9 +12,11 @@ import { ConfirmationModal } from '../../components/ConfirmationModal'
 import { CardPickerPanel } from '../game/CardDialogs'
 import { ForcedDrawStatus } from '../game/ForcedDrawStatus'
 import { GameTable } from '../game/GameTable'
+import { RoundHistoryContent } from '../game/RoundHistoryDialog'
 import type { Room } from '../../lib/room-store'
 import type { ParticipantCommand } from '../../lib/shared-room-protocol'
 import { joinedRoomView } from './joined-room-view'
+import { useRoomSheetMotion } from '../../lib/use-room-sheet-motion'
 import '../game/VengeanceScreen.css'
 
 type Props = {
@@ -36,11 +38,12 @@ type Props = {
 
 function Panel({ title, eyebrow, onClose, children, className = '' }: { title: string; eyebrow: string; onClose: () => void; children: ReactNode; className?: string }) {
   const dialog = useRef<HTMLDialogElement>(null)
+  const sheetMotion = useRoomSheetMotion()
   useEffect(() => { dialog.current?.showModal() }, [])
-  return <dialog ref={dialog} className={`room-dialog tv-share-dialog shared-room-dialog shared-game-dialog ${className}`} onCancel={onClose} onClick={event => { if (event.target === event.currentTarget) onClose() }}>
+  return <motion.dialog {...sheetMotion} ref={dialog} className={`room-dialog tv-share-dialog shared-room-dialog shared-game-dialog ${className}`} onCancel={onClose} onClick={event => { if (event.target === event.currentTarget) onClose() }}>
     <div className="room-dialog-heading"><div><span className="room-kicker">{eyebrow}</span><h2>{title}</h2></div><button className="room-icon-button" aria-label={`Close ${title.toLowerCase()}`} onClick={onClose}><X size={20} /></button></div>
     {children}
-  </dialog>
+  </motion.dialog>
 }
 
 export function JoinedGameView({ room, owner, live, online, busy, pendingAction, approved, error, canReconnect, onSend, onReconnect, onRelease, onExit, onDelete }: Props) {
@@ -48,7 +51,7 @@ export function JoinedGameView({ room, owner, live, online, busy, pendingAction,
   const [organized, setOrganized] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [focusCard, setFocusCard] = useState<Card | null>(null)
-  const [panel, setPanel] = useState<'menu' | 'history' | 'players' | 'connection' | null>(null)
+  const [panel, setPanel] = useState<'menu' | 'history' | 'players' | 'connection' | 'rules' | null>(null)
   const [releasePrompt, setReleasePrompt] = useState(false)
   const [dismissedDecision, setDismissedDecision] = useState('')
   const tabs = useRef<Record<string, HTMLButtonElement | null>>({})
@@ -147,12 +150,28 @@ export function JoinedGameView({ room, owner, live, online, busy, pendingAction,
     </Panel>}
     {panel === 'menu' && <Panel title="Game menu" eyebrow={live ? 'PLAYING TOGETHER' : 'JOINED HISTORY'} onClose={() => setPanel(null)} className={`banker-menu-dialog ${modalClass}`}>
       <div className="banker-menu-list">
-        {([{ icon: Cast, title: 'Room connection', copy: 'Connection and seat details', action: () => setPanel('connection') }, { icon: Users, title: 'Players', copy: 'Tables and scores', action: () => setPanel('players') }, { icon: History, title: 'Round history', copy: 'Cards and scores by round', action: () => setPanel('history') }, ...(!live && onDelete ? [{ icon: Trash2, title: 'Remove history copy', copy: 'Delete this copy from your phone', action: () => { setPanel(null); onDelete() } }] : []), { icon: LogOut, title: live ? 'Exit room' : 'Your rooms', copy: live ? 'Your saved history stays here' : 'Return to your rooms', action: () => { setPanel(null); onExit() } }]).map(item => <button key={item.title} className={`banker-menu-item ${item.title === 'Exit room' || item.title === 'Remove history copy' ? 'banker-menu-item-danger' : ''}`} onClick={item.action}><div className="banker-menu-item-icon"><item.icon size={20} /></div><div className="banker-menu-item-text"><strong>{item.title}</strong><span>{item.copy}</span></div><ChevronRight size={18} className="banker-menu-item-chevron" /></button>)}
+        {([{ icon: Cast, title: 'Room connection', copy: 'Connection and seat details', action: () => setPanel('connection') }, { icon: Users, title: 'Players', copy: 'Tables and scores', action: () => setPanel('players') }, { icon: CircleHelp, title: 'Rules & Guide', copy: 'Cards, turns, and scoring', action: () => setPanel('rules') }, { icon: History, title: 'Round history', copy: 'Cards and scores by round', action: () => setPanel('history') }, ...(!live && onDelete ? [{ icon: Trash2, title: 'Remove history copy', copy: 'Delete this copy from your phone', action: () => { setPanel(null); onDelete() } }] : []), { icon: LogOut, title: live ? 'Exit room' : 'Your rooms', copy: live ? 'Your saved history stays here' : 'Return to your rooms', action: () => { setPanel(null); onExit() } }]).map(item => <button key={item.title} className={`banker-menu-item ${item.title === 'Exit room' || item.title === 'Remove history copy' ? 'banker-menu-item-danger' : ''}`} onClick={item.action}><div className="banker-menu-item-icon"><item.icon size={20} /></div><div className="banker-menu-item-text"><strong>{item.title}</strong><span>{item.copy}</span></div><ChevronRight size={18} className="banker-menu-item-chevron" /></button>)}
       </div>
     </Panel>}
     {panel === 'players' && <Panel title="Players" eyebrow="AT THIS TABLE" onClose={() => setPanel(null)} className={modalClass}><div className="info-list shared-player-list">{players.map(player => <button className={`info-player ${player.id === turn ? 'current-player' : ''}`} key={player.id} onClick={() => { selectSeat(player.id); setPanel(null) }}><PlayerAvatar player={player} className="mini-avatar" /><div><b>{player.name}{player.id === owner ? ' (You)' : ''}{player.id === turn ? ' (current)' : ''}</b><small>{summary(player)}</small></div><span className="info-player-scores"><span><small>ROUND</small><strong>{playerScore(player)}</strong></span><span><small>TOTAL</small><strong>{player.totalScore}</strong></span></span></button>)}</div></Panel>}
+    {panel === 'rules' && <Panel title="Rules & Guide" eyebrow={v ? 'VENGEANCE' : 'CLASSIC'} onClose={() => setPanel(null)} className={modalClass}>
+      <div className="rules-copy shared-rules-copy">
+        <section><h3>Your table</h3><p>Record cards and bank only for your own seat. You can view every table; the host manages corrections and starts each round.</p></section>
+        {v ? <>
+          <section><h3>Turns & scoring</h3><p>Players receive one face-up card, then take turns hitting or staying. Duplicate numbers bust. Seven unique numbers earn a Flip 7 bonus.</p></section>
+          <section><h3>The Zero</h3><p>The Zero resets your round score to 0. You cannot stay until you reach Flip 7 or swap or discard it.</p></section>
+          <section><h3>Unlucky 7 & Lucky 13</h3><p>Unlucky 7 discards previous numbers and modifiers. Lucky 13 lets you hold two 13s before busting.</p></section>
+          <section><h3>Actions & modifiers</h3><p>Steal, Swap, Discard, Just One More, and Flip Four change hands or force flips. Negative modifiers lower scores.</p></section>
+          {v.variant === 'brutal' && <section><h3>Brutal mode</h3><p>Scores can go below zero. Modifiers can target busted players. At Flip 7, choose +15 for yourself or −15 for another player.</p></section>}
+        </> : <>
+          <section><h3>Take a turn</h3><p>Draw a card or bank your points. Drawing a duplicate number busts your hand; seven unique numbers earn a bonus and end the round.</p></section>
+          <section><h3>Action cards</h3><p>Freeze skips a player, Second Chance protects against a duplicate, and Flip Three sends three cards to a player.</p></section>
+          <section><h3>End the round</h3><p>Banked, busted, and frozen players are skipped. The round ends when everyone has finished or someone reaches Flip 7.</p></section>
+        </>}
+      </div>
+    </Panel>}
     {panel === 'history' && <Panel title="Round history" eyebrow="SAVED ON THIS PHONE" onClose={() => setPanel(null)} className={modalClass}>
-      {!state.history.length ? <div className="shared-history-empty"><Clock3 size={32} /><h3>No completed rounds yet</h3></div> : <div className="shared-history-list">{[...state.history].reverse().map(round => <details className="shared-round" key={round.round}><summary><span>ROUND {String(round.round).padStart(2, '0')}</span><b>{Object.keys(round.scores).length} players</b><ChevronRight size={17} /></summary>{Object.entries(round.scores).map(([id, points]) => { const hand = round.hands?.[id]; return <article className="shared-history-hand" key={id}><header>{hand && <PlayerAvatar player={{ ...hand, id }} className="mini-avatar" />}<strong>{hand?.name ?? room.roster.find(p => p.id === id)?.name ?? 'Player'}</strong><b>{points} pts</b></header><div className="shared-history-cards">{hand?.entries.map(entry => <div key={entry.instanceId} className={entry.voided ? 'shared-voided' : ''}><CardArtwork card={entry.card} /></div>)}</div></article> })}</details>)}</div>}
+      <RoundHistoryContent history={state.history} room={room} />
     </Panel>}
     {showDecision && <Panel title={v?.pendingFlipSeven ? 'You hit Flip 7!' : `Who gets ${classic?.pendingAction?.card.label ?? pending?.card.label ?? 'this card'}?`} eyebrow="YOUR DECISION" onClose={() => setDismissedDecision(decisionKey)} className={`shared-decision-dialog ${modalClass}`}>
       {v?.pendingFlipSeven && <p>Take +15 or give another player −15 points.</p>}
