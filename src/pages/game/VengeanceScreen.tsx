@@ -643,6 +643,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
   const room = roomId ? library.rooms.find((r) => r.id === roomId && r.edition === 'vengeance') : undefined
   const onlineDevices = useRoomPresence(roomId)
   const [state, setState] = useState<VState | null>(() => room?.vengeanceState ?? null)
+  const [followTurns, setFollowTurns] = useState(() => { try { return localStorage.getItem('flip7.host.follow-turns.v1') !== 'false' } catch { return true } })
   const stateRef = useRef<VState | null>(state)
   const pendingSaveRef = useRef<VState | null>(null)
   const [saveError, setSaveError] = useState('')
@@ -721,10 +722,13 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
     (action: VAction) => {
       if (!stateRef.current || pendingSaveRef.current) return
       const current = !demo && roomId ? getLibrary().rooms.find(r => r.id === roomId)?.vengeanceState ?? stateRef.current : stateRef.current
-      const next = vengeanceReducer(current, action)
+      let next = vengeanceReducer(current, action)
+      if (!followTurns && action.type !== 'select-player' && next !== current && current.selectedPlayerId && next.players.some(player => player.id === current.selectedPlayerId)) {
+        next = { ...next, selectedPlayerId: current.selectedPlayerId }
+      }
       if (next !== current) persist(next)
     },
-    [persist]
+    [persist, demo, roomId, followTurns]
   )
 
   const selected = state ? state.players.find((p) => p.id === state.selectedPlayerId) ?? state.players[0] : null
@@ -754,9 +758,16 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
 
   // Auto-scroll non-busted player tab into view
   useEffect(() => {
-    if (!turnPlayerId) return
+    if (!followTurns || !turnPlayerId) return
     playerTabRefs.current[turnPlayerId]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
-  }, [turnPlayerId])
+  }, [followTurns, turnPlayerId])
+
+  const toggleFollowTurns = () => {
+    const next = !followTurns
+    setFollowTurns(next)
+    try { localStorage.setItem('flip7.host.follow-turns.v1', String(next)) } catch { /* Keep this session's choice. */ }
+    if (next && turnPlayerId && selected?.id !== turnPlayerId) dispatch({ type: 'select-player', playerId: turnPlayerId })
+  }
 
   // Open round summary modal automatically upon entering settlement
   useEffect(() => {
@@ -973,9 +984,10 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
           )}
         </section>
 
-        <div className="banker-turn-callout" role="status">
+        <div className="banker-turn-callout has-follow-toggle" role="status">
           <span>CURRENT TURN</span>
           <b>{drawing?.name || '—'}</b>
+          <button type="button" className="follow-turns-toggle" aria-label={`Follow turns ${followTurns ? 'on' : 'off'}`} aria-pressed={followTurns} title="Follow current turn" onClick={toggleFollowTurns}>Follow</button>
         </div>
 
         {forcedTurn && forcedTurn.remaining > 0 && <ForcedDrawStatus label={forcedTurn.kind === 'four' ? 'Flip Four' : 'Just One More'} remaining={forcedTurn.remaining} total={forcedTurn.kind === 'four' ? 4 : 1} />}
@@ -995,9 +1007,9 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                 setSelectedCardIndex(null)
               }}
             >
-              <PlayerAvatar player={player} className="mini-avatar" />
+              <span className="host-player-avatar"><PlayerAvatar player={player} className="mini-avatar" /><SeatConnectionBadge status={seatConnection(room, player.id, onlineDevices)} compact /></span>
               <span className="opponent-copy">
-                <b>{player.name}<SeatConnectionBadge status={seatConnection(room, player.id, onlineDevices)} compact /></b>
+                <b>{player.name}</b>
                 <span>{playerTabSummary(player, state.variant, state.flipSevenChoice)}</span>
               </span>
               <strong>

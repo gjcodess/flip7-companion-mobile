@@ -36,6 +36,8 @@ type Props = {
   onDelete?: () => void
 }
 
+const FOLLOW_TURNS_KEY = 'flip7.joiner.follow-turns.v1'
+
 function Panel({ title, eyebrow, onClose, children, className = '' }: { title: string; eyebrow: string; onClose: () => void; children: ReactNode; className?: string }) {
   const dialog = useRef<HTMLDialogElement>(null)
   const sheetMotion = useRoomSheetMotion()
@@ -48,6 +50,7 @@ function Panel({ title, eyebrow, onClose, children, className = '' }: { title: s
 
 export function JoinedGameView({ room, owner, live, online, busy, pendingAction, approved, error, canReconnect, onSend, onReconnect, onRelease, onExit, onDelete }: Props) {
   const [viewSeat, setViewSeat] = useState(owner ?? '')
+  const [followTurns, setFollowTurns] = useState(() => { try { return localStorage.getItem(FOLLOW_TURNS_KEY) === 'true' } catch { return false } })
   const [organized, setOrganized] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [focusCard, setFocusCard] = useState<Card | null>(null)
@@ -80,6 +83,13 @@ export function JoinedGameView({ room, owner, live, online, busy, pendingAction,
   const terminal = status !== 'active'
 
   useEffect(() => { if (!mayRecord || !mine) setPickerOpen(false) }, [mayRecord, mine])
+  useEffect(() => {
+    if (!followTurns || !live || !online || !turn || complete || settled) return
+    setViewSeat(turn)
+    setOrganized(false)
+    setFocusCard(null)
+    setPickerOpen(false)
+  }, [followTurns, live, online, turn, complete, settled, room.id])
   useEffect(() => { tabs.current[selected?.id ?? '']?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }) }, [selected?.id])
   useEffect(() => {
     const close = (event: KeyboardEvent) => {
@@ -91,6 +101,7 @@ export function JoinedGameView({ room, owner, live, online, busy, pendingAction,
 
   if (!state || !selected) return null
   const selectSeat = (id: string) => { setViewSeat(id); setOrganized(false); setFocusCard(null); setPickerOpen(false) }
+  const toggleFollowTurns = () => setFollowTurns(value => { const next = !value; try { localStorage.setItem(FOLLOW_TURNS_KEY, String(next)) } catch { /* Following still works for this session. */ } return next })
   const record = (card: Card) => { if (mayRecord && mine) { setPickerOpen(false); void onSend({ type: 'record', cardId: card.id }) } }
   const playerStatus = (player: typeof selected) => 'round' in player ? player.round.status : player.status
   const playerScore = (player: typeof selected) => 'round' in player ? bankerPlayerDerived(player).score : vengeanceScore(player, v?.variant, v?.flipSevenChoice)
@@ -115,7 +126,7 @@ export function JoinedGameView({ room, owner, live, online, busy, pendingAction,
       </header>
       <section className="match-strip"><div><span>ROUND</span><b>{String(state.roundNumber).padStart(2, '0')}</b></div><div className="target"><span>FIRST TO</span><b>{room.targetScore}</b></div><div><span>VIEWING</span><b>{selected.name}</b></div></section>
       {room.variant === 'brutal' && <div className="shared-brutal-tag">BRUTAL MODE</div>}
-      <div className="banker-turn-callout" role="status"><span>{complete ? 'MATCH COMPLETE' : settled ? 'ROUND COMPLETE' : decisionOwner ? 'CHOOSING' : 'CURRENT TURN'}</span><b>{complete ? 'Final scores saved' : settled ? 'Waiting for host' : decisionName ?? turnName ?? '—'}</b>{!settled && !complete && turn === owner && !decisionOwner && <em className="shared-you-tag">YOU</em>}</div>
+      <div className={`banker-turn-callout ${live && !complete && !settled && turn ? 'has-follow-toggle' : ''}`} role="status"><span>{complete ? 'MATCH COMPLETE' : settled ? 'ROUND COMPLETE' : decisionOwner ? 'CHOOSING' : 'CURRENT TURN'}</span><b>{complete ? 'Final scores saved' : settled ? 'Waiting for host' : decisionName ?? turnName ?? '—'}</b>{!settled && !complete && turn === owner && !decisionOwner && <em className="shared-you-tag">YOU</em>}{live && !complete && !settled && turn && <button type="button" className="follow-turns-toggle" aria-label={`Follow turns ${followTurns ? 'on' : 'off'}`} aria-pressed={followTurns} title="Follow current turn" onClick={toggleFollowTurns}>Follow</button>}</div>
       {forced && forced.remaining > 0 && <ForcedDrawStatus label={v ? ('kind' in forced && forced.kind === 'one' ? 'Flip One' : 'Flip Four') : 'Flip Three'} remaining={forced.remaining} total={v ? ('kind' in forced && forced.kind === 'one' ? 1 : 4) : 3} />}
       {error && <div className="shared-game-error" role="alert">{error}</div>}
       {pendingAction && live && <div className="shared-retry"><p>Your last entry has not been confirmed. Check it safely without recording it twice.</p><button className="secondary-action" disabled={!online || busy} onClick={() => void onSend()}><RefreshCw size={15} /> Check entry</button></div>}

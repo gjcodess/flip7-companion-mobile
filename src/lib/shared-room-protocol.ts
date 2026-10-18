@@ -136,6 +136,24 @@ export function processRoomRequest(room: Room, request: RoomRequest): { next: Ro
   return { next, reply }
 }
 
+function renameSeat(room: Room, playerId: string, name: string): Room {
+  const rename = <T extends { id: string; name: string }>(player: T): T => player.id === playerId ? { ...player, name } : player
+  return {
+    ...room,
+    roster: room.roster.map(rename),
+    state: room.state && { ...room.state, players: room.state.players.map(rename), past: room.state.past.map(snapshot => ({ ...snapshot, players: snapshot.players.map(rename) })), future: room.state.future.map(snapshot => ({ ...snapshot, players: snapshot.players.map(rename) })) },
+    vengeanceState: room.vengeanceState && { ...room.vengeanceState, players: room.vengeanceState.players.map(rename), past: room.vengeanceState.past.map(snapshot => ({ ...snapshot, players: snapshot.players.map(rename) })), future: room.vengeanceState.future.map(snapshot => ({ ...snapshot, players: snapshot.players.map(rename) })) },
+  }
+}
+
+export function reconcileApprovedSeatNames(room: Room): Room {
+  let next = room
+  for (const grant of Object.values(room.sharedHost?.grants ?? {})) {
+    if (grant.status === 'approved' && grant.playerId && next.roster.some(player => player.id === grant.playerId && player.name !== grant.name)) next = renameSeat(next, grant.playerId, grant.name)
+  }
+  return next
+}
+
 export function decideSeat(room: Room, deviceId: string, approve: boolean): Room {
   const shared = room.sharedHost
   const grant = shared?.grants[deviceId]
@@ -143,11 +161,5 @@ export function decideSeat(room: Room, deviceId: string, approve: boolean): Room
   if (approve && (!room.roster.some(p => p.id === grant.requestedSeat) || Object.entries(shared.grants).some(([id, g]) => id !== deviceId && g.status === 'approved' && g.playerId === grant.requestedSeat))) throw new Error('That seat is no longer available.')
   const next = { ...room, sharedHost: { ...shared, grants: { ...shared.grants, [deviceId]: { ...grant, status: approve ? 'approved' as const : 'rejected' as const, playerId: approve ? grant.requestedSeat : undefined } } } }
   if (!approve) return next
-  const rename = <T extends { id: string; name: string }>(player: T): T => player.id === grant.requestedSeat ? { ...player, name: grant.name } : player
-  return {
-    ...next,
-    roster: room.roster.map(rename),
-    state: room.state && { ...room.state, players: room.state.players.map(rename), past: room.state.past.map(snapshot => ({ ...snapshot, players: snapshot.players.map(rename) })), future: room.state.future.map(snapshot => ({ ...snapshot, players: snapshot.players.map(rename) })) },
-    vengeanceState: room.vengeanceState && { ...room.vengeanceState, players: room.vengeanceState.players.map(rename), past: room.vengeanceState.past.map(snapshot => ({ ...snapshot, players: snapshot.players.map(rename) })), future: room.vengeanceState.future.map(snapshot => ({ ...snapshot, players: snapshot.players.map(rename) })) },
-  }
+  return renameSeat(next, grant.requestedSeat, grant.name)
 }

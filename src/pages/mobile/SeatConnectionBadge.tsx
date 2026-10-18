@@ -12,5 +12,5 @@ export function seatConnection(room: Room | undefined, playerId: string, onlineD
 export function SeatConnectionBadge({ status, compact = false }: { status: SeatConnection; compact?: boolean }) {
   if (!status) return null
   const label = status === 'connected' ? 'Connected' : status === 'away' ? 'Not connected' : 'Awaiting approval'
-  return <span className={`seat-connection-badge ${status} ${compact ? 'compact' : ''}`} title={label} aria-label={label}><i aria-hidden="true" />{compact ? status === 'connected' ? 'LIVE' : status === 'away' ? 'AWAY' : 'ASK' : label}</span>
+  return <span className={`seat-connection-badge ${status} ${compact ? 'compact' : ''}`} title={label} aria-label={label}><i aria-hidden="true" />{!compact && label}</span>
 }

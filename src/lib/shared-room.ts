@@ -2,7 +2,7 @@ import { useEffect, useSyncExternalStore } from 'react'
 import { App } from '@capacitor/app'
 import { Capacitor, registerPlugin } from '@capacitor/core'
 import { getLibrary, saveJoinedRoom, saveRoom, type Room } from './room-store'
-import { emptySharedHost, processRoomRequest, publicRoom, SHARED_PROTOCOL, type ParticipantCommand, type RoomReply, type RoomRequest } from './shared-room-protocol'
+import { emptySharedHost, processRoomRequest, publicRoom, reconcileApprovedSeatNames, SHARED_PROTOCOL, type ParticipantCommand, type RoomReply, type RoomRequest } from './shared-room-protocol'
 import { clearRoomPresence, expireRoomPresence, forgetRoomDevice, noteRoomRequest } from './shared-room-presence'
 
 export type RoomInvitation = { protocol: number; roomId: string; url: string; publicKey: string; invitationSecret: string }
@@ -26,7 +26,10 @@ export async function startHosting(room: Room) {
   if (!localRoomsAvailable()) throw new Error('Local rooms are available in the Android app.')
   if (room.joinedCopy) throw new Error('Only the original host can host this room.')
   if (!room.state && !room.vengeanceState) throw new Error('Start this match before enabling joining.')
-  if (!room.sharedHost) saveRoom({ ...room, sharedHost: emptySharedHost() })
+  const current = getLibrary().rooms.find(item => item.id === room.id) ?? room
+  const reconciled = reconcileApprovedSeatNames(current)
+  if (reconciled !== current) saveRoom(reconciled)
+  else if (!current.sharedHost) saveRoom({ ...current, sharedHost: emptySharedHost() })
   const native = await transport.start({ roomId: room.id })
   clearRoomPresence(room.id)
   publishHosting({ ...native, protocol: SHARED_PROTOCOL, roomId: room.id })

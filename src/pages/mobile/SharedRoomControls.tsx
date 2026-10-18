@@ -90,8 +90,11 @@ export function SharedRoomDialog({ roomId, onClose, initialView }: { roomId: str
         <div className="sharing-player-cards">{grants.map(([device, grant]) => {
           const player = room.roster.find(p => p.id === (grant.playerId ?? grant.requestedSeat))
           return <article className={`sharing-player-card ${grant.status}`} key={device}>
-            <div className="sharing-player-top">{player && <PlayerAvatar player={player} className="mini-avatar" />}<div><strong>{grant.name}</strong><span><Link2 size={12} /> {player ? `${player.name}’s table` : 'Seat removed'}</span></div></div>
-            <div className="sharing-player-bottom"><SeatConnectionBadge status={grant.status === 'pending' ? 'pending' : onlineDevices.has(device) ? 'connected' : 'away'} />{grant.status === 'approved' && <button className="sharing-release" disabled={busy} onClick={() => void change(() => { saveRoom(decideSeat(currentRoom(), device, false)); forgetRoomDevice(roomId, device) })}>Release seat</button>}</div>
+            <div className="sharing-player-main">
+              {player && <PlayerAvatar player={player} className="mini-avatar" />}
+              <div className="sharing-player-info"><strong>{grant.name}</strong>{grant.status === 'pending' && <span><Link2 size={12} /> {player ? `${player.name}’s table` : 'Seat removed'}</span>}<SeatConnectionBadge status={grant.status === 'pending' ? 'pending' : onlineDevices.has(device) ? 'connected' : 'away'} /></div>
+              {grant.status === 'approved' && <button className="sharing-release" disabled={busy} onClick={() => void change(() => { saveRoom(decideSeat(currentRoom(), device, false)); forgetRoomDevice(roomId, device) })}>Release</button>}
+            </div>
             {grant.status === 'pending' && <div className="sharing-approval-actions"><button className="sharing-action secondary" disabled={busy} onClick={() => void change(() => { saveRoom(decideSeat(currentRoom(), device, false)); forgetRoomDevice(roomId, device) })}>Decline</button><button className="sharing-action primary" disabled={busy} onClick={() => void change(() => saveRoom(decideSeat(currentRoom(), device, true)))}><Check size={16} /> Approve</button></div>}
           </article>
         })}</div>

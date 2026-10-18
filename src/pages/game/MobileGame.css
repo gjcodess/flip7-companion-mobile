@@ -129,6 +129,36 @@
 }
 .banker-shell .banker-turn-callout > span { font-size: 8px; color: #526783; }
 .banker-shell .banker-turn-callout > b { font-size: 13px; overflow-wrap: anywhere; min-width: 0; }
+:is(.banker-shell, .demo-shell) .banker-turn-callout.has-follow-toggle {
+  position: relative;
+  padding-left: 8px !important;
+  padding-right: 84px !important;
+}
+:is(.banker-shell, .demo-shell) .follow-turns-toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  min-width: 66px;
+  min-height: 27px;
+  padding: 3px 7px;
+  border: 1.5px solid #132d67;
+  border-radius: 7px;
+  background: #fffdf3;
+  color: #132d67;
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 850;
+  cursor: pointer;
+}
+:is(.banker-shell, .demo-shell) .follow-turns-toggle[aria-pressed='true'] {
+  background: #132d67;
+  color: #fffdf3;
+}
+:is(.banker-shell, .demo-shell) .follow-turns-toggle:focus-visible {
+  outline: 2px solid #132d67;
+  outline-offset: 2px;
+}
 .banker-shell .banker-player-strip {
   padding: 16px 16px 17px;
   gap: 10px;
@@ -153,15 +183,18 @@
 .banker-shell .banker-player-tab.stayed { background-color: #eef6d9; box-shadow: 2px 3px 0 #4d8a45; }
 .banker-shell .banker-player-tab.selected:is(.busted, .frozen, .stayed) { background-color: #ffe05c; }
 .banker-shell .banker-player-tab .mini-avatar { grid-row: 1 / span 2; border-radius: 9px; border-width: 1.5px; box-shadow: 1px 2px 0 #132d6726; }
+.banker-shell .banker-player-tab .host-player-avatar { position: relative; grid-column: 1; grid-row: 1 / span 2; align-self: center; width: 28px; height: 28px; }
+.banker-shell .banker-player-tab .host-player-avatar .mini-avatar { width: 100%; height: 100%; }
 .banker-shell .banker-player-tab .opponent-copy { grid-column: 2; grid-row: 1; gap: 2px; padding-bottom: 0; }
 .banker-shell .banker-player-tab > strong { position: static; grid-column: 2; grid-row: 2; }
 .seat-connection-badge { display: inline-flex; align-items: center; gap: 5px; width: max-content; max-width: 100%; padding: 3px 6px; border: 1px solid #317f58; border-radius: 5px; background: #e0f4e6; color: #245b3b; font-size: 9px; font-weight: 850; line-height: 1.1; white-space: nowrap; }
 .seat-connection-badge i { display: block; width: 6px; height: 6px; flex: 0 0 6px; border-radius: 50%; background: currentColor; }
 .seat-connection-badge.away { border-color: #9ba4b1; background: #edf0f2; color: #566173; }
 .seat-connection-badge.pending { border-color: #b98438; background: #fff0ce; color: #805521; }
-.seat-connection-badge.compact { vertical-align: 1px; gap: 3px; padding: 2px 3px; margin-left: 4px; font-size: 7px; letter-spacing: .02em; }
-.seat-connection-badge.compact i { width: 5px; height: 5px; flex-basis: 5px; }
-.banker-player-tab .seat-connection-badge.compact { vertical-align: 1px; }
+.host-player-avatar .seat-connection-badge.compact { position: absolute; top: -4px; right: -4px; display: block; width: 12px; height: 12px; min-width: 12px; padding: 0; border: 2px solid #fffdf3; border-radius: 50%; background: #258b50; box-shadow: 0 0 0 1px #132d67; }
+.host-player-avatar .seat-connection-badge.compact.away { background: #8792a0; }
+.host-player-avatar .seat-connection-badge.compact.pending { background: #e8a73c; }
+.host-player-avatar .seat-connection-badge.compact i { display: none; }
 :is(.banker-shell, .demo-shell) .table-area { background: none; padding-top: 18px; }
 :is(.banker-shell, .demo-shell) .section-kicker { align-items: center; flex-wrap: wrap; font-size: 10px; letter-spacing: .06em; line-height: 1.6; }
 :is(.banker-shell, .demo-shell) .table-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; }

@@ -3,7 +3,7 @@ import { bankerReducer, bankerInitialState } from '../game/bankerGame'
 import { vengeanceInitialState, vengeanceReducer } from '../game/vengeanceGame'
 import { pickerCards } from '../game/cards'
 import type { Room } from './room-store'
-import { applyParticipantCommand, decideSeat, emptySharedHost, processRoomRequest, publicRoom, SHARED_PROTOCOL, vengeanceDecisionOwner, type RoomRequest } from './shared-room-protocol'
+import { applyParticipantCommand, decideSeat, emptySharedHost, processRoomRequest, publicRoom, reconcileApprovedSeatNames, SHARED_PROTOCOL, vengeanceDecisionOwner, type RoomRequest } from './shared-room-protocol'
 
 const deviceId = '12345678-1234-1234-1234-123456789abc', secret = 'abcdefab-1234-1234-1234-123456789abcdefab-1234'
 const secondDevice = '22345678-1234-1234-1234-123456789abc'
@@ -61,6 +61,15 @@ describe('shared room seat authorization', () => {
     expect((vengeance ? room.vengeanceState : room.state)?.players[1].name).toBe('Wang')
     expect((vengeance ? room.vengeanceState : room.state)?.past.every(snapshot => snapshot.players[1].name === 'Wang')).toBe(true)
     expect(processRoomRequest(room, request('poll')).reply.room?.roster[1].name).toBe('Wang')
+  })
+  it('repairs names from seats approved before the table-name fix', () => {
+    const room = fixture()
+    const seat = room.roster[1].id
+    room.sharedHost!.grants[deviceId] = { secret, name: 'Wang', requestedSeat: seat, playerId: seat, status: 'approved' }
+    const repaired = reconcileApprovedSeatNames(room)
+    expect(repaired.roster[1].name).toBe('Wang')
+    expect(repaired.state!.players[1].name).toBe('Wang')
+    expect(reconcileApprovedSeatNames(repaired)).toBe(repaired)
   })
   it('leaving releases control without removing any player or card', () => {
     const room = record(approved()).next

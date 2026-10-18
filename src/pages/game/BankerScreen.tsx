@@ -110,6 +110,7 @@ export function BankerScreen({ roomId }: { roomId: string }) {
   const room = useLibrary().rooms.find(r => r.id === roomId)
   const onlineDevices = useRoomPresence(roomId)
   const [state, setState] = useState(() => room?.state ?? bankerInitialState())
+  const [followTurns, setFollowTurns] = useState(() => { try { return localStorage.getItem('flip7.host.follow-turns.v1') !== 'false' } catch { return true } })
   const stateRef = useRef(state)
   const pendingSaveRef = useRef<BankerState | null>(null)
   const [saveError, setSaveError] = useState('')
@@ -125,9 +126,12 @@ export function BankerScreen({ roomId }: { roomId: string }) {
     if (action.type === 'reset') { navigate('/new'); return }
     if (pendingSaveRef.current) return
     const current = getLibrary().rooms.find(r => r.id === roomId)?.state ?? stateRef.current
-    const next = bankerReducer(current, action)
+    let next = bankerReducer(current, action)
+    if (!followTurns && action.type !== 'select-player' && next !== current && current.selectedPlayerId && next.players.some(player => player.id === current.selectedPlayerId)) {
+      next = { ...next, selectedPlayerId: current.selectedPlayerId }
+    }
     if (next !== current) persist(next)
-  }, [navigate, persist])
+  }, [navigate, persist, roomId, followTurns])
   const [restartOpen, setRestartOpen] = useState(false)
   const [newGamePromptOpen, setNewGamePromptOpen] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -182,9 +186,16 @@ export function BankerScreen({ roomId }: { roomId: string }) {
   }, [allSettled, state.phase])
 
   useEffect(() => {
-    if (state.phase !== 'round' || !turnPlayerId) return
+    if (!followTurns || state.phase !== 'round' || !turnPlayerId) return
     playerTabRefs.current[turnPlayerId]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
-  }, [state.phase, turnPlayerId])
+  }, [followTurns, state.phase, turnPlayerId])
+
+  const toggleFollowTurns = () => {
+    const next = !followTurns
+    setFollowTurns(next)
+    try { localStorage.setItem('flip7.host.follow-turns.v1', String(next)) } catch { /* Keep this session's choice. */ }
+    if (next && turnPlayerId && selectedPlayer?.id !== turnPlayerId) dispatch({ type: 'select-player', playerId: turnPlayerId })
+  }
 
   if (!room || !room.state) return <div className="room-app-shell"><main className="room-app-main"><h1>{room ? 'This room is ready to start.' : 'This room is unavailable.'}</h1><button className="room-button" onClick={() => navigate(room ? `/room?id=${roomId}` : '/landing')}>Back to rooms</button></main></div>
 
@@ -256,9 +267,9 @@ export function BankerScreen({ roomId }: { roomId: string }) {
     <header className="topbar banker-topbar"><RoomSharingButton roomId={roomId} onClick={() => setTvShareOpen(true)} /><span className="game-topbar-brand"><img src="/assets/flip7-title-logo.webp" alt="Flip 7" /></span><button className="brand-button menu-button" aria-label="Open game menu" title="Menu" onClick={() => setShowMenu(true)}><Menu size={20} /></button></header>
     {saveError && <div className="room-game-save-error" role="alert"><span>{saveError}</span><button onClick={() => { if (pendingSaveRef.current) persist(pendingSaveRef.current) }}>Retry save</button></div>}
     <section className="match-strip"><div><span>ROUND</span><b>{String(state.roundNumber).padStart(2, '0')}</b></div><div className="target"><span>FIRST TO</span><b>{state.targetScore}</b></div><div><span>VIEWING</span><b>{selectedPlayer?.name || '—'}</b></div></section>
-    <div className="banker-turn-callout" role="status"><span>CURRENT TURN</span><b>{turnPlayer?.name || '—'}</b></div>
+    <div className="banker-turn-callout has-follow-toggle" role="status"><span>CURRENT TURN</span><b>{turnPlayer?.name || '—'}</b><button type="button" className="follow-turns-toggle" aria-label={`Follow turns ${followTurns ? 'on' : 'off'}`} aria-pressed={followTurns} title="Follow current turn" onClick={toggleFollowTurns}>Follow</button></div>
     {forcedTurn && forcedTurn.remaining > 0 && <ForcedDrawStatus label="Flip Three" remaining={forcedTurn.remaining} total={3} />}
-    <section className="banker-player-strip" aria-label="Player tables">{state.players.map((player) => <button key={player.id} ref={(element) => { playerTabRefs.current[player.id] = element }} className={`banker-player-tab opponent ${player.id === selectedPlayer?.id ? 'selected' : ''} ${player.id === turnPlayerId ? 'turn' : ''} ${statusClass(player)}`} aria-current={player.id === turnPlayerId ? 'step' : undefined} onClick={() => { dispatch({ type: 'select-player', playerId: player.id }); setOrganized(false); setSelectedCardIndex(null) }}><PlayerAvatar player={player} className="mini-avatar" /><span className="opponent-copy"><b>{player.name}<SeatConnectionBadge status={seatConnection(room, player.id, onlineDevices)} compact /></b><span>{playerTabSummary(player)}</span></span><strong><small>Total pts:</small> <b>{player.totalScore}</b></strong></button>)}</section>
+    <section className="banker-player-strip" aria-label="Player tables">{state.players.map((player) => <button key={player.id} ref={(element) => { playerTabRefs.current[player.id] = element }} className={`banker-player-tab opponent ${player.id === selectedPlayer?.id ? 'selected' : ''} ${player.id === turnPlayerId ? 'turn' : ''} ${statusClass(player)}`} aria-current={player.id === turnPlayerId ? 'step' : undefined} onClick={() => { dispatch({ type: 'select-player', playerId: player.id }); setOrganized(false); setSelectedCardIndex(null) }}><span className="host-player-avatar"><PlayerAvatar player={player} className="mini-avatar" /><SeatConnectionBadge status={seatConnection(room, player.id, onlineDevices)} compact /></span><span className="opponent-copy"><b>{player.name}</b><span>{playerTabSummary(player)}</span></span><strong><small>Total pts:</small> <b>{player.totalScore}</b></strong></button>)}</section>
     <GameTable table={table} tableCardIds={cardIds} isVoidedCard={(index) => Boolean(tableEntries[index]?.voided)} cardResolution={(index) => tableEntries[index]?.resolution} score={derived?.score ?? 0} flipSevenBonus={derived?.flipSevenBonus ?? 0} busted={selectedPlayer?.round.status === 'busted'} frozen={selectedPlayer?.round.status === 'frozen'} submitting={false} interactionLocked={interactionLocked || Boolean(saveError)} canEditCards={canEdit} canAddCards={canRecordCards} confirmedAt={terminal ? 'banker' : null} isStaying={selectedPlayer?.round.status === 'stayed'} isOrganized={organized} playerName={selectedPlayer?.name ?? 'Player'} isHost={false} onOrganize={organize} onOpenPicker={() => { if (!interactionLocked && canRecordCards) openPicker() }} onSelectCard={(index) => { if (!interactionLocked) setSelectedCardIndex(index) }} />
     <GameControls isHost allPlayersSettled={allSettled} submitting={false} canEditCards={canEdit} canSettle={canSettle} canUseHistory={state.phase === 'round'} hasCardsOrRemoval={state.past.length > 0} hasRedo={state.future.length > 0} isStaying={selectedPlayer?.round.status === 'stayed'} busted={selectedPlayer?.round.status === 'busted'} frozen={selectedPlayer?.round.status === 'frozen'} playerStatus={playerStatus} confirmedAt={terminal ? 'banker' : null} onNextRound={newRound} onUndo={() => dispatch({ type: 'undo' })} onStay={() => selectedPlayer && dispatch({ type: 'settle-player', playerId: selectedPlayer.id })} onRedo={() => dispatch({ type: 'redo' })} />
   </main><aside className="desktop-marquee right"><div>PRESS<br />YOUR<br />LUCK</div></aside>
