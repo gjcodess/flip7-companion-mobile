@@ -116,6 +116,15 @@
 }
 :is(.banker-shell, .demo-shell) .match-strip span { font-size: 8px; line-height: 1.6; letter-spacing: .12em; }
 :is(.banker-shell, .demo-shell) .match-strip b { font-size: 21px; letter-spacing: -.6px; }
+:is(.banker-shell, .demo-shell) .match-strip .viewing b {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  overflow-wrap: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 :is(.banker-shell, .demo-shell) .match-strip .target { border-inline: 1px dashed #132d6760; }
 .banker-shell .banker-turn-callout {
   justify-content: center;

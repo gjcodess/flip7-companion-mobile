@@ -972,7 +972,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
             <span>{demo ? 'PRACTICE TO' : 'FIRST TO'}</span>
             <b>{state.targetScore}</b>
           </div>
-          <div>
+          <div className="viewing">
             <span>VIEWING</span>
             <b>{selected?.name || '—'}</b>
           </div>
