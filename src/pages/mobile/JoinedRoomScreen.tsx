@@ -7,6 +7,7 @@ import { getLibrary, newProfile, savePlayerProfile, updateLibrary, useLibrary } 
 import { useAppNavigation, useNavigationGuard } from '../../lib/navigation'
 import { connectInvitation, formatRoomCode, invitationCode, localRoomsAvailable, normalizeRoomCode, parseInvitation, readJoinedSession, requestJoined, resolveInvitation, submitJoined } from '../../lib/shared-room'
 import { type ParticipantCommand, type RoomReply } from '../../lib/shared-room-protocol'
+import { PageArtwork } from './PageArtwork'
 import { JoinedGameView } from './JoinedGameView'
 import './SharedRooms.css'
 
@@ -224,7 +225,8 @@ export function JoinedRoomScreen({ historyId }: { historyId?: string }) {
 
   return <>
     {room && (!live || reply?.status === 'approved') ? <JoinedGameView key={room.id} room={room} owner={owner} live={live} online={online} busy={busy} pendingAction={pendingAction} approved={reply?.status === 'approved'} error={error} canReconnect={canReconnect} onSend={send} onReconnect={reconnectSaved} onRelease={leaveSeat} onExit={() => navigate('/landing')} onDelete={!live && savedRoom ? () => setDeletePrompt(true) : undefined} /> : <div className={`room-app-shell edition-${edition}`}><main className="room-app-main shared-join-page">
-      <header className="shared-join-nav"><button className="shared-back" onClick={() => navigate('/landing')}><ArrowLeft size={18} /> Your rooms</button><img src={edition === 'vengeance' ? '/assets/flip7-vengeance-logo.webp' : '/assets/flip7-title-logo.webp'} alt="Flip 7" /></header>
+      <PageArtwork edition={edition} />
+      <header className="shared-join-nav"><button className="shared-back" onClick={() => navigate('/landing')}><ArrowLeft size={18} /> Your rooms</button></header>
       <section className="room-welcome shared-join-heading"><span className="room-kicker">PLAY TOGETHER</span><h1>{live ? reply?.roomName ?? 'Finding your room…' : <>Join a<br /><em>nearby room.</em></>}</h1></section>
       {!live && <>
         <div className="shared-network-tip"><Wifi size={20} /><div><b>Same Wi-Fi or hotspot as the host</b></div></div>
