@@ -5,7 +5,7 @@ import { PlayerAvatar } from '../../components/PlayerAvatar'
 import { getLibrary, saveRoom, useLibrary } from '../../lib/room-store'
 import { decideSeat } from '../../lib/shared-room-protocol'
 import { forgetRoomDevice, useRoomPresence } from '../../lib/shared-room-presence'
-import { invitationText, localRoomsAvailable, startHosting, stopHosting, useHostedRoom } from '../../lib/shared-room'
+import { formatRoomCode, invitationCode, invitationText, localRoomsAvailable, startHosting, stopHosting, useHostedRoom } from '../../lib/shared-room'
 import { useTvSession } from '../../lib/tv-share'
 import { TvSharePanel } from './TvShareDialog'
 import { useRoomSheetMotion } from '../../lib/use-room-sheet-motion'
@@ -36,11 +36,12 @@ export function SharedRoomDialog({ roomId, onClose, initialView }: { roomId: str
   const waiting = grants.filter(([, grant]) => grant.status === 'pending').length
   const approved = grants.filter(([, grant]) => grant.status === 'approved').length
   const connected = grants.filter(([device, grant]) => grant.status === 'approved' && onlineDevices.has(device)).length
+  const code = active && hosted ? invitationCode(hosted) : ''
   useEffect(() => { dialog.current?.showModal() }, [])
   useEffect(() => {
     let cancelled = false
     setQr(''); setCopied(false)
-    if (active && hosted) void import('qrcode').then(module => module.default.toDataURL(invitationText(hosted), { width: 720, margin: 4, errorCorrectionLevel: 'M', color: { dark: '#132d67', light: '#ffffff' } })).then(value => { if (!cancelled) setQr(value) }).catch(() => { if (!cancelled) setError('Could not display the QR code. Copy the invitation instead.') })
+    if (active && hosted) void import('qrcode').then(module => module.default.toDataURL(invitationText(hosted), { width: 720, margin: 4, errorCorrectionLevel: 'M', color: { dark: '#132d67', light: '#ffffff' } })).then(value => { if (!cancelled) setQr(value) }).catch(() => { if (!cancelled) setError('Could not display the QR code. Share the room code instead.') })
     return () => { cancelled = true }
   }, [active, hosted])
   if (!room) return null
@@ -71,18 +72,22 @@ export function SharedRoomDialog({ roomId, onClose, initialView }: { roomId: str
     <div className="sharing-modal-body">
       {!localRoomsAvailable() ? <p className="sharing-description">Room sharing is available in the Android app.</p> : tab === 'tv' ? <TvSharePanel roomId={roomId} /> : !active ? <>
         <div className="sharing-intro"><span className="sharing-hero-icon"><Users size={30} /></span><h3>Play together</h3></div>
-        <ol className="sharing-steps"><li><span>1</span><p>Connect to the same <b>Wi-Fi or hotspot</b>.</p></li><li><span>2</span><p>Share your QR code and <b>approve each seat</b>.</p></li><li><span>3</span><p>Keep the room open. <b>Your phone is the host.</b></p></li></ol>
+        <ol className="sharing-steps"><li><span>1</span><p>Connect to the same <b>Wi-Fi or hotspot</b>.</p></li><li><span>2</span><p>Share your <b>QR code or 6-digit code</b> and approve each seat.</p></li><li><span>3</span><p>Keep the room open. <b>Your phone is the host.</b></p></li></ol>
         <button className="sharing-action primary" disabled={busy || !room.state && !room.vengeanceState} onClick={() => void change(() => startHosting(currentRoom()))}><QrCode size={18} />{busy ? 'Starting…' : hosted ? 'Host this room instead' : 'Open room for friends'}</button>
         {!room.state && !room.vengeanceState && <p className="sharing-description">Start the game before inviting players.</p>}
       </> : tab === 'invite' ? <section aria-label="Invite friends">
-        <div className="sharing-section-heading"><span className="sharing-section-icon"><QrCode size={20} /></span><div><h3>Room QR code</h3></div></div>
+        <div className="sharing-section-heading"><span className="sharing-section-icon"><QrCode size={20} /></span><div><h3>Invite to room</h3><p>Scan the QR code or enter the 6-character code</p></div></div>
         <div className="sharing-qr-ticket">
           <div className="sharing-ticket-label"><Wifi size={15} /> SAME WI-FI OR HOTSPOT</div>
           {qr ? <img className="sharing-qr-image" src={qr} alt="Room invitation QR code" /> : <div className="sharing-qr-loading" role="status"><QrCode size={36} /><span>Preparing your invitation…</span></div>}
-          <p>Scan from <b>Join a nearby room</b>.</p>
+          <div className="sharing-room-code-box">
+            <span>ROOM CODE</span>
+            <strong>{formatRoomCode(code)}</strong>
+          </div>
+          <p>Scan or enter code in <b>Join a nearby room</b>.</p>
         </div>
-        <button className="sharing-action secondary" disabled={busy} onClick={() => void change(async () => { await navigator.clipboard.writeText(invitationText(hosted!)); setCopied(true) })}>{copied ? <Check size={18} /> : <Copy size={18} />}{copied ? 'Invitation copied' : 'Copy invitation'}</button>
-        <span className="sharing-status-text" role="status">{copied ? 'Invitation copied' : ''}</span>
+        <button className="sharing-action secondary" disabled={busy} onClick={() => void change(async () => { await navigator.clipboard.writeText(code); setCopied(true) })}>{copied ? <Check size={18} /> : <Copy size={18} />}{copied ? `Code ${formatRoomCode(code)} copied` : `Copy room code (${formatRoomCode(code)})`}</button>
+        <span className="sharing-status-text" role="status">{copied ? 'Room code copied' : ''}</span>
         {waiting > 0 && <button className="sharing-request-notice" onClick={() => setTab('players')}><Users size={17} /><span>{waiting} seat request{waiting === 1 ? '' : 's'} waiting</span><ChevronRight size={17} /></button>}
       </section> : <section aria-label="Seats and requests">
         <div className="sharing-section-heading"><span className="sharing-section-icon"><Users size={20} /></span><div><h3>Players</h3>{grants.length > 0 && <p>{connected} connected · {approved} approved{waiting ? ` · ${waiting} waiting` : ''}</p>}</div></div>

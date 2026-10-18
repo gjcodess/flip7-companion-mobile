@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { SHARED_PROTOCOL } from './shared-room-protocol'
-const native = vi.hoisted(() => ({ request: vi.fn(), start: vi.fn(), stop: vi.fn() }))
+const native = vi.hoisted(() => ({ request: vi.fn(), start: vi.fn(), stop: vi.fn(), resolveCode: vi.fn() }))
 vi.mock('@capacitor/core', () => ({ Capacitor: { getPlatform: () => 'android' }, registerPlugin: () => native }))
 const invitation = { protocol: SHARED_PROTOCOL, roomId: 'room-1234', url: 'http://192.168.43.1:32100/room/room-1234', publicKey: 'A'.repeat(392), invitationSecret: 'A'.repeat(44) }
 let saved: Map<string, string>
@@ -15,6 +15,17 @@ describe('invitations and reconnect requests', () => {
     expect(shared.parseInvitation(shared.invitationText(invitation))).toEqual(invitation)
     for (const host of ['8.8.8.8', '127.0.0.1', 'example.com', '192.168.43.1@evil.example']) expect(() => shared.parseInvitation(shared.invitationText({ ...invitation, url: `http://${host}:32100/room/room-1234` }))).toThrow('local Wi-Fi')
     expect(() => shared.parseInvitation(shared.invitationText({ ...invitation, protocol: 100 }))).toThrow('incompatible')
+  })
+  it('derives, formats, and resolves a 6-character alphanumeric room code', async () => {
+    const shared = await import('./shared-room')
+    const code = shared.invitationCode(invitation)
+    expect(code).toMatch(/^[A-Z0-9]{6}$/)
+    expect(shared.formatRoomCode('a7k-9m2')).toBe('A7K 9M2')
+    native.resolveCode.mockResolvedValueOnce({ ...invitation, code })
+    const resolved = await shared.resolveInvitation('a7k 9m2')
+    expect(native.resolveCode).toHaveBeenCalledWith({ code: 'A7K9M2' })
+    expect(resolved.roomId).toBe('room-1234')
+    await expect(shared.resolveInvitation('ABC')).rejects.toThrow('6-character')
   })
   it('preserves the device approval credentials when rescanning a changed host address', async () => {
     const shared = await import('./shared-room')

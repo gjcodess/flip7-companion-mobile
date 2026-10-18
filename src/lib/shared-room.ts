@@ -5,13 +5,14 @@ import { getLibrary, saveJoinedRoom, saveRoom, type Room } from './room-store'
 import { emptySharedHost, processRoomRequest, publicRoom, reconcileApprovedSeatNames, SHARED_PROTOCOL, type ParticipantCommand, type RoomReply, type RoomRequest } from './shared-room-protocol'
 import { clearRoomPresence, expireRoomPresence, forgetRoomDevice, noteRoomRequest } from './shared-room-presence'
 
-export type RoomInvitation = { protocol: number; roomId: string; url: string; publicKey: string; invitationSecret: string }
+export type RoomInvitation = { protocol: number; roomId: string; url: string; publicKey: string; invitationSecret: string; code?: string }
 type NativeRoom = {
   start(options: { roomId: string }): Promise<Omit<RoomInvitation, 'protocol' | 'roomId'>>
   stop(): Promise<void>
   drain(): Promise<{ messages: { id: string; request: RoomRequest }[] }>
   reply(options: { id: string; response: RoomReply }): Promise<void>
   request(options: RoomInvitation & { request: RoomRequest }): Promise<RoomReply>
+  resolveCode(options: { code: string }): Promise<RoomInvitation>
 }
 const transport = registerPlugin<NativeRoom>('SharedRoom')
 const listeners = new Set<() => void>()
@@ -21,6 +22,29 @@ export function blockSharedHost(roomId: string, blocked: boolean) { if (blocked)
 export const localRoomsAvailable = () => Capacitor.getPlatform() === 'android'
 export function useHostedRoom() { return useSyncExternalStore(callback => { listeners.add(callback); return () => listeners.delete(callback) }, () => hosting) }
 function publishHosting(next: RoomInvitation | null) { hosting = next; listeners.forEach(callback => callback()) }
+
+const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+function deriveRoomCode(seed: string): string {
+  let hash = 2166136261
+  for (let i = 0; i < seed.length; i++) hash = Math.imul(hash ^ seed.charCodeAt(i), 16777619) >>> 0
+  let out = ''
+  for (let i = 0; i < 6; i++) {
+    out += CODE_ALPHABET[hash % CODE_ALPHABET.length]
+    hash = Math.imul(hash ^ (i + 17), 2246822519) >>> 0
+  }
+  return out
+}
+export function normalizeRoomCode(value: string): string {
+  return value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6)
+}
+export function formatRoomCode(code: string): string {
+  const clean = normalizeRoomCode(code)
+  return clean.length > 3 ? `${clean.slice(0, 3)} ${clean.slice(3)}` : clean
+}
+export function invitationCode(invitation: RoomInvitation): string {
+  const explicit = invitation.code ? normalizeRoomCode(invitation.code) : ''
+  return explicit.length === 6 ? explicit : deriveRoomCode(`${invitation.roomId}:${invitation.invitationSecret}`)
+}
 
 export async function startHosting(room: Room) {
   if (!localRoomsAvailable()) throw new Error('Local rooms are available in the Android app.')
@@ -32,22 +56,34 @@ export async function startHosting(room: Room) {
   else if (!current.sharedHost) saveRoom({ ...current, sharedHost: emptySharedHost() })
   const native = await transport.start({ roomId: room.id })
   clearRoomPresence(room.id)
-  publishHosting({ ...native, protocol: SHARED_PROTOCOL, roomId: room.id })
+  const full: RoomInvitation = { ...native, protocol: SHARED_PROTOCOL, roomId: room.id }
+  full.code = invitationCode(full)
+  publishHosting(full)
 }
 export async function stopHosting() { await transport.stop(); if (hosting) clearRoomPresence(hosting.roomId); publishHosting(null) }
 export const invitationText = (invitation: RoomInvitation) => `flip7-local:${JSON.stringify(invitation)}`
 export function parseInvitation(raw: string): RoomInvitation {
   const text = raw.trim()
-  if (!text.startsWith('flip7-local:') || text.length > 3000) throw new Error('Scan or paste a Flip7 room invitation.')
+  if (!text.startsWith('flip7-local:') || text.length > 3000) throw new Error('Scan a Flip 7 QR code or enter a 6-character room code.')
   let data: RoomInvitation
   try { data = JSON.parse(text.slice('flip7-local:'.length)) } catch { throw new Error('This room invitation is damaged.') }
   if (!data || data.protocol !== SHARED_PROTOCOL) throw new Error('App versions are incompatible. Update both apps.')
   if (typeof data.roomId !== 'string' || !/^[a-zA-Z0-9-]{1,80}$/.test(data.roomId) || typeof data.publicKey !== 'string' || !/^[a-zA-Z0-9+/=]{300,600}$/.test(data.publicKey) || typeof data.invitationSecret !== 'string' || !/^[a-zA-Z0-9+/=]{40,100}$/.test(data.invitationSecret)) throw new Error('Invalid room invitation.')
+  if (data.code !== undefined && (typeof data.code !== 'string' || !/^[A-Z0-9]{6}$/i.test(data.code))) throw new Error('Invalid room code.')
   let url: URL
   try { url = new URL(data.url) } catch { throw new Error('Invalid local-room address.') }
   const parts = url.hostname.split('.').map(Number)
   if (url.protocol !== 'http:' || url.username || url.password || url.search || url.hash || !url.port || url.pathname !== `/room/${data.roomId}` || parts.length !== 4 || parts.some(n => !Number.isInteger(n) || n < 0 || n > 255) || !(parts[0] === 10 || parts[0] === 192 && parts[1] === 168 || parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31)) throw new Error('Rooms must use a local Wi-Fi or hotspot address.')
   return data
+}
+export async function resolveInvitation(raw: string): Promise<RoomInvitation> {
+  const text = raw.trim()
+  if (text.startsWith('flip7-local:')) return parseInvitation(text)
+  const code = normalizeRoomCode(text)
+  if (code.length !== 6) throw new Error('Enter the 6-character room code from your host.')
+  if (!localRoomsAvailable()) throw new Error('Join using the Android app on the same Wi-Fi or hotspot.')
+  const resolved = await transport.resolveCode({ code })
+  return parseInvitation(invitationText({ ...resolved, protocol: resolved.protocol ?? SHARED_PROTOCOL }))
 }
 
 export function useHostRoomPump(path: string, search: string) {

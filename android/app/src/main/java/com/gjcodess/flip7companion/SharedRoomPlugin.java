@@ -30,10 +30,14 @@ public class SharedRoomPlugin extends Plugin {
     private final Set<Socket> sockets = ConcurrentHashMap.newKeySet();
     private final SecureRandom random = new SecureRandom();
     private volatile ServerSocket server;
+    private volatile DatagramSocket beacon;
     private volatile KeyPair keys;
     private volatile String hostedRoom;
+    private volatile String roomCode;
     private volatile String invitationSecret;
     private volatile String address;
+    private static final int DISCOVERY_PORT = 41777;
+    private static final String CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private static final int MAX_BODY = 12 * 1024 * 1024;
     private static class Incoming {
         final String id = UUID.randomUUID().toString();
@@ -44,6 +48,11 @@ public class SharedRoomPlugin extends Plugin {
     private static String b64(byte[] bytes) { return Base64.encodeToString(bytes, Base64.NO_WRAP); }
     private static byte[] un64(String value) { return Base64.decode(value, Base64.DEFAULT); }
     private byte[] bytes(int count) { byte[] value = new byte[count]; random.nextBytes(value); return value; }
+    private String newRoomCode() {
+        StringBuilder out = new StringBuilder(6);
+        for (int i = 0; i < 6; i++) out.append(CODE_ALPHABET.charAt(random.nextInt(CODE_ALPHABET.length())));
+        return out.toString();
+    }
     private static Cipher rsa(int mode, Key key) throws Exception {
         Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPPadding");
         cipher.init(mode, key, new OAEPParameterSpec("SHA-256", "MGF1", MGF1ParameterSpec.SHA256, PSource.PSpecified.DEFAULT));
@@ -80,30 +89,129 @@ public class SharedRoomPlugin extends Plugin {
                                 KeyFactory factory = KeyFactory.getInstance("RSA");
                                 keys = new KeyPair(factory.generatePublic(new X509EncodedKeySpec(un64(prefs.getString("public", "")))), factory.generatePrivate(new PKCS8EncodedKeySpec(un64(prefs.getString("private", "")))));
                                 invitationSecret = prefs.getString("secret", "");
+                                String savedCode = prefs.getString("code", "");
+                                roomCode = savedCode.matches("[A-Z0-9]{6}") ? savedCode : newRoomCode();
                                 port = prefs.getInt("port", 0);
                             } catch (Exception ignored) { keys = null; }
                         }
                         if (keys == null) {
                             KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA"); generator.initialize(2048); keys = generator.generateKeyPair();
                             invitationSecret = b64(bytes(32));
+                            roomCode = newRoomCode();
                         }
                         ServerSocket listener = new ServerSocket(); listener.setReuseAddress(true);
                         try { listener.bind(new InetSocketAddress(lan, port), 24); }
                         catch (IOException occupied) { listener.close(); listener = new ServerSocket(0, 24, lan); }
                         server = listener; address = lan.getHostAddress(); hostedRoom = room;
-                        prefs.edit().putString("room", room).putString("public", b64(keys.getPublic().getEncoded())).putString("private", b64(keys.getPrivate().getEncoded())).putString("secret", invitationSecret).putInt("port", server.getLocalPort()).apply();
+                        prefs.edit().putString("room", room).putString("public", b64(keys.getPublic().getEncoded())).putString("private", b64(keys.getPrivate().getEncoded())).putString("secret", invitationSecret).putString("code", roomCode).putInt("port", server.getLocalPort()).apply();
                         final ServerSocket active = server;
                         Thread accept = new Thread(() -> accept(active), "flip7-room-listener"); accept.setDaemon(true); accept.start();
+                        try {
+                            DatagramSocket udp = new DatagramSocket(null);
+                            udp.setReuseAddress(true);
+                            udp.bind(new InetSocketAddress(DISCOVERY_PORT));
+                            beacon = udp;
+                            Thread discover = new Thread(() -> listenDiscovery(udp), "flip7-room-beacon");
+                            discover.setDaemon(true);
+                            discover.start();
+                        } catch (IOException ignored) { /* QR still works if discovery port is busy */ }
                     }
-                    JSObject result = new JSObject();
-                    result.put("url", "http://" + address + ":" + server.getLocalPort() + "/room/" + hostedRoom);
-                    result.put("publicKey", b64(keys.getPublic().getEncoded()));
-                    result.put("invitationSecret", invitationSecret);
+                    JSObject result = currentInvitation();
                     getActivity().runOnUiThread(() -> getActivity().getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON));
                     call.resolve(result);
                 } catch (Exception error) { closeServer(); call.reject("Could not host: " + error.getMessage()); }
             }
         });
+    }
+    private JSObject currentInvitation() {
+        JSObject result = new JSObject();
+        result.put("url", "http://" + address + ":" + server.getLocalPort() + "/room/" + hostedRoom);
+        result.put("publicKey", b64(keys.getPublic().getEncoded()));
+        result.put("invitationSecret", invitationSecret);
+        result.put("code", roomCode);
+        return result;
+    }
+    private void listenDiscovery(DatagramSocket udp) {
+        byte[] buffer = new byte[512];
+        while (!udp.isClosed()) {
+            try {
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                udp.receive(packet);
+                String query = new String(packet.getData(), packet.getOffset(), packet.getLength(), StandardCharsets.UTF_8).trim();
+                String code = roomCode;
+                ServerSocket active = server;
+                KeyPair pair = keys;
+                if (code != null && active != null && !active.isClosed() && pair != null && query.equalsIgnoreCase("FLIP7_FIND:" + code)) {
+                    JSONObject payload = new JSONObject()
+                        .put("protocol", 1)
+                        .put("roomId", hostedRoom)
+                        .put("code", code)
+                        .put("url", "http://" + address + ":" + active.getLocalPort() + "/room/" + hostedRoom)
+                        .put("publicKey", b64(pair.getPublic().getEncoded()))
+                        .put("invitationSecret", invitationSecret);
+                    byte[] response = payload.toString().getBytes(StandardCharsets.UTF_8);
+                    udp.send(new DatagramPacket(response, response.length, packet.getAddress(), packet.getPort()));
+                }
+            } catch (Exception ignored) {
+                if (udp.isClosed()) break;
+            }
+        }
+    }
+    @PluginMethod
+    public void resolveCode(PluginCall call) {
+        workers.execute(() -> {
+            String raw = call.getString("code", "").trim().toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]", "");
+            if (!raw.matches("[A-Z0-9]{6}")) { call.reject("Enter a 6-character room code."); return; }
+            if (server != null && !server.isClosed() && raw.equalsIgnoreCase(roomCode)) {
+                JSObject own = currentInvitation();
+                own.put("protocol", 1);
+                own.put("roomId", hostedRoom);
+                call.resolve(own);
+                return;
+            }
+            try (DatagramSocket socket = new DatagramSocket()) {
+                socket.setBroadcast(true);
+                socket.setSoTimeout(750);
+                byte[] probe = ("FLIP7_FIND:" + raw).getBytes(StandardCharsets.UTF_8);
+                Set<InetAddress> targets = broadcastTargets();
+                byte[] buffer = new byte[4096];
+                for (int attempt = 0; attempt < 3; attempt++) {
+                    for (InetAddress target : targets) {
+                        try { socket.send(new DatagramPacket(probe, probe.length, target, DISCOVERY_PORT)); }
+                        catch (IOException ignored) {}
+                    }
+                    long deadline = System.currentTimeMillis() + 750;
+                    while (System.currentTimeMillis() < deadline) {
+                        try {
+                            DatagramPacket reply = new DatagramPacket(buffer, buffer.length);
+                            socket.receive(reply);
+                            JSONObject json = new JSONObject(new String(reply.getData(), reply.getOffset(), reply.getLength(), StandardCharsets.UTF_8));
+                            if (raw.equalsIgnoreCase(json.optString("code"))) {
+                                call.resolve(JSObject.fromJSONObject(json));
+                                return;
+                            }
+                        } catch (SocketTimeoutException timeout) { break; }
+                    }
+                }
+                call.reject("Room not found. Check the 6-character code and make sure both phones are on the same Wi-Fi or hotspot.");
+            } catch (Exception error) {
+                call.reject("Could not search for room on your network. Check Wi-Fi or scan the QR code.");
+            }
+        });
+    }
+    private static Set<InetAddress> broadcastTargets() {
+        Set<InetAddress> targets = new LinkedHashSet<>();
+        try { targets.add(InetAddress.getByName("255.255.255.255")); } catch (Exception ignored) {}
+        try {
+            for (NetworkInterface network : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+                if (!network.isUp() || network.isLoopback()) continue;
+                for (InterfaceAddress ia : network.getInterfaceAddresses()) {
+                    InetAddress broadcast = ia.getBroadcast();
+                    if (broadcast instanceof Inet4Address) targets.add(broadcast);
+                }
+            }
+        } catch (Exception ignored) {}
+        return targets;
     }
     @PluginMethod
     public void drain(PluginCall call) {
@@ -218,10 +326,11 @@ public class SharedRoomPlugin extends Plugin {
         return null;
     }
     private synchronized void closeServer() {
+        if (beacon != null) { beacon.close(); beacon = null; }
         if (server != null) try { server.close(); } catch (IOException ignored) {}
         for (Socket socket : sockets) try { socket.close(); } catch (IOException ignored) {}
         for (Incoming request : pending.values()) request.reply.complete("{\"ok\":false,\"error\":\"Hosting stopped.\"}");
-        sockets.clear(); pending.clear(); inbox.clear(); server = null; keys = null; hostedRoom = null; address = null;
+        sockets.clear(); pending.clear(); inbox.clear(); server = null; keys = null; hostedRoom = null; roomCode = null; address = null;
         if (getActivity() != null) getActivity().runOnUiThread(() -> getActivity().getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON));
     }
     @Override protected void handleOnDestroy() { closeServer(); workers.shutdownNow(); }

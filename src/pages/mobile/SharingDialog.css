@@ -59,8 +59,11 @@
 .sharing-section-heading p { color: var(--sharing-muted); font-size: 11px; line-height: 1.5; margin-top: 4px; }
 .sharing-qr-ticket { overflow: hidden; border: 1.5px solid var(--ink); border-radius: 14px; background: var(--sharing-paper); box-shadow: 3px 4px 0 var(--ink); text-align: center; margin-bottom: 19px; }
 .sharing-ticket-label { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 8px; border-bottom: 1.5px solid var(--ink); background: var(--yellow); font-size: 8px; font-weight: 900; letter-spacing: .08em; }
-.sharing-qr-image { display: block; width: min(100%, 236px); height: auto; margin: 3px auto 0; background: #fff; }
-.sharing-qr-ticket > p { padding: 2px 12px 15px; color: var(--sharing-muted); font-size: 11px; line-height: 1.65; }
+.sharing-qr-image { display: block; width: min(100%, 224px); height: auto; margin: 6px auto 0; background: #fff; }
+.sharing-room-code-box { display: grid; gap: 4px; margin: 4px 16px 12px; padding: 10px 12px; border: 1.5px dashed #132d6755; border-radius: 11px; background: var(--cream); }
+.sharing-room-code-box > span { color: var(--sharing-muted); font-size: 8px; font-weight: 900; letter-spacing: .14em; }
+.sharing-room-code-box > strong { color: var(--ink); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 22px; font-weight: 950; letter-spacing: .16em; line-height: 1.15; user-select: all; }
+.sharing-qr-ticket > p { padding: 0 12px 14px; color: var(--sharing-muted); font-size: 11px; line-height: 1.65; }
 .sharing-qr-ticket b { color: var(--ink); }
 .sharing-qr-loading { min-height: 230px; display: grid; place-content: center; justify-items: center; gap: 13px; font-size: 12px; color: var(--sharing-muted); }
 .sharing-modal .sharing-action { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 45px; padding: 10px 13px; border: 1.5px solid var(--ink); border-radius: 11px; background: var(--sharing-paper); color: var(--ink); font-size: 12px; font-weight: 850; line-height: 1.35; box-shadow: 2px 3px 0 var(--ink); }
