@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react'
+import { motion } from 'motion/react'
 import { RotateCcw, X } from 'lucide-react'
+import { useRoomSheetMotion } from '../../lib/use-room-sheet-motion'
 
 export function RestartDialog({ edition = 'classic', disabled = false, onClose, onRestart }: {
   edition?: 'classic' | 'vengeance'
@@ -8,8 +10,9 @@ export function RestartDialog({ edition = 'classic', disabled = false, onClose, 
   onRestart: (scope: 'game' | 'round') => void
 }) {
   const dialog = useRef<HTMLDialogElement>(null)
+  const sheetMotion = useRoomSheetMotion()
   useEffect(() => { dialog.current?.showModal() }, [])
-  return <dialog ref={dialog} className={`room-dialog banker-menu-dialog edition-${edition}`} aria-labelledby="restart-title"
+  return <motion.dialog {...sheetMotion} ref={dialog} className={`room-dialog banker-menu-dialog edition-${edition}`} aria-labelledby="restart-title"
     onCancel={onClose} onClick={event => { if (event.target === event.currentTarget) onClose() }}>
     <div className="room-dialog-heading">
       <div><span className="room-kicker">RESTART</span><h2 id="restart-title">What would you like to restart?</h2></div>
@@ -26,5 +29,5 @@ export function RestartDialog({ edition = 'classic', disabled = false, onClose, 
         <div className="banker-menu-item-text"><strong>Restart whole game</strong><span>Clear all scores and round history. Start again at round 1.</span></div>
       </button>
     </div>
-  </dialog>
+  </motion.dialog>
 }

@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
+import { motion } from 'motion/react'
 import { ChevronRight, Download, Share2, X } from 'lucide-react'
 import { saveGameResults, shareGameResults, type GameResults } from '../../lib/results-sharing'
+import { useRoomSheetMotion } from '../../lib/use-room-sheet-motion'
 
 export function ResultsShareDialog({ roomName, players, history, targetScore, edition, variant, onClose }: GameResults & { onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null)
+  const sheetMotion = useRoomSheetMotion()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -20,7 +23,7 @@ export function ResultsShareDialog({ roomName, players, history, targetScore, ed
       if ((failure as Error).name !== 'AbortError') setError((failure as Error).message)
     } finally { setBusy(false) }
   }
-  return <dialog ref={dialog} className={`room-dialog banker-menu-dialog results-share-dialog${edition === 'vengeance' ? ' edition-vengeance' : ''}`} onCancel={event => { if (busy) event.preventDefault(); else onClose() }} onClick={event => { if (!busy && event.target === event.currentTarget) onClose() }}>
+  return <motion.dialog {...sheetMotion} ref={dialog} className={`room-dialog banker-menu-dialog results-share-dialog${edition === 'vengeance' ? ' edition-vengeance' : ''}`} onCancel={event => { if (busy) event.preventDefault(); else onClose() }} onClick={event => { if (!busy && event.target === event.currentTarget) onClose() }}>
     <div className="room-dialog-heading"><div><span className="room-kicker">FINAL SCORES</span><h2>Share game results</h2></div><button type="button" className="room-icon-button" aria-label="Close sharing options" disabled={busy} onClick={onClose}><X size={20} /></button></div>
     <p>Keep a picture of your final scoreboard or send it to your crew.</p>
     <div className="banker-menu-list">
@@ -30,6 +33,6 @@ export function ResultsShareDialog({ roomName, players, history, targetScore, ed
     {busy && <p className="results-share-status" role="status">Preparing your results image…</p>}
     {notice && <p className="results-share-status" role="status">{notice}</p>}
     {error && <p className="room-error" role="alert">{error}</p>}
-  </dialog>
+  </motion.dialog>
 }
 

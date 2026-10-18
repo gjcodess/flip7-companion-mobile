@@ -124,7 +124,7 @@ Flip7 Companion is built with a **strict offline-first, privacy-by-design philos
 - **Zero user accounts:** No logins, passwords, emails, or phone numbers are required.
 - **Zero online analytics:** No tracking libraries, telemetry beacons, crash reporters, or behavioral analytics are embedded in the App.
 - **Zero advertising:** The App is completely free of ads, advertising SDKs, and marketing trackers.
-- **Zero cloud storage:** All room libraries, player rosters, card histories, and settings live solely on your device.
+- **Zero cloud storage:** Room libraries and settings are stored on devices. Optional shared-room play sends the selected match to approved local participants, who retain independent history copies.
 - **Zero internet requirement:** The App runs in full offline mode without needing an active internet connection.
 
 ### 2. Information Handled by the App
@@ -154,6 +154,10 @@ When you choose to activate the **Show live scores on TV** feature:
 - No data is routed outside your local network boundary, and the server shuts down immediately when you stop sharing or close the room.
 
 ### 5. Storage & Retention on Device
+
+**Optional shared rooms:** The host approves a device for one player seat. Approved devices can view all tables and receive the complete match history; only their own seat and assigned game decisions are editable. The original host remains responsible for corrections and round management. Play pauses when that host is unavailable. Removing a room or revoking access does not erase history already received by another device. Unrelated rooms, the host's profile library, and preferences are not shared.
+
+**Camera and connection credentials:** Optional camera access scans room QR invitations locally. Camera frames and selected QR photos are not uploaded. Shared-room game exchanges encrypt their payloads and use host keys supplied by the invitation. Local device credentials remember approved seats. JSON backups include any stored host approvals and participant history, so treat backup files as private.
 
 - **Storage Location:** All data is stored in the device's sandboxed local application storage (IndexedDB and LocalStorage).
 - **Retention Period:** Game data remains stored on your device indefinitely until you explicitly delete it, clear the application cache/storage, or uninstall the App.
@@ -196,7 +200,8 @@ If you have questions, feedback, or concerns regarding these Terms or our Data P
 | **Internet Required** | **No** — 100% offline functionality |
 | **User Accounts** | **None** — No login or registration required |
 | **External Analytics & Tracking** | **None** — Zero tracking scripts or analytics SDKs |
-| **Third-Party Data Sharing** | **None** — Data never leaves your device |
+| **Cloud Data Sharing** | **None** — Optional room and TV sharing is direct over the local network |
+| **Shared-Room History** | **Device Local** — Approved participants retain their own copies of the full match |
 | **TV Scoreboard Streaming** | **Local Only** — Direct HTTP/WebSocket over local Wi-Fi or hotspot |
 | **Data Storage Location** | **Device Local** — Sandboxed IndexedDB / LocalStorage |
 | **Data Export / Backup** | **Yes** — Portable JSON backup export & restore |

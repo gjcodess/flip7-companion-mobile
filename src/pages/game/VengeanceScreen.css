@@ -1202,12 +1202,12 @@
   box-shadow: 1px 1px 0 #132d67 !important;
 }
 
-/* Room Dialog & Menu Dialog (Centered Floating Modal) */
+/* Vengeance game dialogs share the bottom-sheet treatment. */
 .room-dialog.banker-menu-dialog.edition-vengeance {
   background: #fff7da !important;
   border: 2px solid #132d67 !important;
   border-radius: 20px !important;
-  box-shadow: 5px 5px 0 #f7c244 !important;
+  box-shadow: 5px 6px 0 #132d67 !important;
 }
 
 .room-dialog.banker-menu-dialog.edition-vengeance .room-kicker {
