@@ -65,7 +65,6 @@ function BankerMenuDialog({ onClose, onOpenPlayers, onOpenRules, onOpenTvShare, 
   useEffect(() => { dialog.current?.showModal() }, [])
   return <dialog ref={dialog} className="room-dialog banker-menu-dialog tv-share-dialog" onCancel={onClose} onClick={event => { if (event.target === event.currentTarget) onClose() }}>
     <div className="room-dialog-heading"><div><span className="room-kicker">BANKER MODE</span><h2>Game menu</h2></div><button className="room-icon-button" aria-label="Close menu" onClick={onClose}><X size={20} /></button></div>
-    <p>Manage tables, view game rules, cast to TV, or exit this session.</p>
     <div className="banker-menu-list">
       <button type="button" className="banker-menu-item" onClick={() => { onClose(); onOpenPlayers() }}>
         <div className="banker-menu-item-icon"><Users size={20} /></div>

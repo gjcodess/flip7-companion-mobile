@@ -240,7 +240,6 @@ function VengeanceMenuDialog({
           <X size={20} />
         </button>
       </div>
-      <p>{demo ? 'Manage tables, view game rules, restart, or exit this practice session.' : 'Manage tables, view game rules, cast to TV, or exit this session.'}</p>
       <div className="banker-menu-list">
         <button
           type="button"
