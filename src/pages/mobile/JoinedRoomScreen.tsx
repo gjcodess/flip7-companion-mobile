@@ -155,8 +155,8 @@ export function JoinedRoomScreen({ historyId }: { historyId?: string }) {
     catch (error) { setDeletePrompt(false); setError((error as Error).message) }
   }
 
-  return <div className={`room-app-shell edition-${edition}`}>
-    {room && (!live || reply?.status === 'approved') ? <JoinedGameView key={room.id} room={room} owner={owner} live={live} online={online} busy={busy} pendingAction={pendingAction} approved={reply?.status === 'approved'} error={error} canReconnect={canReconnect} onSend={send} onReconnect={connect} onRelease={leaveSeat} onExit={() => navigate('/landing')} onDelete={!live && savedRoom ? () => setDeletePrompt(true) : undefined} /> : <main className="room-app-main shared-join-page">
+  return <>
+    {room && (!live || reply?.status === 'approved') ? <JoinedGameView key={room.id} room={room} owner={owner} live={live} online={online} busy={busy} pendingAction={pendingAction} approved={reply?.status === 'approved'} error={error} canReconnect={canReconnect} onSend={send} onReconnect={connect} onRelease={leaveSeat} onExit={() => navigate('/landing')} onDelete={!live && savedRoom ? () => setDeletePrompt(true) : undefined} /> : <div className={`room-app-shell edition-${edition}`}><main className="room-app-main shared-join-page">
       <header className="shared-join-nav"><button className="shared-back" onClick={() => navigate('/landing')}><ArrowLeft size={18} /> Your rooms</button><img src={edition === 'vengeance' ? '/assets/flip7-vengeance-logo.webp' : '/assets/flip7-title-logo.webp'} alt="Flip 7" /></header>
       <section className="room-welcome shared-join-heading"><span className="room-kicker">PLAY TOGETHER · SAME WI-FI</span><h1>{live ? reply?.roomName ?? 'Finding your room…' : <>One table.<br /><em>Everyone’s invited.</em></>}</h1><p>{live ? 'Choose your seat. Once the host approves, you’re ready to play.' : 'Join your friends, record your own cards, and follow every table as you play.'}</p></section>
       {!live && <>
@@ -184,7 +184,7 @@ export function JoinedRoomScreen({ historyId }: { historyId?: string }) {
         <button className="room-button" disabled={!seat || busy || !profile && !name.trim() || Boolean(reply?.seats?.find(player => player.id === seat)?.occupied)} onClick={() => void claim()}>{busy ? 'Requesting…' : 'Request this seat'} <ChevronRight size={17} /></button><p className="shared-field-help">One approval from the host, then your entries go straight to the table.</p>
       </section>}
       {notice && <p className="shared-notice" role="status">{notice}</p>}{error && <p className="room-error" role="alert">{error}</p>}
-    </main>}
+    </main></div>}
     {deletePrompt && savedRoom && <ConfirmationModal variant="floating" eyebrow="REMOVE JOINED HISTORY" title="Remove this history copy?" message="Only the copy on this phone is removed. Lifetime statistics stay. Export a backup first to keep the detailed cards and scores." cancelLabel="Keep history" confirmLabel="Remove copy" onCancel={() => setDeletePrompt(false)} onConfirm={removeCopy} />}
-  </div>
+  </>
 }

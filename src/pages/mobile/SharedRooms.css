@@ -101,11 +101,6 @@
 .shared-brutal-tag { align-self: center; color: #b0262c; padding: 12px 0 0; font-size: 8px; font-weight: 950; letter-spacing: .14em; }
 .shared-you-tag { padding: 3px 5px; background: #132d67; color: #fff7da; border-radius: 4px; font-size: 7px; font-weight: 950; font-style: normal; }
 .banker-player-tab .shared-tab-you { display: inline-block; font-size: 6px; margin-left: 4px; padding: 2px 3px; border-radius: 3px; background: #132d67; color: #fff7da; vertical-align: middle; }
-.shared-table-context { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 5px 20px 0; min-height: 30px; color: #53607a; }
-.shared-table-context > span { display: flex; align-items: center; gap: 6px; font-size: 8px; font-weight: 900; letter-spacing: .07em; }
-.shared-table-context.own-table > span { color: #ad2d58; }
-.shared-table-context button { display: flex; align-items: center; gap: 3px; border: 0; background: transparent; color: #132d67; font-size: 10px; font-weight: 850; min-height: 38px; padding: 0; }
-.joined-game .table-area { padding-top: 9px; }
 .joined-game .table-area:has(.card-rows:empty) { min-height: 180px; }
 .shared-empty-table { text-align: center; font-size: 12px; color: #53607a; margin: -54px 25px 40px; }
 .shared-table-hint { margin: 5px 20px 18px; text-align: center; }

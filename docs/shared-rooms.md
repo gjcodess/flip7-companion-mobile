@@ -91,6 +91,11 @@ applicable local-network permission flow. Do not promise background hosting or
 automatic host transfer in this version. The protocol constant must be bumped
 when command semantics or game-rule compatibility change.
 
+### Emulator layout
+
+Keep the **joiner on the left** (`Pixel_10_Pro`) and the **host on the right**
+(`medium_phone`) when testing or comparing the two interfaces.
+
 ### Two-emulator walkthrough — October 16, 2026
 
 Manually exercised the installed APK on `medium_phone` (Android 16, host) and
