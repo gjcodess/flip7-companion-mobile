@@ -1577,14 +1577,14 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                     const score = vengeanceScore(player, state.variant, state.flipSevenChoice)
                     return (
                       <div
-                        className={`info-player ${player.id === selected?.id ? 'current-player' : ''}`}
+                        className={`info-player ${player.id === turnPlayerId ? 'current-player' : ''}`}
                         key={player.id}
                       >
                         <PlayerAvatar player={player} className="mini-avatar" />
                         <div>
                           <b>
                             {player.name}
-                            {player.id === selected?.id ? ' (current)' : ''}
+                            {player.id === turnPlayerId ? ' (current)' : ''}
                           </b>
                           <small>{playerTabSummary(player, state.variant, state.flipSevenChoice)}</small>
                         </div>

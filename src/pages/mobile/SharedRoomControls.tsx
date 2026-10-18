@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { Cast, Check, CheckCircle2, ChevronRight, Clock3, Copy, Link2, Monitor, Power, QrCode, ShieldCheck, Users, Wifi, X } from 'lucide-react'
+import { Cast, Check, CheckCircle2, ChevronRight, Clock3, Copy, Link2, Monitor, Power, QrCode, Users, Wifi, X } from 'lucide-react'
 import { PlayerAvatar } from '../../components/PlayerAvatar'
 import { getLibrary, saveRoom, useLibrary } from '../../lib/room-store'
 import { decideSeat } from '../../lib/shared-room-protocol'
@@ -63,23 +63,23 @@ export function SharedRoomDialog({ roomId, onClose, initialView }: { roomId: str
     </header>
     <div className="sharing-modal-body">
       {!localRoomsAvailable() ? <p className="sharing-description">Room sharing is available in the Android app.</p> : tab === 'tv' ? <TvSharePanel roomId={roomId} /> : !active ? <>
-        <div className="sharing-intro"><span className="sharing-hero-icon"><Users size={30} /></span><h3>One game. Every phone.</h3><p>Friends record their own cards.<br />You keep control of every table.</p></div>
+        <div className="sharing-intro"><span className="sharing-hero-icon"><Users size={30} /></span><h3>Play together</h3></div>
         <ol className="sharing-steps"><li><span>1</span><p>Connect to the same <b>Wi-Fi or hotspot</b>.</p></li><li><span>2</span><p>Share your QR code and <b>approve each seat</b>.</p></li><li><span>3</span><p>Keep the room open. <b>Your phone is the host.</b></p></li></ol>
         <button className="sharing-action primary" disabled={busy || !room.state && !room.vengeanceState} onClick={() => void change(() => startHosting(currentRoom()))}><QrCode size={18} />{busy ? 'Starting…' : hosted ? 'Host this room instead' : 'Open room for friends'}</button>
         {!room.state && !room.vengeanceState && <p className="sharing-description">Start the game before inviting players.</p>}
       </> : tab === 'invite' ? <section aria-label="Invite friends">
-        <div className="sharing-section-heading"><span className="sharing-section-icon"><QrCode size={20} /></span><div><h3>Pull up a seat.</h3><p>Ask your friends to scan this code.</p></div></div>
+        <div className="sharing-section-heading"><span className="sharing-section-icon"><QrCode size={20} /></span><div><h3>Room QR code</h3></div></div>
         <div className="sharing-qr-ticket">
           <div className="sharing-ticket-label"><Wifi size={15} /> SAME WI-FI OR HOTSPOT</div>
           {qr ? <img className="sharing-qr-image" src={qr} alt="Room invitation QR code" /> : <div className="sharing-qr-loading" role="status"><QrCode size={36} /><span>Preparing your invitation…</span></div>}
-          <p>In their app, open <b>Join a nearby room</b>,<br />then scan and request a seat.</p>
+          <p>Scan from <b>Join a nearby room</b>.</p>
         </div>
         <button className="sharing-action secondary" disabled={busy} onClick={() => void change(async () => { await navigator.clipboard.writeText(invitationText(hosted!)); setCopied(true) })}>{copied ? <Check size={18} /> : <Copy size={18} />}{copied ? 'Invitation copied' : 'Copy invitation'}</button>
         <span className="sharing-status-text" role="status">{copied ? 'Invitation copied' : ''}</span>
         {waiting > 0 && <button className="sharing-request-notice" onClick={() => setTab('players')}><Users size={17} /><span>{waiting} seat request{waiting === 1 ? '' : 's'} waiting</span><ChevronRight size={17} /></button>}
       </section> : <section aria-label="Seats and requests">
-        <div className="sharing-section-heading"><span className="sharing-section-icon"><Users size={20} /></span><div><h3>Your players</h3><p>{!grants.length ? 'Waiting for your first player' : `${connected} seat${connected === 1 ? '' : 's'} approved${waiting ? ` · ${waiting} waiting for you` : ' · No pending requests'}`}</p></div></div>
-        {!grants.length && <div className="sharing-empty"><span className="sharing-hero-icon"><Users size={28} /></span><h3>Save a seat for your friends.</h3><p>Share the invitation. Their seat requests will appear right here.</p><button className="sharing-action secondary" onClick={() => setTab('invite')}><QrCode size={17} /> Show room QR</button></div>}
+        <div className="sharing-section-heading"><span className="sharing-section-icon"><Users size={20} /></span><div><h3>Players</h3>{grants.length > 0 && <p>{connected} approved{waiting ? ` · ${waiting} waiting` : ''}</p>}</div></div>
+        {!grants.length && <div className="sharing-empty"><span className="sharing-hero-icon"><Users size={28} /></span><h3>No players yet</h3><button className="sharing-action secondary" onClick={() => setTab('invite')}><QrCode size={17} /> Show room QR</button></div>}
         <div className="sharing-player-cards">{grants.map(([device, grant]) => {
           const player = room.roster.find(p => p.id === (grant.playerId ?? grant.requestedSeat))
           return <article className={`sharing-player-card ${grant.status}`} key={device}>
@@ -91,6 +91,6 @@ export function SharedRoomDialog({ roomId, onClose, initialView }: { roomId: str
       </section>}
       {error && <p className="room-error" role="alert">{error}</p>}
     </div>
-    {active && tab !== 'tv' && <footer className="sharing-modal-footer"><div className="sharing-host-note"><ShieldCheck size={18} /><p><b>You’re hosting this game.</b> Keep the room open so everyone can keep playing.</p></div><button className="sharing-action stop" disabled={busy} onClick={() => void change(async () => { await stopHosting(); setTab('invite') })}><Power size={16} /> Stop hosting</button></footer>}
+    {active && tab !== 'tv' && <footer className="sharing-modal-footer"><button className="sharing-action stop" disabled={busy} onClick={() => void change(async () => { await stopHosting(); setTab('invite') })}><Power size={16} /> Stop hosting</button></footer>}
   </dialog>
 }

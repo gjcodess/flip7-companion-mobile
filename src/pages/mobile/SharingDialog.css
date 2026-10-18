@@ -103,7 +103,7 @@
 .sharing-host-note > svg { flex-shrink: 0; margin-top: 2px; color: var(--ink); }
 .sharing-host-note p { font-size: 10px; line-height: 1.6; color: var(--sharing-muted); }
 .sharing-host-note b { color: var(--ink); }
-.sharing-modal-footer .sharing-action { margin-top: 12px; }
+.sharing-modal-footer .sharing-action { margin-top: 0; }
 .sharing-tv-preview { padding: 18px 17px 15px; border: 1.5px solid var(--ink); border-radius: 14px; background: #dceef0; }
 .sharing-tv-screen { padding: 11px 12px 12px; border: 3px solid var(--ink); border-radius: 12px; background: var(--cream); box-shadow: 3px 4px 0 #132d6730; }
 .sharing-tv-screen > header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-bottom: 8px; border-bottom: 1px dashed #132d6750; }
