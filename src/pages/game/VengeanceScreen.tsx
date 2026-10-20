@@ -13,6 +13,7 @@ import {
   CircleHelp,
   ClipboardList,
   Eye,
+  History,
   LogOut,
   Menu,
   Monitor,
@@ -63,6 +64,7 @@ import { RoomCharacterDialog } from '../mobile/MobileApp'
 import { BrutalSkullIcon } from '../../components/BrutalSkullIcon'
 import { GameTable } from './GameTable'
 import { ResultsShareDialog } from './ResultsShareDialog'
+import { RoundHistoryDialog } from './RoundHistoryDialog'
 import './VengeanceScreen.css'
 
 const demoColors = ['#e93234', '#193c89', '#da8736', '#257878', '#802e80', '#63439b', '#b33973', '#2e7d32']
@@ -205,6 +207,7 @@ function VengeanceMenuDialog({
   demo = false,
   onClose,
   onOpenPlayers,
+  onOpenHistory,
   onOpenRules,
   onOpenTvShare,
   onRestart,
@@ -213,6 +216,7 @@ function VengeanceMenuDialog({
   demo?: boolean
   onClose: () => void
   onOpenPlayers: () => void
+  onOpenHistory: () => void
   onOpenRules: () => void
   onOpenTvShare: () => void
   onRestart?: () => void
@@ -242,7 +246,7 @@ function VengeanceMenuDialog({
           <X size={20} />
         </button>
       </div>
-      <p>{demo ? 'Manage tables, view game rules, restart, or exit this practice session.' : 'Manage tables, view game rules, cast to TV, or exit this session.'}</p>
+      <p>{demo ? 'Manage tables, review rounds and rules, or exit this practice session.' : 'Manage tables, review past rounds and rules, or exit this session.'}</p>
       <div className="banker-menu-list">
         <button
           type="button"
@@ -259,6 +263,18 @@ function VengeanceMenuDialog({
             <strong>Players</strong>
             <span>View current scores, active cards, and table standings</span>
           </div>
+          <ChevronRight size={18} className="banker-menu-item-chevron" />
+        </button>
+        <button
+          type="button"
+          className="banker-menu-item"
+          onClick={() => {
+            onClose()
+            onOpenHistory()
+          }}
+        >
+          <div className="banker-menu-item-icon"><History size={20} /></div>
+          <div className="banker-menu-item-text"><strong>Round History</strong><span>Review saved rounds, scores, and cards</span></div>
           <ChevronRight size={18} className="banker-menu-item-chevron" />
         </button>
         <button
@@ -641,6 +657,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
   const [organizedPlayers, setOrganizedPlayers] = useState<Record<string, boolean>>({})
   const [showMenu, setShowMenu] = useState(false)
   const [playersOpen, setPlayersOpen] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
   const [rulesOpen, setRulesOpen] = useState(false)
   const [roundSummaryOpen, setRoundSummaryOpen] = useState(false)
   const [restartOpen, setRestartOpen] = useState(false)
@@ -1714,12 +1731,15 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
           demo={demo}
           onClose={() => setShowMenu(false)}
           onOpenPlayers={() => setPlayersOpen(true)}
+          onOpenHistory={() => setHistoryOpen(true)}
           onOpenRules={() => setRulesOpen(true)}
           onOpenTvShare={() => setTvOpen(true)}
           onRestart={() => setRestartOpen(true)}
           onExit={exit}
         />
       )}
+
+      {historyOpen && <RoundHistoryDialog edition="vengeance" history={state.history} roster={room?.roster ?? state.players} onClose={() => setHistoryOpen(false)} />}
 
       {restartOpen && <RestartDialog edition="vengeance" disabled={Boolean(saveError)} onClose={() => setRestartOpen(false)} onRestart={scope => {
         dispatch({ type: 'restart', scope }); setRestartOpen(false); setRoundSummaryOpen(false);
