@@ -67,9 +67,8 @@ function VengeanceRounds({ history, roster }: { history: VHistory[]; roster: Pla
 }
 
 export function RoundHistory(props: RoundHistoryProps) {
-  const { roster, showHeading = true, currentRound, onReturnToTable } = props
+  const { roster, currentRound, onReturnToTable } = props
   return <div className="round-history-content">
-    {showHeading && <div className="room-section-heading"><h2>Every round. Every card.</h2></div>}
     {props.history.length ? props.edition === 'vengeance'
       ? <VengeanceRounds history={props.history} roster={roster} />
       : <ClassicRounds history={props.history} roster={roster} />

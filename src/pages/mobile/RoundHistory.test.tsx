@@ -37,4 +37,9 @@ describe('shared round history', () => {
     expect(markup).toContain('-15 PENALTY')
     expect(markup).toContain('score-negative')
   })
+
+  it('omits the legacy "Every round. Every card." heading', () => {
+    const markup = renderToStaticMarkup(<RoundHistory edition="classic" roster={roster} history={[]} />)
+    expect(markup).not.toContain('Every round. Every card.')
+  })
 })
