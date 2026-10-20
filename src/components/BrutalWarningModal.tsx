@@ -1,6 +1,7 @@
 import { ShieldAlert, Swords, Target, TrendingDown, X } from 'lucide-react'
 import { motion } from 'motion/react'
 import { createPortal } from 'react-dom'
+import { useBackAction } from '../lib/back-actions'
 
 type BrutalWarningModalProps = {
   onCancel: () => void
@@ -8,6 +9,7 @@ type BrutalWarningModalProps = {
 }
 
 export function BrutalWarningModal({ onCancel, onConfirm }: BrutalWarningModalProps) {
+  useBackAction(true, onCancel, 100)
   const modal = (
     <motion.div
       className="picker-backdrop confirmation-backdrop floating-confirmation-backdrop brutal-warning-backdrop"

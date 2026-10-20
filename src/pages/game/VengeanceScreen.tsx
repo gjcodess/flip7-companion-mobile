@@ -48,6 +48,7 @@ import {
 } from '../../game/vengeanceGame'
 import { getLibrary, saveVengeanceState, updateLibrary, type PlayerProfile } from '../../lib/room-store'
 import { useAppNavigation, useNavigationGuard } from '../../lib/navigation'
+import { useBackAction } from '../../lib/back-actions'
 import { ConfirmationModal } from '../../components/ConfirmationModal'
 import { BrutalWarningModal } from '../../components/BrutalWarningModal'
 import { BrutalFlipSevenModal } from './BrutalFlipSevenModal'
@@ -218,6 +219,7 @@ function VengeanceMenuDialog({
   onExit: () => void
 }) {
   const dialog = useRef<HTMLDialogElement>(null)
+  useBackAction(true, onClose, 100)
   useEffect(() => {
     dialog.current?.showModal()
   }, [])
@@ -662,6 +664,15 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
   }
 
   const exit = useCallback(() => navigate(roomId ? `/room?id=${roomId}` : '/landing', { replace: true }), [navigate, roomId])
+  useBackAction(pickerOpen || selectedCardIndex !== null || playersOpen || rulesOpen || roundSummaryOpen || Boolean(state?.pendingFlipSeven) || Boolean(state && vengeancePending(state)), () => {
+    if (selectedCardIndex !== null) { setSelectedCardIndex(null); return }
+    if (pickerOpen) { setPickerOpen(false); setEditingCardInstanceId(null); return }
+    if (state?.pendingFlipSeven) return
+    if (state && vengeancePending(state)) { dispatch({ type: 'cancel-pending' }); return }
+    if (roundSummaryOpen) { setRoundSummaryOpen(false); return }
+    if (playersOpen) { setPlayersOpen(false); return }
+    if (rulesOpen) setRulesOpen(false)
+  })
 
   useNavigationGuard(
     demo && state || saveError

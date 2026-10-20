@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, ChevronDown, ChevronRight, CircleHelp, Download, Flag, FolderOpen, History, Home, Medal, Monitor, MoreHorizontal, Pencil, Pin, Play, Plus, Search, Settings, ShieldCheck, Skull, Sparkles, Trash2, Trophy, Upload, Users, X } from 'lucide-react'
-import { useAppNavigation } from '../../lib/navigation'
+import { useAppNavigation, useNavigationGuard } from '../../lib/navigation'
+import { useBackAction } from '../../lib/back-actions'
 import { useScrollNav } from '../../lib/use-scroll-nav'
 import { useKeyboardVisible } from '../../lib/use-keyboard-visible'
 import { canEditRoster, createRoom, decodeLibrary, editRoom, exportBackup, formatBytes, getStorageError, newProfile, playerStats, restoreBackup, roomStatus, savePlayerProfile, saveRoom, startRoom, STORAGE_LIMIT, storageBytes, updateLibrary, useLibrary, type Edition, type PlayerProfile, type Room, type RoomVariant } from '../../lib/room-store'
@@ -99,6 +100,8 @@ function ColorPicker({ color, onChange }: { color: string; onChange: (color: str
 function PlayerEditor({ profile, onClose }: { profile?: PlayerProfile; onClose: () => void }) {
   const library = useLibrary(); const edition = library.settings.edition; const profiles = edition === 'vengeance' ? library.vengeancePlayers : library.players; const [name, setName] = useState(profile?.name ?? ''); const [color, setColor] = useState(profile?.color ?? bankerPlayerColors[profiles.length % bankerPlayerColors.length]); const [avatar, setAvatar] = useState(profile?.avatar ?? defaultPlayerAvatarFor(profile?.id, profiles.length)); const [error, setError] = useState(''); const [deleting, setDeleting] = useState(false)
   const dialogRef = useRef<HTMLDialogElement>(null); const deleteDialogRef = useRef<HTMLDialogElement>(null)
+  useBackAction(true, onClose, 100)
+  useBackAction(deleting, () => setDeleting(false), 110)
   useEffect(() => { dialogRef.current?.showModal() }, [])
   useEffect(() => { if (deleting) deleteDialogRef.current?.showModal() }, [deleting])
   const submit = () => {
@@ -110,6 +113,7 @@ function PlayerEditor({ profile, onClose }: { profile?: PlayerProfile; onClose: 
 }
 
 export function RoomCharacterDialog({ player, onClose, onSave }: { player: PlayerProfile; onClose: () => void; onSave: (avatar: PlayerAvatarId, color: string) => void }) {
+  useBackAction(true, onClose, 100)
   const [avatar, setAvatar] = useState(player.avatar ?? defaultPlayerAvatarFor(player.id))
   const [color, setColor] = useState(player.color)
   const [error, setError] = useState('')
@@ -148,6 +152,21 @@ function HistoryScreen() {
 
 function RoomForm({ room, onDone }: { room?: Room; onDone?: () => void }) {
   const library = useLibrary(); const edition = room?.edition ?? library.settings.edition; const profiles = edition === 'vengeance' ? library.vengeancePlayers : library.players; const navigate = useAppNavigation(); const [name, setName] = useState(room?.name ?? ''); const [variant, setVariant] = useState<RoomVariant>(room?.variant ?? 'standard'); const [brutalWarningOpen, setBrutalWarningOpen] = useState(false); const [target, setTarget] = useState(room?.targetScore ?? (edition === 'vengeance' ? library.settings.vengeanceTargetScore : library.settings.targetScore)); const [roster, setRoster] = useState<PlayerProfile[]>(room?.roster ?? []); const [playerName, setPlayerName] = useState(''); const [error, setError] = useState(''); const [showPicker, setShowPicker] = useState(false); const [editingCharacter, setEditingCharacter] = useState<PlayerProfile | null>(null); const [removingPlayer, setRemovingPlayer] = useState<PlayerProfile | null>(null)
+  const [discardPrompt, setDiscardPrompt] = useState(false)
+  const originalRef = useRef(JSON.stringify({ name, variant, target, roster }))
+  const dirty = originalRef.current !== JSON.stringify({ name, variant, target, roster }) || Boolean(playerName)
+  useNavigationGuard(dirty ? {
+    eyebrow: 'UNSAVED ROOM', title: 'Discard room changes?',
+    message: 'The changes on this form have not been saved.',
+    cancelLabel: 'Keep editing', confirmLabel: 'Discard changes', shouldBlock: () => true,
+  } : null)
+  const leaveForm = () => {
+    if (showPicker) { setShowPicker(false); return }
+    if (dirty) { setDiscardPrompt(true); return }
+    if (room && onDone) onDone()
+    else navigate(room ? `/room?id=${room.id}` : '/landing', { replace: true })
+  }
+  useBackAction(true, leaveForm)
   const addPlayer = (profile?: PlayerProfile) => {
     const nextName = (profile?.name ?? playerName).trim()
     if (!nextName) return setError('Enter a player name first.')
@@ -172,21 +191,22 @@ function RoomForm({ room, onDone }: { room?: Room; onDone?: () => void }) {
     if (roster.length < 2) return setError('Add at least 2 players to start your room.')
     if (!Number.isInteger(target) || target < 50 || target > 500) return setError('Choose a target between 50 and 500 points.')
     try {
-      if (room) { editRoom(room, name, target, roster, undefined, variant); if (onDone) onDone(); else navigate(`/room?id=${room.id}`); return }
+      if (room) { editRoom(room, name, target, roster, undefined, variant); if (onDone) onDone(); else navigate(`/room?id=${room.id}`, { skipGuard: true }); return }
       const created = createRoom(name, target, roster, edition, undefined, variant)
-      if (begin) { startRoom(created); navigate(roomPlayPath(created)) } else navigate(`/room?id=${created.id}`)
+      if (begin) { startRoom(created); navigate(roomPlayPath(created), { skipGuard: true }) } else navigate(`/room?id=${created.id}`, { skipGuard: true })
     } catch (e) { setError((e as Error).message) }
   }
-  return <><div className="room-back-row"><button onClick={() => { if (room && onDone) onDone(); else navigate(room ? `/room?id=${room.id}` : '/landing') }}><ArrowLeft size={19} /> {room ? 'Back to room' : 'Your rooms'}</button></div><PageHeading kicker={edition === 'vengeance' ? 'SET UP YOUR VENGEANCE TABLE' : 'SET UP YOUR TABLE'} title={room ? 'Edit room' : 'New room'} copy={room ? 'Update players before the first card of the round.' : 'Name your room and add your players.'} />
+  return <><div className="room-back-row"><button onClick={leaveForm}><ArrowLeft size={19} /> {room ? 'Back to room' : 'Your rooms'}</button></div><PageHeading kicker={edition === 'vengeance' ? 'SET UP YOUR VENGEANCE TABLE' : 'SET UP YOUR TABLE'} title={room ? 'Edit room' : 'New room'} copy={room ? 'Update players before the first card of the round.' : 'Name your room and add your players.'} />
     <section className="room-form-panel"><div className="room-form-section-title"><span>01</span><h2>Make it yours</h2><Flag size={21} /></div><label className="room-field">ROOM NAME<input placeholder="Friday night flips" maxLength={40} value={name} onChange={e => setName(e.target.value)} /></label>{edition === 'vengeance' && <div className="room-field"><span>GAMEPLAY STYLE</span><div className="room-variant-options"><button type="button" className={variant === 'standard' ? 'selected' : ''} aria-pressed={variant === 'standard'} onClick={() => setVariant('standard')}><strong>Standard</strong><small>Original Vengeance</small></button><button type="button" className={`brutal-variant-btn ${variant === 'brutal' ? 'selected' : ''}`} aria-pressed={variant === 'brutal'} onClick={() => { if (variant !== 'brutal') setBrutalWarningOpen(true) }}><strong>Brutal Mode <BrutalSkullIcon size={15} /></strong><small>Sub-zero & penalties</small></button></div></div>}<div className="room-field">TARGET SCORE<div className="room-target-options">{targetScorePresets.map(({ value, label }) => <button key={value} className={target === value ? 'selected' : ''} aria-pressed={target === value} onClick={() => setTarget(value)}>{value}<small>PTS</small><span>{label}</span></button>)}</div><label className="room-custom-target">Custom target<input type="number" min={50} max={500} aria-label="Custom target score" value={target || ''} onChange={e => setTarget(Number(e.target.value))} /></label></div></section>
     <section className="room-form-panel"><div className="room-form-section-title"><span>02</span><h2>Who’s at the table?</h2><b>{roster.length}/18</b></div><p className="room-muted">2–18 players. Arrange your crew in turn order.{room?.state && ' New players join with zero points.'}</p><div className="room-roster">{roster.map((p, i) => <div className="room-roster-row" key={p.id}><span className="room-seat">{String(i + 1).padStart(2, '0')}</span><button type="button" className="room-roster-avatar-edit" aria-label={`Edit ${p.name}'s character`} title={`Edit ${p.name}'s character`} onClick={() => setEditingCharacter(p)}><Avatar player={p} small /><Pencil size={13} /></button><b>{p.name}</b><div className="room-roster-controls"><button type="button" aria-label={`Move ${p.name} up`} disabled={i === 0} onClick={() => move(i, -1)}><ArrowUp size={14} /></button><button type="button" aria-label={`Move ${p.name} down`} disabled={i === roster.length - 1} onClick={() => move(i, 1)}><ArrowDown size={14} /></button><button type="button" className="room-roster-remove" aria-label={`Remove ${p.name} from room`} title={`Remove ${p.name} from room`} onClick={() => removePlayer(p)}><X size={16} /></button></div></div>)}</div>
       <div className="room-add-player"><input aria-label="New player name" maxLength={24} placeholder="Add a player’s name" value={playerName} onChange={e => setPlayerName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPlayer() } }} /><button aria-label="Add named player" disabled={roster.length >= 18} onClick={() => addPlayer()}><Plus size={20} /></button></div>
       {profiles.length > 0 && <><button className="room-pick-crew" aria-expanded={showPicker} onClick={() => setShowPicker(!showPicker)}><Users size={16} /> Choose saved players <ChevronDown size={15} /></button>{showPicker && <div className="room-saved-player-picker">{profiles.filter(p => !roster.some(r => r.id === p.id || r.name.toLowerCase() === p.name.toLowerCase())).map(p => <button key={p.id} onClick={() => addPlayer(p)}><Avatar player={p} small />{p.name}<Plus size={14} /></button>)}{profiles.every(p => roster.some(r => r.id === p.id)) && <p>Everyone’s at the table!</p>}</div>}</>}
-    </section>{error && <p className="room-error" role="alert">{error}</p>}<div className="room-form-actions"><ActionButton onClick={() => save(!room)}><Play size={17} fill="currentColor" /> {room ? 'Save room changes' : 'Create & start playing'}</ActionButton>{!room && <ActionButton secondary onClick={() => save(false)}><FolderOpen size={17} /> Save room for later</ActionButton>}</div>{editingCharacter && <RoomCharacterDialog player={editingCharacter} onClose={() => setEditingCharacter(null)} onSave={(avatar, color) => saveCharacter(editingCharacter, avatar, color)} />}{removingPlayer && <ConfirmationModal variant="floating" edition={edition} eyebrow="REMOVE PLAYER" title={`Remove ${removingPlayer.name}?`} message="Saving this change removes their total from the current match. Completed round cards and scores stay in room history, and their saved player profile stays available." cancelLabel="Keep player" confirmLabel="Remove player" onCancel={() => setRemovingPlayer(null)} onConfirm={() => { setRoster(current => current.filter(player => player.id !== removingPlayer.id)); setRemovingPlayer(null); setError('') }} />}{brutalWarningOpen && <BrutalWarningModal onCancel={() => setBrutalWarningOpen(false)} onConfirm={() => { setVariant('brutal'); setBrutalWarningOpen(false) }} />}</>
+    </section>{error && <p className="room-error" role="alert">{error}</p>}<div className="room-form-actions"><ActionButton onClick={() => save(!room)}><Play size={17} fill="currentColor" /> {room ? 'Save room changes' : 'Create & start playing'}</ActionButton>{!room && <ActionButton secondary onClick={() => save(false)}><FolderOpen size={17} /> Save room for later</ActionButton>}</div>{editingCharacter && <RoomCharacterDialog player={editingCharacter} onClose={() => setEditingCharacter(null)} onSave={(avatar, color) => saveCharacter(editingCharacter, avatar, color)} />}{removingPlayer && <ConfirmationModal variant="floating" edition={edition} eyebrow="REMOVE PLAYER" title={`Remove ${removingPlayer.name}?`} message="Saving this change removes their total from the current match. Completed round cards and scores stay in room history, and their saved player profile stays available." cancelLabel="Keep player" confirmLabel="Remove player" onCancel={() => setRemovingPlayer(null)} onConfirm={() => { setRoster(current => current.filter(player => player.id !== removingPlayer.id)); setRemovingPlayer(null); setError('') }} />}{brutalWarningOpen && <BrutalWarningModal onCancel={() => setBrutalWarningOpen(false)} onConfirm={() => { setVariant('brutal'); setBrutalWarningOpen(false) }} />}{discardPrompt && <ConfirmationModal variant="floating" edition={edition} eyebrow="UNSAVED ROOM" title="Discard room changes?" message="The changes on this form have not been saved." cancelLabel="Keep editing" confirmLabel="Discard changes" onCancel={() => setDiscardPrompt(false)} onConfirm={() => { setDiscardPrompt(false); if (room && onDone) onDone(); else navigate(room ? `/room?id=${room.id}` : '/landing', { replace: true, skipGuard: true }) }} />}</>
 }
 
 function VengeanceRoomDetail({ room }: { room: Room }) {
   const navigate = useAppNavigation(); const [editing, setEditing] = useState(false); const [menu, setMenu] = useState(false); const [deletePrompt, setDeletePrompt] = useState(false); const [tvShareOpen, setTvShareOpen] = useState(false); const [error, setError] = useState(''); const [tab, setTab] = useState<'scores' | 'rounds'>('scores')
+  useBackAction(menu, () => setMenu(false))
   const state = room.vengeanceState; const editable = canEditRoster(room)
   if (editing && editable) return <RoomForm room={room} onDone={() => { setEditing(false); window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' })) }} />
   const play = () => { try { if (!state) startRoom(room); navigate(roomPlayPath(room)) } catch (cause) { setError((cause as Error).message) } }
@@ -204,6 +224,7 @@ function VengeanceRoomDetail({ room }: { room: Room }) {
 
 function RoomDetail({ room }: { room: Room }) {
   const navigate = useAppNavigation(); const [editing, setEditing] = useState(false); const [menu, setMenu] = useState(false); const [deletePrompt, setDeletePrompt] = useState(false); const [tvShareOpen, setTvShareOpen] = useState(false); const [error, setError] = useState(''); const [tab, setTab] = useState('scores')
+  useBackAction(menu, () => setMenu(false))
   const state = room.state; const editable = canEditRoster(room)
   if (editing && editable) return <RoomForm room={room} onDone={() => { setEditing(false); window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' })) }} />
   const play = () => { try { if (!state) startRoom(room); navigate(`/banker?room=${room.id}`) } catch (e) { setError((e as Error).message) } }

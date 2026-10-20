@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChevronRight, Download, Share2, X } from 'lucide-react'
 import { saveGameResults, shareGameResults, type GameResults } from '../../lib/results-sharing'
+import { useBackAction } from '../../lib/back-actions'
 
 export function ResultsShareDialog({ roomName, players, history, targetScore, edition, variant, onClose }: GameResults & { onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null)
   const [busy, setBusy] = useState(false)
+  useBackAction(true, () => { if (!busy) onClose() }, 100)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   useEffect(() => { dialog.current?.showModal() }, [])

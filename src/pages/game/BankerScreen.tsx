@@ -10,6 +10,7 @@ import { getLibrary, saveRoomState } from '../../lib/room-store'
 import { organizeDemoEntries } from '../../game/demoGame'
 import { pointLabel } from '../../lib/app-utils'
 import { useAppNavigation, useNavigationGuard } from '../../lib/navigation'
+import { useBackAction } from '../../lib/back-actions'
 import { ConfirmationModal } from '../../components/ConfirmationModal'
 import { CardActionsPanel, CardPickerPanel } from './CardDialogs'
 import { GameControls } from './GameControls'
@@ -60,6 +61,7 @@ function BankerResults({ players, history, targetScore, onNewGame, onExit }: { p
 }
 
 function BankerMenuDialog({ onClose, onOpenPlayers, onOpenRules, onOpenTvShare, onRestart, onExit }: { onClose: () => void; onOpenPlayers: () => void; onOpenRules: () => void; onOpenTvShare: () => void; onRestart: () => void; onExit: () => void }) {
+  useBackAction(true, onClose, 100)
   const dialog = useRef<HTMLDialogElement>(null)
   useEffect(() => { dialog.current?.showModal() }, [])
   return <dialog ref={dialog} className="room-dialog banker-menu-dialog tv-share-dialog" onCancel={onClose} onClick={event => { if (event.target === event.currentTarget) onClose() }}>
@@ -152,6 +154,14 @@ export function BankerScreen({ roomId }: { roomId: string }) {
   const cardIds = tableEntries.map(entry => entry.instanceId)
 
   const exit = useCallback(() => navigate(`/room?id=${roomId}`, { replace: true }), [navigate, roomId])
+  useBackAction(pickerOpen || selectedCardIndex !== null || pendingAction !== null || roundSummaryOpen || playersOpen || rulesOpen, () => {
+    if (selectedCardIndex !== null) { setSelectedCardIndex(null); return }
+    if (pickerOpen) { closePicker(); return }
+    if (pendingAction) { closePendingAction(); return }
+    if (roundSummaryOpen) { setRoundSummaryOpen(false); return }
+    if (playersOpen) { setPlayersOpen(false); return }
+    if (rulesOpen) setRulesOpen(false)
+  })
   useNavigationGuard(saveError ? {
     eyebrow: 'UNSAVED ACTION',
     title: 'Leave without the last action?',

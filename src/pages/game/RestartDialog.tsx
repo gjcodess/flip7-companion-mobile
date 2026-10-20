@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { RotateCcw, X } from 'lucide-react'
+import { useBackAction } from '../../lib/back-actions'
 
 export function RestartDialog({ edition = 'classic', disabled = false, onClose, onRestart }: {
   edition?: 'classic' | 'vengeance'
@@ -7,6 +8,7 @@ export function RestartDialog({ edition = 'classic', disabled = false, onClose, 
   onClose: () => void
   onRestart: (scope: 'game' | 'round') => void
 }) {
+  useBackAction(true, onClose, 100)
   const dialog = useRef<HTMLDialogElement>(null)
   useEffect(() => { dialog.current?.showModal() }, [])
   return <dialog ref={dialog} className={`room-dialog banker-menu-dialog edition-${edition}`} aria-labelledby="restart-title"

@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { Copy, Monitor, Radio, X } from 'lucide-react'
 import { useLibrary } from '../../lib/room-store'
 import { startTvSharing, stopTvSharing, useTvSession } from '../../lib/tv-share'
+import { useBackAction } from '../../lib/back-actions'
 
 export function TvShareDialog({ roomId, onClose }: { roomId: string; onClose: () => void }) {
+  useBackAction(true, onClose, 100)
   const dialog = useRef<HTMLDialogElement>(null)
   const library = useLibrary()
   const session = useTvSession()

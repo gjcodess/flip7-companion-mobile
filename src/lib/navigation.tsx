@@ -1,5 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { ConfirmationModal } from '../components/ConfirmationModal'
+import { App as CapacitorApp } from '@capacitor/app'
+import { Capacitor } from '@capacitor/core'
+import { runBackAction } from './back-actions'
 
 export type AppLocation = {
   pathname: string
@@ -67,7 +70,17 @@ type PendingNavigation = {
   guard: NavigationGuard
 }
 
-export function AppNavigationProvider({ navigate, onPopState, children }: { navigate: AppNavigationContextValue['navigate']; onPopState: (fromPath?: string) => void; children: ReactNode }) {
+export function backDestination(pathname: string, search: string) {
+  if (pathname === '/banker' || pathname === '/vengeance') {
+    const roomId = new URLSearchParams(search).get('room')
+    return roomId ? `/room?id=${encodeURIComponent(roomId)}` : '/landing'
+  }
+  if (pathname === '/landing' || pathname === '/') return null
+  if (['/rules', '/faq', '/privacy', '/terms', '/contact'].includes(pathname)) return '/settings'
+  return '/landing'
+}
+
+export function AppNavigationProvider({ navigate, onPopState, onExitRequest, children }: { navigate: AppNavigationContextValue['navigate']; onPopState: (fromPath?: string) => void; onExitRequest: () => void; children: ReactNode }) {
   const guardRef = useRef<NavigationGuard | null>(null)
   const currentUrlRef = useRef(currentNavigableUrl())
   const restoringHistoryRef = useRef(false)
@@ -102,6 +115,26 @@ export function AppNavigationProvider({ navigate, onPopState, children }: { navi
     }
     commitNavigation(next, options)
   }, [commitNavigation, pendingNavigation])
+
+  const backRef = useRef(() => {})
+  backRef.current = () => {
+    if (runBackAction()) return
+    if (pendingNavigation) { setPendingNavigation(null); return }
+    const target = backDestination(window.location.pathname, window.location.search)
+    if (target) requestNavigation(target, { replace: true })
+    else onExitRequest()
+  }
+
+  useEffect(() => {
+    if (Capacitor.getPlatform() !== 'android') return
+    let active = true
+    let listener: { remove: () => Promise<void> } | undefined
+    void CapacitorApp.addListener('backButton', () => backRef.current()).then(handle => {
+      if (active) listener = handle
+      else void handle.remove()
+    })
+    return () => { active = false; void listener?.remove() }
+  }, [])
 
   useEffect(() => {
     const handlePopState = () => {

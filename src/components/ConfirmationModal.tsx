@@ -2,6 +2,7 @@ import { LoaderCircle, X } from 'lucide-react'
 import { useId } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'motion/react'
+import { useBackAction } from '../lib/back-actions'
 
 type ConfirmationModalProps = {
   eyebrow?: string
@@ -17,6 +18,7 @@ type ConfirmationModalProps = {
 }
 
 export function ConfirmationModal({ eyebrow = 'CONFIRM ACTION', title, message, cancelLabel = 'Cancel', confirmLabel = 'Continue', confirming = false, variant, edition, onCancel, onConfirm }: ConfirmationModalProps) {
+  useBackAction(true, () => { if (!confirming) onCancel() }, 100)
   const id = useId()
   const titleId = `confirmation-modal-title-${id}`
   const messageId = `confirmation-modal-message-${id}`
