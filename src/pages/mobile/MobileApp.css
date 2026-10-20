@@ -2228,6 +2228,7 @@
 }
 
 .room-storage-panel .storage-explanation {
+  margin-top: 16px;
   border-top: 1px solid #b5d0d5;
   padding-top: 12px;
   font-size: 9px;
