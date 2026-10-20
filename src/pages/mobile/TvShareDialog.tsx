@@ -3,8 +3,11 @@ import { Check, Copy, Monitor, Power, Radio } from 'lucide-react'
 import { PlayerAvatar } from '../../components/PlayerAvatar'
 import { useLibrary } from '../../lib/room-store'
 import { startTvSharing, stopTvSharing, useTvSession } from '../../lib/tv-share'
+import { useBackAction } from '../../lib/back-actions'
 
-export function TvSharePanel({ roomId }: { roomId: string }) {
+export function TvShareDialog({ roomId, onClose }: { roomId: string; onClose: () => void }) {
+  useBackAction(true, onClose, 100)
+  const dialog = useRef<HTMLDialogElement>(null)
   const library = useLibrary()
   const session = useTvSession()
   const room = library.rooms.find(item => item.id === roomId)

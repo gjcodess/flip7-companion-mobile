@@ -995,6 +995,65 @@
   backdrop-filter: blur(4px);
 }
 
+.round-history-dialog {
+  --ink: #132d67;
+  --cream: #fff7da;
+  --yellow: #ffe05c;
+  --pink: #ed4f7e;
+  background: var(--cream);
+  width: calc(100% - 30px);
+  max-width: 430px;
+  padding: 0 !important;
+  overflow: hidden;
+  max-height: min(85dvh, calc(100dvh - 48px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
+}
+.round-history-dialog[open] { display: flex; flex-direction: column; }
+.round-history-dialog.edition-vengeance { --yellow: #f7c244; --pink: #e83239; box-shadow: 5px 5px 0 var(--yellow); }
+.round-history-dialog .room-dialog-heading {
+  position: relative;
+  isolation: isolate;
+  flex: 0 0 auto;
+  padding: 18px 18px 10px;
+  border-bottom: 1px dashed #b9ad88;
+}
+.round-history-dialog .room-dialog-heading h2 {
+  margin: 0;
+  line-height: 1.15;
+}
+.round-history-dialog .room-dialog-heading .room-kicker {
+  display: block;
+  margin-bottom: 6px;
+  color: #c53264;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .1em;
+}
+.round-history-dialog.edition-vengeance .room-dialog-heading .room-kicker {
+  color: var(--pink);
+}
+.round-history-dialog .room-dialog-heading .room-icon-button {
+  top: 14px;
+  right: 14px;
+}
+.round-history-dialog .round-history-content {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 18px 20px;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.round-history-dialog .round-history-content::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+.round-history-dialog .room-round-detail { box-shadow: 3px 4px 0 var(--ink); }
+.round-history-dialog .room-empty { margin-bottom: 4px; }
+
 .room-dialog-heading {
   display: flex;
   align-items: center;
@@ -2159,6 +2218,7 @@
 }
 
 .room-storage-panel .storage-explanation {
+  margin-top: 16px;
   border-top: 1px solid #b5d0d5;
   padding-top: 12px;
   font-size: 9px;

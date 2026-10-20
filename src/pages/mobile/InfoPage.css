@@ -18,6 +18,7 @@
 .room-create-banner::after { display: none; }
 /* Corner-only print texture, behind content and never intercepting card controls. */
 .room-dialog,
+.round-history-dialog :is(.room-round-detail, .room-history-hand),
 .room-footer-disclaimer-card,
 .room-form-panel,
 .room-app-main:is(.page-home, .page-players, .page-history, .page-settings) :is(.library-room-card, .room-profile-card, .room-create-banner, .room-history-banner, .room-storage-panel, .room-settings-group, .room-crew-banner, .room-empty),
@@ -26,6 +27,7 @@
   isolation: isolate;
 }
 .room-dialog::before,
+.round-history-dialog :is(.room-round-detail, .room-history-hand)::before,
 .room-footer-disclaimer-card::before,
 .room-form-panel::before,
 .room-app-main:is(.page-home, .page-players, .page-history, .page-settings) :is(.library-room-card, .room-profile-card, .room-create-banner, .room-history-banner, .room-storage-panel, .room-settings-group, .room-crew-banner, .room-empty)::before,

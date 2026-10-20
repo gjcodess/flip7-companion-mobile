@@ -8,6 +8,7 @@ import { CardActionsPanel, CardPickerPanel } from './CardDialogs'
 import { GameControls } from './GameControls'
 import { GameTable } from './GameTable'
 import { useAppNavigation, useNavigationGuard } from '../../lib/navigation'
+import { useBackAction } from '../../lib/back-actions'
 
 const terminalStatuses: DemoStatus[] = ['stayed', 'frozen', 'busted', 'flip-seven']
 
@@ -22,6 +23,12 @@ export function DemoScreen() {
   const [rulesOpen, setRulesOpen] = useState(false)
   const derived = useMemo(() => demoDerived(state), [state])
   const terminal = terminalStatuses.includes(state.status)
+  useBackAction(pickerOpen || selectedIndex !== null || summaryOpen || rulesOpen, () => {
+    if (selectedIndex !== null) { setSelectedIndex(null); return }
+    if (pickerOpen) { setPickerOpen(false); setEditingIndex(null); return }
+    if (summaryOpen) { setSummaryOpen(false); return }
+    if (rulesOpen) setRulesOpen(false)
+  })
   const canEdit = state.status === 'active' || state.status === 'busted'
   const interactionLocked = pickerOpen || selectedIndex !== null || summaryOpen || !canEdit
   const table = state.entries.map((entry) => entry.card)

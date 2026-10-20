@@ -39,18 +39,6 @@ export default function App() {
     return () => window.clearTimeout(dismissTimer)
   }, [])
   useEffect(() => {
-    if (Capacitor.getPlatform() !== 'android') return
-    let active = true
-    let listener: { remove: () => Promise<void> } | undefined
-    void CapacitorApp.addListener('backButton', () => {
-      setShowExitPrompt(current => !current)
-    }).then(handle => {
-      if (active) listener = handle
-      else void handle.remove()
-    })
-    return () => { active = false; void listener?.remove() }
-  }, [])
-  useEffect(() => {
     // Warm the lightweight picker previews after the first screen has painted.
     if ('requestIdleCallback' in window) {
       const idle = window.requestIdleCallback(() => { void preloadCardArtwork() }, { timeout: 1500 })
@@ -134,7 +122,7 @@ export default function App() {
   else if (location.pathname === '/room') content = <MobileApp key={`room-${location.search}`} page="room" roomId={new URLSearchParams(location.search).get('id') ?? undefined} />
   else content = <MobileApp key="home" page="home" />
 
-  return <MotionConfig reducedMotion={library.settings.reducedMotion ? 'always' : 'user'}><AppNavigationProvider navigate={navigate} onPopState={syncLocationFromHistory}>
+  return <MotionConfig reducedMotion={library.settings.reducedMotion ? 'always' : 'user'}><AppNavigationProvider navigate={navigate} onPopState={syncLocationFromHistory} onExitRequest={() => setShowExitPrompt(true)}>
     <PageTransition routeKey={`${location.pathname}${location.search}`}>{content}</PageTransition>
     {showExitPrompt && <ConfirmationModal variant="floating" eyebrow="EXIT APP" title="Leave Flip7 Companion?" message="Your saved rooms and player records will be here when you come back." cancelLabel="Stay" confirmLabel="Exit app" onCancel={() => setShowExitPrompt(false)} onConfirm={() => { void CapacitorApp.exitApp() }} />}
   </AppNavigationProvider></MotionConfig>

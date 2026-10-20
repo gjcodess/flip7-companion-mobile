@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { motion } from 'motion/react'
 import { RotateCcw, X } from 'lucide-react'
-import { useRoomSheetMotion } from '../../lib/use-room-sheet-motion'
+import { useBackAction } from '../../lib/back-actions'
 
 export function RestartDialog({ edition = 'classic', disabled = false, onClose, onRestart }: {
   edition?: 'classic' | 'vengeance'
@@ -9,6 +9,7 @@ export function RestartDialog({ edition = 'classic', disabled = false, onClose, 
   onClose: () => void
   onRestart: (scope: 'game' | 'round') => void
 }) {
+  useBackAction(true, onClose, 100)
   const dialog = useRef<HTMLDialogElement>(null)
   const sheetMotion = useRoomSheetMotion()
   useEffect(() => { dialog.current?.showModal() }, [])

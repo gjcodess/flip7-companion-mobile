@@ -235,6 +235,7 @@ Named APK versions are archived in `APK Versions/`, including:
 - `flip7-companion-v1.1.apk`
 - `flip7-companion-v1.2.apk`
 - `flip7-companion-v1.3.apk`
+- `flip7-companion-v1.4.apk`
 
 ---
 

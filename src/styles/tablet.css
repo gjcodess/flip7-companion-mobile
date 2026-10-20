@@ -133,8 +133,8 @@
   .banker-menu-dialog .banker-menu-item { min-height: 76px; padding: 16px; }
   .banker-menu-dialog .banker-menu-item-text strong { font-size: 16px; }
   .banker-menu-dialog .banker-menu-item-text > span { font-size: 13px; }
-  :is(.banker-shell, .demo-shell) :is(.physical-picker-header, .info-panel-header) { padding: 26px 24px 18px !important; }
-  :is(.banker-shell, .demo-shell) :is(.physical-picker-scroll, .info-panel-scroll) { padding: 22px 24px 26px !important; }
+  :is(.banker-shell, .demo-shell) :is(.physical-picker-header, .info-panel-header), .round-history-dialog .room-dialog-heading { padding: 26px 24px 18px !important; }
+  :is(.banker-shell, .demo-shell) :is(.physical-picker-scroll, .info-panel-scroll), .round-history-dialog .round-history-content { padding: 22px 24px 26px !important; }
   :is(.banker-shell, .demo-shell) .physical-picker-scroll .picker-grid { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; gap: 14px !important; }
   :is(.banker-shell, .demo-shell) .picker-heading h2 { font-size: 30px !important; }
   :is(.banker-shell, .demo-shell) :is(.physical-picker-header, .info-panel-header) > p { font-size: 14px !important; }

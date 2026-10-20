@@ -54,6 +54,7 @@ import { blockSharedHost } from '../../lib/shared-room'
 import { useRoomPresence } from '../../lib/shared-room-presence'
 import { SeatConnectionBadge, seatConnection } from '../mobile/SeatConnectionBadge'
 import { useAppNavigation, useNavigationGuard } from '../../lib/navigation'
+import { useBackAction } from '../../lib/back-actions'
 import { ConfirmationModal } from '../../components/ConfirmationModal'
 import { BrutalWarningModal } from '../../components/BrutalWarningModal'
 import { BrutalFlipSevenModal } from './BrutalFlipSevenModal'
@@ -67,6 +68,7 @@ import { RoomCharacterDialog } from '../mobile/MobileApp'
 import { BrutalSkullIcon } from '../../components/BrutalSkullIcon'
 import { GameTable } from './GameTable'
 import { ResultsShareDialog } from './ResultsShareDialog'
+import { RoundHistoryDialog } from './RoundHistoryDialog'
 import './VengeanceScreen.css'
 
 const demoColors = ['#e93234', '#193c89', '#da8736', '#257878', '#802e80', '#63439b', '#b33973', '#2e7d32']
@@ -209,6 +211,7 @@ function VengeanceMenuDialog({
   demo = false,
   onClose,
   onOpenPlayers,
+  onOpenHistory,
   onOpenRules,
   onOpenHistory,
   onOpenTvShare,
@@ -218,6 +221,7 @@ function VengeanceMenuDialog({
   demo?: boolean
   onClose: () => void
   onOpenPlayers: () => void
+  onOpenHistory: () => void
   onOpenRules: () => void
   onOpenHistory: () => void
   onOpenTvShare: () => void
@@ -225,7 +229,7 @@ function VengeanceMenuDialog({
   onExit: () => void
 }) {
   const dialog = useRef<HTMLDialogElement>(null)
-  const sheetMotion = useRoomSheetMotion()
+  useBackAction(true, onClose, 100)
   useEffect(() => {
     dialog.current?.showModal()
   }, [])
@@ -249,6 +253,7 @@ function VengeanceMenuDialog({
           <X size={20} />
         </button>
       </div>
+      <p>{demo ? 'Manage tables, review rounds and rules, or exit this practice session.' : 'Manage tables, review past rounds and rules, or exit this session.'}</p>
       <div className="banker-menu-list">
         <button
           type="button"
@@ -265,6 +270,18 @@ function VengeanceMenuDialog({
             <strong>Players</strong>
             <span>View current scores, active cards, and table standings</span>
           </div>
+          <ChevronRight size={18} className="banker-menu-item-chevron" />
+        </button>
+        <button
+          type="button"
+          className="banker-menu-item"
+          onClick={() => {
+            onClose()
+            onOpenHistory()
+          }}
+        >
+          <div className="banker-menu-item-icon"><History size={20} /></div>
+          <div className="banker-menu-item-text"><strong>Round History</strong><span>Review saved rounds, scores, and cards</span></div>
           <ChevronRight size={18} className="banker-menu-item-chevron" />
         </button>
         <button
@@ -659,6 +676,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
   const [organizedPlayers, setOrganizedPlayers] = useState<Record<string, boolean>>({})
   const [showMenu, setShowMenu] = useState(false)
   const [playersOpen, setPlayersOpen] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
   const [rulesOpen, setRulesOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [roundSummaryOpen, setRoundSummaryOpen] = useState(false)
@@ -681,6 +699,15 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
   }
 
   const exit = useCallback(() => navigate(roomId ? `/room?id=${roomId}` : '/landing', { replace: true }), [navigate, roomId])
+  useBackAction(pickerOpen || selectedCardIndex !== null || playersOpen || rulesOpen || roundSummaryOpen || Boolean(state?.pendingFlipSeven) || Boolean(state && vengeancePending(state)), () => {
+    if (selectedCardIndex !== null) { setSelectedCardIndex(null); return }
+    if (pickerOpen) { setPickerOpen(false); setEditingCardInstanceId(null); return }
+    if (state?.pendingFlipSeven) return
+    if (state && vengeancePending(state)) { dispatch({ type: 'cancel-pending' }); return }
+    if (roundSummaryOpen) { setRoundSummaryOpen(false); return }
+    if (playersOpen) { setPlayersOpen(false); return }
+    if (rulesOpen) setRulesOpen(false)
+  })
 
   useNavigationGuard(
     demo && state || saveError
@@ -1729,6 +1756,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
           demo={demo}
           onClose={() => setShowMenu(false)}
           onOpenPlayers={() => setPlayersOpen(true)}
+          onOpenHistory={() => setHistoryOpen(true)}
           onOpenRules={() => setRulesOpen(true)}
           onOpenHistory={() => setHistoryOpen(true)}
           onOpenTvShare={() => setTvOpen(true)}
@@ -1737,6 +1765,8 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
         />
       )}
       {historyOpen && room && <RoundHistoryDialog room={room} history={state.history} onClose={() => setHistoryOpen(false)} />}
+
+      {historyOpen && <RoundHistoryDialog edition="vengeance" history={state.history} roster={room?.roster ?? state.players} onClose={() => setHistoryOpen(false)} />}
 
       {restartOpen && <RestartDialog edition="vengeance" disabled={Boolean(saveError)} onClose={() => setRestartOpen(false)} onRestart={scope => {
         dispatch({ type: 'restart', scope }); setRestartOpen(false); setRoundSummaryOpen(false);
