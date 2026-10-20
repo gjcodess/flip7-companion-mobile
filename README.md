@@ -92,6 +92,22 @@ While players shuffle, deal, and reveal cards from the physical deck at the tabl
 
 ## Playing offline
 
+### Local shared rooms (Android)
+
+Start a saved match, tap the upper-left cast button, and choose **Invite → Open room for friends** in **Share & connect**. Other
+players connect to the same Wi-Fi or hotspot, choose **Join a nearby room** on
+Home, scan the invitation, and request their seat. After host approval they can
+view every table, record their own cards and make their assigned action choices.
+The host retains all-table access and alone handles corrections and rounds.
+Keep the host room open; participants pause if the host is unavailable. Each
+approved participant automatically keeps a read-only full match-history copy.
+
+See [shared-room design, recovery behavior, and device test checklist](docs/shared-rooms.md).
+Wi-Fi/hotspot hardware compatibility and maximum group size require physical-device
+validation before release; automated rule, storage and Android transport tests are included.
+
+### Single-phone play
+
 1. Open **Home** and tap **+** (New room) in the bottom navigation.
 2. Select **Classic** or **With a Vengeance**.
 3. Name the room, set a target score (50–500 pts), select your gameplay style (Standard or Brutal in Vengeance), and add 2–18 players.

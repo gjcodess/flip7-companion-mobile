@@ -14,12 +14,12 @@ function LegalSection({ id, title, children }: { id: string; title: string; chil
 function PrivacyPolicy() {
   return <>
     <LegalSection id="overview" title="Overview">
-      <p>This Data Privacy Policy explains how Flip7 Companion handles information when you use the offline companion app. Flip7 Companion helps groups record physical card flips and keep round scores together on one device.</p>
+      <p>This Data Privacy Policy explains how Flip7 Companion handles information when you use the offline companion app. Groups can record physical cards on one device or optionally join a host over local Wi-Fi or a hotspot.</p>
       <p>By using the app, you acknowledge the practices described here. This policy applies to the app and its informational pages.</p>
     </LegalSection>
     <LegalSection id="information" title="Information we collect">
       <p>The app stores the game information you choose to enter locally, including room names, player profiles, recorded cards, actions, round scores, and match results.</p>
-      <p>There are no accounts, access codes, networked player profiles, or online game records in this mobile build. Please avoid putting sensitive personal information into player names.</p>
+      <p>There are no online accounts or cloud game records. Optional shared rooms use local invitations and device credentials to remember approved seats. Please avoid putting sensitive personal information into player names.</p>
     </LegalSection>
     <LegalSection id="local-modes" title="Demo and Banker Mode">
       <p>Demo Mode and Banker Mode are local-only experiences. Room data is saved on this device and is not sent to any online service. Demo practice remains temporary.</p>
@@ -34,13 +34,15 @@ function PrivacyPolicy() {
     </LegalSection>
     <LegalSection id="sharing" title="When information is shared">
       <p>Because this mobile build is offline, game information is not transmitted to or shared with online service providers.</p>
+      <p>If you enable shared-room play, approved participants receive every table’s player names, avatars, cards, scores, and full match history over the local network. Their apps keep independent, read-only history copies. Deleting your room or releasing a seat does not remove copies already received on other devices. No other rooms, local profile library, or settings are sent.</p>
+      <p>Camera access is optional and used to scan room QR invitations. Camera frames and selected QR photos are processed on the device and are not uploaded. Shared-room exchanges encrypt game data and device credentials. TV sharing remains a separate read-only local display.</p>
     </LegalSection>
     <LegalSection id="retention" title="Storage and retention">
       <p>Rooms and player profiles remain in this device’s local app storage until you remove them. Settings includes backup and completed-room cleanup controls. Removing completed rooms keeps compact lifetime player totals for matches, wins, and best scores, without keeping their detailed card history. Backups include these totals. Clearing app data or uninstalling may remove all saves. The game-data save limit is 10 MB; actual device limits may be lower, and artwork is bundled separately.</p>
       <p>Keeping the app offline reduces network exposure, but no device or software can guarantee absolute security.</p>
     </LegalSection>
     <LegalSection id="choices" title="Your choices">
-      <p>You can choose what player names and game information to enter, and you may stop using the app at any time. You can remove saved rooms and player profiles locally or export a backup from Settings. There is no online account or remote room record.</p>
+      <p>You can choose what player names and game information to enter, and you may stop using the app at any time. You can remove saved rooms and player profiles locally or export a backup from Settings. Backups include shared-room history and any host seat approvals stored on this device; share backup files only with people you trust. There is no cloud account or cloud room record.</p>
     </LegalSection>
     <LegalSection id="children" title="Children's privacy">
       <p>Flip7 Companion is intended for general audiences and is not directed to children under the age where parental consent is required by local law. If you believe a child provided personal information, please contact the project owner so it can be reviewed.</p>
@@ -63,7 +65,7 @@ function TermsConditions() {
     </LegalSection>
     <LegalSection id="local-modes" title="Demo and Banker Mode">
       <p>Demo Mode is a private practice experience. Banker Mode is a one-device setup where a banker switches between player tables and records the group's physical cards and actions locally.</p>
-      <p>Banker rooms are saved locally and can be resumed. Demo practice is temporary. Keep backups of records you want to preserve; device storage can be cleared or lost. Both modes require the physical deck.</p>
+      <p>Banker rooms are saved locally and can be resumed. Optional shared-room play lets approved devices record their own seats and view every table over local Wi-Fi or a hotspot. Only the host can correct cards and manage rounds. Play pauses when the host is unavailable. Participants keep independent history copies. Demo practice is temporary. Keep backups of records you want to preserve; device storage can be cleared or lost. Both modes require the physical deck.</p>
     </LegalSection>
     <LegalSection id="tv-cast" title="TV Scoreboard & spectator display">
       <p>The TV Scoreboard (Cast) feature provides a local display interface designed to broadcast round scores and player statuses to external screens on your local network or phone hotspot.</p>
@@ -104,7 +106,7 @@ export function LegalScreen({ kind }: { kind: LegalKind }) {
     ? [['overview', 'Overview'], ['information', 'Information we collect'], ['local-modes', 'Demo and Banker Mode'], ['tv-cast', 'TV Scoreboard & casting'], ['use', 'How we use information'], ['sharing', 'When information is shared'], ['retention', 'Storage and retention'], ['choices', 'Your choices'], ['children', "Children's privacy"], ['changes', 'Changes']]
     : [['acceptance', 'Acceptance of these terms'], ['service', 'The companion service'], ['local-modes', 'Demo and Banker Mode'], ['tv-cast', 'TV Scoreboard & display'], ['independent', 'Independent companion'], ['accounts', 'Local session access'], ['fair-play', 'Fair play'], ['content', 'Your game data'], ['availability', 'Availability'], ['responsibility', 'Gameplay responsibility'], ['updates', 'Updates']]
   return <InfoPage kind={kind} kicker="APP INFORMATION" title={isPrivacy ? 'Privacy & local data' : 'Terms & conditions'} accent="" intro={isPrivacy ? 'How your saved game information is handled.' : 'The ground rules for using this companion.'}>
-    <section className={`info-art-banner ${isPrivacy ? 'cyan' : 'yellow'}`}><div><h2>{isPrivacy ? 'Kept close to home.' : 'Made for your table.'}</h2><p>{isPrivacy ? 'No accounts. No online game records. Your rooms stay on this device.' : 'An independent companion. Your physical deck runs the game.'}</p></div><AssetCardFan cards={isPrivacy ? ['Back', 'SECOND CHANCE', '0'] : ['Back', '12', '+6']} /></section>
+    <section className={`info-art-banner ${isPrivacy ? 'cyan' : 'yellow'}`}><div><h2>{isPrivacy ? 'Kept close to home.' : 'Made for your table.'}</h2><p>{isPrivacy ? 'No accounts or cloud records. Optional sharing stays on your local network.' : 'An independent companion. Your physical deck runs the game.'}</p></div><AssetCardFan cards={isPrivacy ? ['Back', 'SECOND CHANCE', '0'] : ['Back', '12', '+6']} /></section>
     <div className="info-document-meta"><span>Updated October 2026</span><span>{isPrivacy ? 'Data Privacy Policy' : 'Terms & Conditions'}</span></div>
     <details className="info-contents"><summary><span>ON THIS PAGE</span><b>{sections.length} sections</b><ChevronDown className="info-contents-chevron" size={18} aria-hidden="true" /></summary><nav aria-label={isPrivacy ? 'Privacy policy sections' : 'Terms sections'}>{sections.map(([id, title], i) => <a key={id} href={`#${id}`}><span>{String(i + 1).padStart(2, '0')}</span>{title}</a>)}</nav></details>
     <article className="info-legal-document" aria-label={isPrivacy ? 'Data Privacy Policy' : 'Terms & Conditions'}>{isPrivacy ? <PrivacyPolicy /> : <TermsConditions />}</article>

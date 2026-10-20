@@ -1,12 +1,13 @@
+import { RoomSharingButton, SharedRoomDialog } from '../mobile/SharedRoomControls'
 import { RestartDialog } from './RestartDialog'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
+import { useRoomSheetMotion } from '../../lib/use-room-sheet-motion'
 import {
   ArrowDown,
   ArrowLeft,
   ArrowRightLeft,
   ArrowUp,
-  Cast,
   Check,
   ChevronDown,
   ChevronRight,
@@ -30,6 +31,7 @@ import {
 } from 'lucide-react'
 import type { Card } from '../../game/cards'
 import { ForcedDrawStatus } from './ForcedDrawStatus'
+import { RoundHistoryDialog } from './RoundHistoryDialog'
 import { vengeanceTableEntries, type VTableEntry } from '../../game/tableEntries'
 import { vengeanceCards, type VengeanceCard } from '../../game/vengeanceCards'
 import {
@@ -47,7 +49,10 @@ import {
   type VVariant,
   type VFlipSevenChoice,
 } from '../../game/vengeanceGame'
-import { getLibrary, saveVengeanceState, updateLibrary, type PlayerProfile } from '../../lib/room-store'
+import { getLibrary, saveVengeanceState, updateLibrary, useLibrary, type PlayerProfile } from '../../lib/room-store'
+import { blockSharedHost } from '../../lib/shared-room'
+import { useRoomPresence } from '../../lib/shared-room-presence'
+import { SeatConnectionBadge, seatConnection } from '../mobile/SeatConnectionBadge'
 import { useAppNavigation, useNavigationGuard } from '../../lib/navigation'
 import { useBackAction } from '../../lib/back-actions'
 import { ConfirmationModal } from '../../components/ConfirmationModal'
@@ -57,8 +62,7 @@ import { CardArtwork } from '../../components/CardArtwork'
 import { PickerCardArtwork } from '../../components/PickerCardArtwork'
 import { PlayerAvatar } from '../../components/PlayerAvatar'
 import { defaultPlayerAvatarFor, type PlayerAvatarId } from '../../lib/player-avatars'
-import { TvShareDialog } from '../mobile/TvShareDialog'
-import { tvSharingAvailable, useTvSession } from '../../lib/tv-share'
+import { tvSharingAvailable } from '../../lib/tv-share'
 import { TargetScorePicker } from '../mobile/TargetScorePicker'
 import { RoomCharacterDialog } from '../mobile/MobileApp'
 import { BrutalSkullIcon } from '../../components/BrutalSkullIcon'
@@ -209,6 +213,7 @@ function VengeanceMenuDialog({
   onOpenPlayers,
   onOpenHistory,
   onOpenRules,
+  onOpenHistory,
   onOpenTvShare,
   onRestart,
   onExit,
@@ -218,6 +223,7 @@ function VengeanceMenuDialog({
   onOpenPlayers: () => void
   onOpenHistory: () => void
   onOpenRules: () => void
+  onOpenHistory: () => void
   onOpenTvShare: () => void
   onRestart?: () => void
   onExit: () => void
@@ -229,7 +235,8 @@ function VengeanceMenuDialog({
   }, [])
 
   return (
-    <dialog
+    <motion.dialog
+      {...sheetMotion}
       ref={dialog}
       className="room-dialog banker-menu-dialog tv-share-dialog edition-vengeance"
       onCancel={onClose}
@@ -294,6 +301,11 @@ function VengeanceMenuDialog({
           </div>
           <ChevronRight size={18} className="banker-menu-item-chevron" />
         </button>
+        {!demo && <button type="button" className="banker-menu-item" onClick={() => { onClose(); onOpenHistory() }}>
+          <div className="banker-menu-item-icon"><History size={20} /></div>
+          <div className="banker-menu-item-text"><strong>Round history</strong><span>Cards and scores by round</span></div>
+          <ChevronRight size={18} className="banker-menu-item-chevron" />
+        </button>}
         {onRestart && (
           <button
             type="button"
@@ -326,8 +338,8 @@ function VengeanceMenuDialog({
               <Monitor size={20} />
             </div>
             <div className="banker-menu-item-text">
-              <strong>TV Scoreboard</strong>
-              <span>Cast live scores to a TV or web browser</span>
+              <strong>Share & connect</strong>
+              <span>Invite players, manage seats, or show scores on TV</span>
             </div>
             <ChevronRight size={18} className="banker-menu-item-chevron" />
           </button>
@@ -350,7 +362,7 @@ function VengeanceMenuDialog({
           <ChevronRight size={18} className="banker-menu-item-chevron" />
         </button>
       </div>
-    </dialog>
+    </motion.dialog>
   )
 }
 
@@ -644,11 +656,18 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
     }
   }, [])
 
-  const room = roomId ? getLibrary().rooms.find((r) => r.id === roomId && r.edition === 'vengeance') : undefined
+  const library = useLibrary()
+  const room = roomId ? library.rooms.find((r) => r.id === roomId && r.edition === 'vengeance') : undefined
+  const onlineDevices = useRoomPresence(roomId)
   const [state, setState] = useState<VState | null>(() => room?.vengeanceState ?? null)
+  const [followTurns, setFollowTurns] = useState(() => { try { return localStorage.getItem('flip7.host.follow-turns.v1') !== 'false' } catch { return true } })
   const stateRef = useRef<VState | null>(state)
   const pendingSaveRef = useRef<VState | null>(null)
   const [saveError, setSaveError] = useState('')
+  useEffect(() => {
+    if (!demo && room?.vengeanceState && !pendingSaveRef.current) { stateRef.current = room.vengeanceState; setState(room.vengeanceState) }
+  }, [demo, room?.vengeanceState])
+  useEffect(() => { if (roomId) blockSharedHost(roomId, Boolean(saveError)); return () => { if (roomId) blockSharedHost(roomId, false) } }, [roomId, saveError])
 
   const [pickerOpen, setPickerOpen] = useState(false)
   const pickerSessionRef = useRef(0)
@@ -659,6 +678,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
   const [playersOpen, setPlayersOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [rulesOpen, setRulesOpen] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
   const [roundSummaryOpen, setRoundSummaryOpen] = useState(false)
   const [restartOpen, setRestartOpen] = useState(false)
   const [newGamePromptOpen, setNewGamePromptOpen] = useState(false)
@@ -666,8 +686,6 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
   const [tvOpen, setTvOpen] = useState(false)
 
   const playerTabRefs = useRef<Record<string, HTMLButtonElement | null>>({})
-  const tvSession = useTvSession()
-  const isSharing = tvSession?.roomId === roomId
 
   useEffect(() => {
     stateRef.current = state
@@ -713,11 +731,13 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
       if (!roomId) return
       try {
         saveVengeanceState(roomId, next)
+        blockSharedHost(roomId, false)
         stateRef.current = next
         pendingSaveRef.current = null
         setState(next)
         setSaveError('')
       } catch (error) {
+        blockSharedHost(roomId, true)
         pendingSaveRef.current = next
         setSaveError(`${(error as Error).message} Retry before continuing.`)
       }
@@ -728,10 +748,14 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
   const dispatch = useCallback(
     (action: VAction) => {
       if (!stateRef.current || pendingSaveRef.current) return
-      const next = vengeanceReducer(stateRef.current, action)
-      if (next !== stateRef.current) persist(next)
+      const current = !demo && roomId ? getLibrary().rooms.find(r => r.id === roomId)?.vengeanceState ?? stateRef.current : stateRef.current
+      let next = vengeanceReducer(current, action)
+      if (!followTurns && action.type !== 'select-player' && next !== current && current.selectedPlayerId && next.players.some(player => player.id === current.selectedPlayerId)) {
+        next = { ...next, selectedPlayerId: current.selectedPlayerId }
+      }
+      if (next !== current) persist(next)
     },
-    [persist]
+    [persist, demo, roomId, followTurns]
   )
 
   const selected = state ? state.players.find((p) => p.id === state.selectedPlayerId) ?? state.players[0] : null
@@ -761,9 +785,16 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
 
   // Auto-scroll non-busted player tab into view
   useEffect(() => {
-    if (!turnPlayerId) return
+    if (!followTurns || !turnPlayerId) return
     playerTabRefs.current[turnPlayerId]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
-  }, [turnPlayerId])
+  }, [followTurns, turnPlayerId])
+
+  const toggleFollowTurns = () => {
+    const next = !followTurns
+    setFollowTurns(next)
+    try { localStorage.setItem('flip7.host.follow-turns.v1', String(next)) } catch { /* Keep this session's choice. */ }
+    if (next && turnPlayerId && selected?.id !== turnPlayerId) dispatch({ type: 'select-player', playerId: turnPlayerId })
+  }
 
   // Open round summary modal automatically upon entering settlement
   useEffect(() => {
@@ -935,15 +966,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
           </header>
         ) : (
           <header className="topbar banker-topbar">
-            <button
-              className={`brand-button cast-button ${isSharing ? 'is-sharing' : ''}`}
-              aria-label="TV scoreboard"
-              title="TV scoreboard"
-              onClick={() => setTvOpen(true)}
-            >
-              <Cast size={20} />
-              {isSharing && <span className="cast-live-dot" />}
-            </button>
+            <RoomSharingButton roomId={roomId} onClick={() => setTvOpen(true)} />
             <span className="game-topbar-brand">
               <img src="/assets/flip7-vengeance-logo.webp" alt="Flip 7 With a Vengeance" />
             </span>
@@ -976,7 +999,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
             <span>{demo ? 'PRACTICE TO' : 'FIRST TO'}</span>
             <b>{state.targetScore}</b>
           </div>
-          <div>
+          <div className="viewing">
             <span>VIEWING</span>
             <b>{selected?.name || '—'}</b>
           </div>
@@ -988,9 +1011,10 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
           )}
         </section>
 
-        <div className="banker-turn-callout" role="status">
+        <div className="banker-turn-callout has-follow-toggle" role="status">
           <span>CURRENT TURN</span>
           <b>{drawing?.name || '—'}</b>
+          <button type="button" className="follow-turns-toggle" aria-label={`Follow turns ${followTurns ? 'on' : 'off'}`} aria-pressed={followTurns} title="Follow current turn" onClick={toggleFollowTurns}>Follow</button>
         </div>
 
         {forcedTurn && forcedTurn.remaining > 0 && <ForcedDrawStatus label={forcedTurn.kind === 'four' ? 'Flip Four' : 'Just One More'} remaining={forcedTurn.remaining} total={forcedTurn.kind === 'four' ? 4 : 1} />}
@@ -1010,7 +1034,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                 setSelectedCardIndex(null)
               }}
             >
-              <PlayerAvatar player={player} className="mini-avatar" />
+              <span className="host-player-avatar"><PlayerAvatar player={player} className="mini-avatar" /><SeatConnectionBadge status={seatConnection(room, player.id, onlineDevices)} compact /></span>
               <span className="opponent-copy">
                 <b>{player.name}</b>
                 <span>{playerTabSummary(player, state.variant, state.flipSevenChoice)}</span>
@@ -1608,16 +1632,17 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
                     const score = vengeanceScore(player, state.variant, state.flipSevenChoice)
                     return (
                       <div
-                        className={`info-player ${player.id === selected?.id ? 'current-player' : ''}`}
+                        className={`info-player ${player.id === turnPlayerId ? 'current-player' : ''}`}
                         key={player.id}
                       >
                         <PlayerAvatar player={player} className="mini-avatar" />
                         <div>
                           <b>
                             {player.name}
-                            {player.id === selected?.id ? ' (current)' : ''}
+                            {player.id === turnPlayerId ? ' (current)' : ''}
                           </b>
                           <small>{playerTabSummary(player, state.variant, state.flipSevenChoice)}</small>
+                          <SeatConnectionBadge status={seatConnection(room, player.id, onlineDevices)} />
                         </div>
                         <span className="info-player-scores">
                           <span>
@@ -1733,11 +1758,13 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
           onOpenPlayers={() => setPlayersOpen(true)}
           onOpenHistory={() => setHistoryOpen(true)}
           onOpenRules={() => setRulesOpen(true)}
+          onOpenHistory={() => setHistoryOpen(true)}
           onOpenTvShare={() => setTvOpen(true)}
           onRestart={() => setRestartOpen(true)}
           onExit={exit}
         />
       )}
+      {historyOpen && room && <RoundHistoryDialog room={room} history={state.history} onClose={() => setHistoryOpen(false)} />}
 
       {historyOpen && <RoundHistoryDialog edition="vengeance" history={state.history} roster={room?.roster ?? state.players} onClose={() => setHistoryOpen(false)} />}
 
@@ -1745,7 +1772,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
         dispatch({ type: 'restart', scope }); setRestartOpen(false); setRoundSummaryOpen(false);
         setOrganizedPlayers({}); setSelectedCardIndex(null); setEditingCardInstanceId(null);
       }} />}
-      {tvOpen && roomId && <TvShareDialog roomId={roomId} onClose={() => setTvOpen(false)} />}
+      {tvOpen && roomId && <SharedRoomDialog roomId={roomId} onClose={() => setTvOpen(false)} />}
     </div>
   )
 }

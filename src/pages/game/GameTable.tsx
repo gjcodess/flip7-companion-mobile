@@ -20,6 +20,7 @@ type GameTableProps = {
   interactionLocked: boolean
   canEditCards: boolean | undefined
   canAddCards?: boolean
+  showAddCard?: boolean
   canDrawWhileStayed?: boolean
   confirmedAt: string | null | undefined
   isStaying: boolean
@@ -31,7 +32,7 @@ type GameTableProps = {
   onSelectCard: (index: number, card: Card) => void
 }
 
-export function GameTable({ table, tableCardIds, isVoidedCard, cardResolution, score, flipSevenBonus, busted, frozen, submitting, interactionLocked, canEditCards, canAddCards = true, canDrawWhileStayed = false, confirmedAt, isStaying, isOrganized, playerName, isHost, onOrganize, onOpenPicker, onSelectCard }: GameTableProps) {
+export function GameTable({ table, tableCardIds, isVoidedCard, cardResolution, score, flipSevenBonus, busted, frozen, submitting, interactionLocked, canEditCards, canAddCards = true, showAddCard = true, canDrawWhileStayed = false, confirmedAt, isStaying, isOrganized, playerName, isHost, onOrganize, onOpenPicker, onSelectCard }: GameTableProps) {
   useEffect(() => {
     void preloadCardArtwork()
   }, [])
@@ -82,7 +83,7 @@ export function GameTable({ table, tableCardIds, isVoidedCard, cardResolution, s
             </AnimatePresence>
           </div>)}
         </div>
-        {!busted && (canDrawWhileStayed || (!confirmedAt && !isStaying && !frozen)) && <button className="add-card-card" disabled={submitting || interactionLocked || !canEditCards || !canAddCards} onClick={() => { if (submitting || interactionLocked || !canEditCards || !canAddCards) return; onOpenPicker() }} aria-label="Record a physical card"><Plus size={30} /></button>}
+        {showAddCard && !busted && (canDrawWhileStayed || (!confirmedAt && !isStaying && !frozen)) && <button className="add-card-card" disabled={submitting || interactionLocked || !canEditCards || !canAddCards} onClick={() => { if (submitting || interactionLocked || !canEditCards || !canAddCards) return; onOpenPicker() }} aria-label="Record a physical card"><Plus size={30} /></button>}
       </AnimatePresence>
     </div>
   </section>

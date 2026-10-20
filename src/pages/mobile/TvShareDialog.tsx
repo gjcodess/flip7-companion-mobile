@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
-import { Copy, Monitor, Radio, X } from 'lucide-react'
+import { useState } from 'react'
+import { Check, Copy, Monitor, Power, Radio } from 'lucide-react'
+import { PlayerAvatar } from '../../components/PlayerAvatar'
 import { useLibrary } from '../../lib/room-store'
 import { startTvSharing, stopTvSharing, useTvSession } from '../../lib/tv-share'
 import { useBackAction } from '../../lib/back-actions'
@@ -11,11 +12,11 @@ export function TvShareDialog({ roomId, onClose }: { roomId: string; onClose: ()
   const session = useTvSession()
   const room = library.rooms.find(item => item.id === roomId)
   const sharingThisRoom = session?.roomId === roomId
+  const state = room?.edition === 'vengeance' ? room.vengeanceState : room?.state
+  const previewPlayers = [...(state?.players ?? room?.roster.map(player => ({ ...player, totalScore: 0 })) ?? [])].sort((a, b) => b.totalScore - a.totalScore).slice(0, 3)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
-
-  useEffect(() => { dialog.current?.showModal() }, [])
 
   const start = async () => {
     if (!room) return
@@ -35,13 +36,21 @@ export function TvShareDialog({ roomId, onClose }: { roomId: string; onClose: ()
     try { await navigator.clipboard.writeText(session.url); setCopied(true) }
     catch { setError('Could not copy the address. You can type it on the TV instead.') }
   }
-  return <dialog ref={dialog} className={`room-dialog tv-share-dialog${room?.edition === 'vengeance' ? ' edition-vengeance' : ''}`} onCancel={onClose} onClick={event => { if (event.target === event.currentTarget) onClose() }}>
-    <div className="room-dialog-heading"><div><span className="room-kicker">LIVE TV SCOREBOARD</span><h2>Show this room on TV</h2></div><button className="room-icon-button" aria-label="Close TV sharing" onClick={onClose}><X size={20} /></button></div>
-    <p>Everyone can follow the scores. Only this phone controls the game.</p>
-    {sharingThisRoom && session ? <div className="tv-share-active"><span><Radio size={16} /> SHARING ON YOUR LOCAL NETWORK</span><p>Open your TV’s web browser and enter this address:</p><code>{session.url}</code><button type="button" onClick={copy}><Copy size={15} /> {copied ? 'Copied' : 'Copy address'}</button></div> : <div className="tv-share-instructions"><Monitor size={33} /><p>Connect your phone and TV to the same local network, by Wi-Fi or Ethernet. Open the address in the TV’s web browser. Internet and mobile data are not needed.</p></div>}
-    {session && !sharingThisRoom && <p className="tv-share-switch">Sharing another room will switch the TV to {room?.name}.</p>}
+  return <section className="sharing-tv-panel" aria-label="TV scoreboard">
+    <div className="sharing-section-heading"><span className="sharing-section-icon"><Monitor size={20} /></span><div><h3>{sharingThisRoom ? 'TV scoreboard is live' : 'Show scores on TV'}</h3></div></div>
+    {sharingThisRoom && session ? <div className="sharing-tv-live">
+      <span className="sharing-live-label"><Radio size={15} /> LIVE ON YOUR NETWORK</span>
+      <p>Open your TV’s web browser and enter:</p>
+      <code>{session.url}</code>
+      <button className="sharing-action secondary" onClick={copy}>{copied ? <Check size={17} /> : <Copy size={17} />}{copied ? 'Address copied' : 'Copy TV address'}</button>
+      <span className="sharing-status-text" role="status">{copied ? 'TV address copied' : ''}</span>
+    </div> : <>
+      <figure className="sharing-tv-preview"><div className="sharing-tv-screen" aria-hidden="true"><header><img src={room?.edition === 'vengeance' ? '/assets/flip7-vengeance-logo.webp' : '/assets/flip7-title-logo.webp'} alt="" /><span>ROUND {String(state?.roundNumber ?? 1).padStart(2, '0')}</span></header><div className="sharing-tv-scores">{previewPlayers.map((player, index) => <div key={player.id}><span>{index + 1}</span><PlayerAvatar player={player} className="mini-avatar" /><b>{player.name}</b><strong>{player.totalScore}<small>PTS</small></strong></div>)}</div></div><span className="sharing-tv-stand" aria-hidden="true" /></figure>
+      <ol className="sharing-steps"><li><span>1</span><p>Put your phone and TV on the <b>same network</b>.</p></li><li><span>2</span><p>Open the address in your <b>TV’s web browser</b>.</p></li></ol>
+    </>}
+    {session && !sharingThisRoom && <p className="sharing-tv-switch">The TV will switch from your other room to {room?.name}.</p>}
     {error && <p className="room-error" role="alert">{error}</p>}
-    {sharingThisRoom ? <button type="button" className="tv-share-stop" disabled={busy} onClick={stop}>Stop TV sharing</button> : <button type="button" className="room-button tv-share-start" disabled={busy || !room} onClick={start}><Monitor size={18} /> {busy ? 'Starting…' : 'Show TV address'}</button>}
-    <p className="tv-share-note">Keep the app open while the TV is watching. If your Wi-Fi changes, stop and start sharing again to get a new address.</p>
-  </dialog>
+    {sharingThisRoom ? <button type="button" className="sharing-action stop" disabled={busy} onClick={stop}><Power size={16} /> Stop TV sharing</button> : <button type="button" className="sharing-action primary" disabled={busy || !room} onClick={start}><Monitor size={18} /> {busy ? 'Starting…' : 'Show TV address'}</button>}
+    {sharingThisRoom && <p className="sharing-tv-note">Keep the app open while the TV is connected.</p>}
+  </section>
 }
