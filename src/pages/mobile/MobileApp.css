@@ -1426,6 +1426,52 @@
   padding: 3px 5px;
 }
 
+.room-stay-rule-options {
+  display: grid;
+  grid-template-columns: minmax(90px, 1.55fr) repeat(4, minmax(0, 1fr));
+  margin-top: 10px;
+  overflow: hidden;
+  border: 2px solid var(--ink);
+  border-radius: 11px;
+  background: var(--cream);
+  box-shadow: 3px 3px var(--ink);
+}
+
+.room-stay-rule-options button {
+  min-width: 0;
+  min-height: 46px;
+  padding: 0 5px;
+  border: 0;
+  border-left: 1px solid var(--ink);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 850;
+  letter-spacing: 0;
+}
+
+.room-stay-rule-options button:first-child {
+  border-left: 0;
+  font-size: 11px;
+}
+
+.room-stay-rule-options button.selected {
+  background: var(--yellow);
+}
+
+.room-stay-rule-options button:focus-visible {
+  position: relative;
+  outline: 3px solid var(--pink);
+  outline-offset: -4px;
+}
+
+.room-detail-hero .room-stay-rule-note {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .room-muted {
   color: #777683;
   font-size: 10px;

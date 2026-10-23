@@ -5,7 +5,7 @@ import type { Room } from './room-store'
 import type { PlayerAvatarId } from './player-avatars'
 
 // Bump whenever commands or game-rule compatibility change, independently of marketing versions.
-export const SHARED_PROTOCOL = 1
+export const SHARED_PROTOCOL = 2
 export type SeatGrant = { secret: string; name: string; requestedSeat: string; playerId?: string; status: 'pending' | 'approved' | 'rejected' }
 export type SharedHost = { revision: number; grants: Record<string, SeatGrant>; receipts: string[] }
 export type JoinedCopy = { revision: number; playerId: string; localProfileId?: string; syncedAt: number }

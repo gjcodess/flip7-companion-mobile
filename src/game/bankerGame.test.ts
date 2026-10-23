@@ -26,6 +26,19 @@ function action(state: BankerState, sourcePlayerId: string, targetPlayerId: stri
 }
 
 describe('Banker turn progression', () => {
+  it('requires the room minimum for voluntary Stay but still lets Freeze settle a short hand', () => {
+    let state = bankerReducer(bankerInitialState(), { type: 'start', targetScore: 200, names: ['Ana', 'Ben', 'Cy'], minimumNumberCardsToStay: 3 })
+    const a = state.players[0].id
+    state = bankerReducer(state, { type: 'player', playerId: a, action: { type: 'add', card: numberCard(1) } })
+    expect(bankerReducer(state, { type: 'settle-player', playerId: a })).toBe(state)
+    expect(bankerReducer(state, { type: 'player', playerId: a, action: { type: 'stay' } })).toBe(state)
+    state = bankerReducer(state, { type: 'player', playerId: a, action: { type: 'add', card: numberCard(2) } })
+    expect(bankerReducer(state, { type: 'settle-player', playerId: a })).toBe(state)
+    state = bankerReducer(state, { type: 'player', playerId: a, action: { type: 'add', card: numberCard(3) } })
+    expect(bankerReducer(state, { type: 'settle-player', playerId: a }).players[0].round.status).toBe('stayed')
+    const frozen = action(state, a, state.players[1].id, freeze())
+    expect(frozen.players[1].round.status).toBe('frozen')
+  })
   it('advances through the configured order and skips terminal tables', () => {
     let state = start()
     state = record(state, 'banker-player-1', numberCard(1))

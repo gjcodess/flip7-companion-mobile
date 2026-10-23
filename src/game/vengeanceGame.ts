@@ -1,5 +1,6 @@
 import type { PlayerAvatarId } from '../lib/player-avatars'
 import { vengeanceCard, type VengeanceCard } from './vengeanceCards'
+import { meetsStayMinimum, type MinimumNumberCardsToStay } from './stayRule'
 
 export type VVariant = 'standard' | 'brutal'
 export type VFlipSevenChoice = { finisherId: string; choice: 'self' | 'penalize'; targetId?: string }
@@ -13,6 +14,7 @@ export type VSnapshot = Pick<VState, 'phase' | 'dealerId' | 'dealIndex' | 'turnP
 export type VState = {
   phase: 'deal' | 'turn' | 'settlement' | 'results'
   targetScore: number
+  minimumNumberCardsToStay?: MinimumNumberCardsToStay
   variant: VVariant
   roundNumber: number
   /** First seat of this round; retained under its legacy save key. */
@@ -53,11 +55,12 @@ export type VAction = (
   | { type: 'resolve-flip-seven'; choice: 'penalize'; targetPlayerId: string }
 ) & { expectedPendingKey?: string }
 
-export function vengeanceInitialState(roster: Pick<VPlayer, 'id' | 'name' | 'color' | 'avatar'>[], targetScore = 200, starterId = roster[0]?.id, variant: VVariant = 'standard'): VState {
+export function vengeanceInitialState(roster: Pick<VPlayer, 'id' | 'name' | 'color' | 'avatar'>[], targetScore = 200, starterId = roster[0]?.id, variant: VVariant = 'standard', minimumNumberCardsToStay?: MinimumNumberCardsToStay): VState {
   const first = roster.find(player => player.id === starterId) ?? roster[0]
   return {
     phase: 'deal',
     targetScore,
+    minimumNumberCardsToStay,
     variant,
     roundNumber: 1,
     dealerId: first?.id ?? '',
@@ -303,7 +306,7 @@ export function vengeanceReducer(state: VState, action: VAction): VState {
   if (action.type === 'restart') {
     if (!state.players.length || (action.scope === 'round' && state.phase === 'results')) return state
     const fresh = vengeanceInitialState(state.players, state.targetScore,
-      action.scope === 'game' ? state.players[0].id : state.dealerId, state.variant)
+      action.scope === 'game' ? state.players[0].id : state.dealerId, state.variant, state.minimumNumberCardsToStay)
     return action.scope === 'game' ? fresh : { ...fresh, roundNumber: state.roundNumber,
       history: state.history, players: fresh.players.map(player => ({ ...player,
         totalScore: state.players.find(previous => previous.id === player.id)!.totalScore })) }
@@ -435,7 +438,7 @@ export function vengeanceReducer(state: VState, action: VAction): VState {
   if (action.type === 'stay') {
     if (state.phase !== 'turn' || state.pending || state.forced.length || !state.turnPlayerId) return state
     const player = state.players.find(item => item.id === state.turnPlayerId)
-    if (!player || player.status !== 'active' || player.entries.some(entry => !entry.voided && entry.card.id === 'v-number-zero')) return state
+    if (!player || player.status !== 'active' || player.entries.some(entry => !entry.voided && entry.card.id === 'v-number-zero') || !meetsStayMinimum(player.entries.filter(isNumber).length, state.minimumNumberCardsToStay)) return state
     const players = state.players.map(item => item.id === player.id ? { ...item, status: 'stayed' as const } : item)
     return commit(state, advanceNormal(addEvent({ ...state, players, roundFinisherId: player.id }, `${player.name} stayed; score remains provisional`)))
   }

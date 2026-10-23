@@ -15,7 +15,7 @@ export function joinedRoomView(room: Room, owner: string | undefined, enabled: b
   const myVengeance = vengeance?.players.find(player => player.id === owner)
   const mayRecord = Boolean(enabled && owner && turn === owner && !decisionOwner && !complete && !settled)
   const mayBank = Boolean(mayRecord && (vengeance
-    ? vengeance.phase === 'turn' && !vengeance.forced.length && myVengeance?.status === 'active' && !myVengeance.entries.some(entry => !entry.voided && entry.card.id === 'v-number-zero')
-    : !classic?.forcedTurns.length && myClassic && bankerPlayerDerived(myClassic).canStay))
+    ? vengeance.phase === 'turn' && !vengeance.forced.length && myVengeance?.status === 'active' && !myVengeance.entries.some(entry => !entry.voided && entry.card.id === 'v-number-zero') && (vengeance.minimumNumberCardsToStay === undefined || myVengeance.entries.filter(entry => !entry.voided && entry.card.kind === 'number').length >= vengeance.minimumNumberCardsToStay)
+    : classic && !classic.forcedTurns.length && myClassic && bankerPlayerDerived(myClassic).canStay && (classic.minimumNumberCardsToStay === undefined || bankerPlayerDerived(myClassic).numberCardCount >= classic.minimumNumberCardsToStay)))
   return { vengeance, classic, state, turn, decisionOwner, complete, settled, mayRecord, mayBank }
 }

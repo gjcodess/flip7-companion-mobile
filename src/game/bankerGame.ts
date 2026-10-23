@@ -1,6 +1,7 @@
 import { demoDerived, demoInitialState, demoReducer, type DemoAction, type DemoState, type DemoStatus } from './demoGame'
 import type { Card } from './cards'
 import type { PlayerAvatarId } from '../lib/player-avatars'
+import { meetsStayMinimum, type MinimumNumberCardsToStay } from './stayRule'
 
 export const bankerPlayerColors = [
   '#ed4f7e', '#57b8d7', '#97c844', '#f7a235', '#9b7bd8',
@@ -44,6 +45,7 @@ export type BankerSnapshot = {
 export type BankerState = {
   phase: 'setup' | 'round' | 'results'
   targetScore: number
+  minimumNumberCardsToStay?: MinimumNumberCardsToStay
   roundNumber: number
   /** First seat of this round; retained under its legacy save key. */
   dealerId: string | null
@@ -60,7 +62,7 @@ export type BankerState = {
 }
 
 export type BankerAction =
-  | { type: 'start'; targetScore: number; names: string[] }
+  | { type: 'start'; targetScore: number; names: string[]; minimumNumberCardsToStay?: MinimumNumberCardsToStay }
   | { type: 'select-player'; playerId: string }
   /** Applies an intentional table correction without changing turn order. */
   | { type: 'player'; playerId: string; action: DemoAction }
@@ -225,7 +227,7 @@ export function bankerReducer(state: BankerState, action: BankerAction): BankerS
   if (action.type === 'start') {
     const players = createPlayers(action.names)
     const firstPlayerId = players[0]?.id ?? null
-    return { phase: 'round', targetScore: action.targetScore, roundNumber: 1, dealerId: firstPlayerId, selectedPlayerId: firstPlayerId, turnPlayerId: firstPlayerId, roundFinisherId: null, forcedTurns: [], players, history: [], winnerIds: [], past: [], future: [] }
+    return { phase: 'round', targetScore: action.targetScore, minimumNumberCardsToStay: action.minimumNumberCardsToStay, roundNumber: 1, dealerId: firstPlayerId, selectedPlayerId: firstPlayerId, turnPlayerId: firstPlayerId, roundFinisherId: null, forcedTurns: [], players, history: [], winnerIds: [], past: [], future: [] }
   }
 
   if (action.type === 'select-player') {
@@ -247,6 +249,7 @@ export function bankerReducer(state: BankerState, action: BankerAction): BankerS
     if (action.action.type === 'redo') return redoBankerState(state)
     const player = state.players.find(candidate => candidate.id === action.playerId)
     if (!player) return state
+    if (action.action.type === 'stay' && !meetsStayMinimum(bankerPlayerDerived(player).numberCardCount, state.minimumNumberCardsToStay)) return state
     const currentRound = player.round.externalForces ? player.round : { ...player.round, externalForces: true }
     const nextRound = demoReducer(currentRound, action.action)
     if (nextRound === currentRound) return state
@@ -302,6 +305,7 @@ export function bankerReducer(state: BankerState, action: BankerAction): BankerS
     if (state.phase !== 'round' || currentTurnId(state) !== action.playerId || state.forcedTurns.length > 0 || state.pendingAction) return state
     const player = state.players.find((candidate) => candidate.id === action.playerId)
     if (!player || player.round.status !== 'active') return state
+    if (!meetsStayMinimum(bankerPlayerDerived(player).numberCardCount, state.minimumNumberCardsToStay)) return state
     const nextRound = demoReducer(player.round, { type: 'stay' })
     if (nextRound === player.round) return state
     const players = replacePlayerRound(state.players, player.id, nextRound)

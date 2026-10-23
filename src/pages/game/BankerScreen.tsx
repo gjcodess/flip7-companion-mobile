@@ -164,7 +164,7 @@ export function BankerScreen({ roomId }: { roomId: string }) {
   const allSettled = allBankerPlayersSettled(state)
   const canEdit = selectedPlayer?.round.status === 'active' || selectedPlayer?.round.status === 'busted'
   const canRecordCards = selectedPlayer?.id === turnPlayerId && selectedPlayer.round.status === 'active' && !state.pendingAction
-  const canSettle = canRecordCards && !forcedTurn && Boolean(derived?.canStay)
+  const canSettle = canRecordCards && !forcedTurn && Boolean(derived?.canStay) && (state.minimumNumberCardsToStay === undefined || (derived?.numberCardCount ?? 0) >= state.minimumNumberCardsToStay)
   const interactionLocked = pickerOpen || selectedCardIndex !== null || cardDialogClosing || pendingAction !== null || roundSummaryOpen || !canEdit
   const tableEntries = selectedPlayer ? bankerTableEntries(state, selectedPlayer.id) : []
   const table = tableEntries.map(entry => entry.card)
