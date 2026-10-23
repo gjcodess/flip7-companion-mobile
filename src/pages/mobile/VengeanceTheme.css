@@ -133,20 +133,6 @@
     background: #e83239;
 }
 
-/* Home Stats in Vengeance */
-.edition-vengeance .room-home-stats {
-    background: transparent;
-    color: #5c6370;
-}
-
-.edition-vengeance .room-home-stats b {
-    color: #132d67;
-}
-
-.edition-vengeance .room-home-stats>span+span {
-    border-left: 1px solid #dcd1ba;
-}
-
 .vengeance-history-cards {
     display: flex;
     gap: 5px;
