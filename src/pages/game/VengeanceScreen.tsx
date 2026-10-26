@@ -985,9 +985,11 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
           )}
         </section>
 
-        <div className="banker-turn-callout has-follow-toggle" role="status">
-          <span>CURRENT TURN</span>
-          <b>{drawing?.name || '—'}</b>
+        <div className="banker-turn-row">
+          <div className="banker-turn-callout" role="status">
+            <span>CURRENT TURN</span>
+            <b>{drawing?.name || '—'}</b>
+          </div>
           <button type="button" className="follow-turns-toggle" aria-label={`Follow turns ${followTurns ? 'on' : 'off'}`} aria-pressed={followTurns} title="Follow current turn" onClick={toggleFollowTurns}>Follow</button>
         </div>
 

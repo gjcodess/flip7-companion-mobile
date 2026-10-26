@@ -160,6 +160,19 @@
   box-shadow: 2px 2px 0 #132d67 !important;
 }
 
+.edition-vengeance .banker-turn-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin: 14px 16px 0;
+}
+
+.edition-vengeance .banker-turn-row .banker-turn-callout {
+  flex: 1;
+  min-width: 0;
+  margin: 0 !important;
+}
+
 .edition-vengeance .banker-turn-callout > span {
   font-size: 8px !important;
   color: #132d67 !important;

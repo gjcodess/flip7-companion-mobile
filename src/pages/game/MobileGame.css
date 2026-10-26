@@ -126,30 +126,31 @@
   white-space: nowrap;
 }
 :is(.banker-shell, .demo-shell) .match-strip .target { border-inline: 1px dashed #132d6760; }
-.banker-shell .banker-turn-callout {
+.banker-shell .banker-turn-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin: 14px 16px 0;
+}
+.banker-shell .banker-turn-row .banker-turn-callout {
+  flex: 1;
+  min-width: 0;
   justify-content: center;
   gap: 9px;
   min-height: 38px;
-  margin: 14px 16px 0;
   padding: 8px 12px;
   background: #dceef0;
   border: 1px solid #9dbbc7;
   border-radius: 10px;
 }
-.banker-shell .banker-turn-callout > span { font-size: 8px; color: #526783; }
-.banker-shell .banker-turn-callout > b { font-size: 13px; overflow-wrap: anywhere; min-width: 0; }
-:is(.banker-shell, .demo-shell) .banker-turn-callout.has-follow-toggle {
-  position: relative;
-  padding-left: 8px !important;
-  padding-right: 84px !important;
-}
-:is(.banker-shell, .demo-shell) .follow-turns-toggle {
-  position: absolute;
-  top: 50%;
-  right: 6px;
-  transform: translateY(-50%);
+.banker-shell .banker-turn-callout > span { font-size: 8px; color: #526783; white-space: nowrap; }
+.banker-shell .banker-turn-callout > b { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+:is(.banker-shell, .demo-shell) .banker-turn-row .follow-turns-toggle {
+  position: static;
+  transform: none;
+  flex: 0 0 auto;
   min-width: 66px;
-  min-height: 27px;
+  min-height: 38px;
   padding: 3px 7px;
   border: 1.5px solid #132d67;
   border-radius: 7px;
@@ -160,11 +161,11 @@
   font-weight: 850;
   cursor: pointer;
 }
-:is(.banker-shell, .demo-shell) .follow-turns-toggle[aria-pressed='true'] {
+:is(.banker-shell, .demo-shell) .banker-turn-row .follow-turns-toggle[aria-pressed='true'] {
   background: #132d67;
   color: #fffdf3;
 }
-:is(.banker-shell, .demo-shell) .follow-turns-toggle:focus-visible {
+:is(.banker-shell, .demo-shell) .banker-turn-row .follow-turns-toggle:focus-visible {
   outline: 2px solid #132d67;
   outline-offset: 2px;
 }
