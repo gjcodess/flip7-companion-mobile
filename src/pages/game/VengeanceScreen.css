@@ -210,6 +210,12 @@
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
+.edition-vengeance .banker-player-tab .mini-avatar {
+  border: 1.5px solid #132d67 !important;
+  border-radius: 9px !important;
+  box-shadow: 1px 2px 0 #132d6726 !important;
+}
+
 .edition-vengeance .banker-player-tab.selected {
   background-color: #f7c244 !important;
   box-shadow: 3px 4px 0 #132d67 !important;
