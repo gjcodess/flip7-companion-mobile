@@ -3,7 +3,8 @@ import { App as CapacitorApp } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
 import { MotionConfig } from 'motion/react'
 import { ConfirmationModal } from './components/ConfirmationModal'
-import { AppNavigationProvider, PageTransition, currentNavigableUrl, readAppLocation, runAppViewTransition, toNavigablePath, type AppLocation } from './lib/navigation'
+import { AppNavigationProvider, PageTransition, currentNavigableUrl, readAppLocation, runAppViewTransition, toNavigablePath, useAppNavigation, type AppLocation } from './lib/navigation'
+import { androidBackDestination, dismissTopOverlay, isMainTab } from './lib/android-back'
 import { RulesScreen } from './pages/rules/RulesScreen'
 import { FAQScreen } from './pages/faq/FAQScreen'
 import { LegalScreen } from './pages/legal/LegalScreen'
@@ -24,6 +25,33 @@ function shouldSkipViewTransition(fromPath: string, toPath: string) {
   return fromPath === '/demo' || toPath === '/demo' || !viewTransitionPaths.has(fromPath) || !viewTransitionPaths.has(toPath)
 }
 
+function AndroidBackHandler({ showExitPrompt, setShowExitPrompt }: { showExitPrompt: boolean; setShowExitPrompt: (show: boolean) => void }) {
+  const navigate = useAppNavigation()
+  useEffect(() => {
+    if (Capacitor.getPlatform() !== 'android') return
+    let active = true
+    let listener: { remove: () => Promise<void> } | undefined
+    void CapacitorApp.addListener('backButton', () => {
+      if (showExitPrompt) {
+        setShowExitPrompt(false)
+        return
+      }
+      if (dismissTopOverlay()) return
+      const { pathname, search } = readAppLocation()
+      if (isMainTab(pathname)) {
+        setShowExitPrompt(true)
+        return
+      }
+      navigate(androidBackDestination(pathname, search), { replace: true })
+    }).then(handle => {
+      if (active) listener = handle
+      else void handle.remove()
+    })
+    return () => { active = false; void listener?.remove() }
+  }, [navigate, setShowExitPrompt, showExitPrompt])
+  return null
+}
+
 export default function App() {
   const [showExitPrompt, setShowExitPrompt] = useState(false)
   useEffect(() => {
@@ -37,18 +65,6 @@ export default function App() {
       window.setTimeout(removeSplash, 500)
     }, 700)
     return () => window.clearTimeout(dismissTimer)
-  }, [])
-  useEffect(() => {
-    if (Capacitor.getPlatform() !== 'android') return
-    let active = true
-    let listener: { remove: () => Promise<void> } | undefined
-    void CapacitorApp.addListener('backButton', () => {
-      setShowExitPrompt(current => !current)
-    }).then(handle => {
-      if (active) listener = handle
-      else void handle.remove()
-    })
-    return () => { active = false; void listener?.remove() }
   }, [])
   useEffect(() => {
     // Warm the lightweight picker previews after the first screen has painted.
@@ -135,6 +151,7 @@ export default function App() {
   else content = <MobileApp key="home" page="home" />
 
   return <MotionConfig reducedMotion={library.settings.reducedMotion ? 'always' : 'user'}><AppNavigationProvider navigate={navigate} onPopState={syncLocationFromHistory}>
+    <AndroidBackHandler showExitPrompt={showExitPrompt} setShowExitPrompt={setShowExitPrompt} />
     <PageTransition routeKey={`${location.pathname}${location.search}`}>{content}</PageTransition>
     {showExitPrompt && <ConfirmationModal variant="floating" eyebrow="EXIT APP" title="Leave Flip7 Companion?" message="Your saved rooms and player records will be here when you come back." cancelLabel="Stay" confirmLabel="Exit app" onCancel={() => setShowExitPrompt(false)} onConfirm={() => { void CapacitorApp.exitApp() }} />}
   </AppNavigationProvider></MotionConfig>

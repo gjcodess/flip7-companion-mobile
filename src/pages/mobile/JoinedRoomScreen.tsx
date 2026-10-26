@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import jsQR from 'jsqr'
-import { ArrowLeft, Camera, Check, ChevronDown, ChevronRight, ClipboardPaste, Clock3, ImagePlus, QrCode, RefreshCw, Users, Wifi, X } from 'lucide-react'
+import { ArrowLeft, Camera, Check, ChevronDown, ChevronRight, ClipboardPaste, Clock3, ImagePlus, PencilLine, QrCode, RefreshCw, Users, Wifi, X } from 'lucide-react'
 import { PlayerAvatar } from '../../components/PlayerAvatar'
 import { ConfirmationModal } from '../../components/ConfirmationModal'
 import { isPlayerAvatarId } from '../../lib/player-avatars'
@@ -54,6 +54,31 @@ function CameraScanner({ onRead, onClose }: { onRead: (value: string) => void; o
   </div>
 }
 
+function SavedProfileDialog({ profiles, selectedId, onSelect, onClose }: {
+  profiles: ReturnType<typeof getLibrary>['players']
+  selectedId: string
+  onSelect: (id: string) => void
+  onClose: () => void
+}) {
+  const dialog = useRef<HTMLDialogElement>(null)
+  useEffect(() => { dialog.current?.showModal() }, [])
+
+  return <dialog ref={dialog} className="shared-profile-dialog" onCancel={onClose} onClick={event => { if (event.target === event.currentTarget) onClose() }} aria-labelledby="shared-profile-dialog-title">
+    <div className="shared-profile-dialog-header">
+      <div><span>YOUR SAVED PROFILES</span><h2 id="shared-profile-dialog-title">Choose your profile</h2></div>
+      <button type="button" className="shared-profile-dialog-close" aria-label="Close profile picker" onClick={onClose}><X size={19} /></button>
+    </div>
+    <p>Pick the profile you’ll use to join this room.</p>
+    <div className="shared-profile-options">
+      {profiles.map(player => <button key={player.id} type="button" className={`shared-profile-option ${selectedId === player.id ? 'is-selected' : ''}`} onClick={() => onSelect(player.id)}>
+        <PlayerAvatar player={player} className="shared-profile-avatar" />
+        <span>{player.name}</span>
+        {selectedId === player.id && <Check size={19} aria-label="Selected" />}
+      </button>)}
+    </div>
+  </dialog>
+}
+
 export function JoinedRoomScreen({ historyId }: { historyId?: string }) {
   const library = useLibrary(), navigate = useAppNavigation()
   const initialSession = useRef(readJoinedSession())
@@ -61,10 +86,11 @@ export function JoinedRoomScreen({ historyId }: { historyId?: string }) {
   const [raw, setRaw] = useState(''), [code, setCode] = useState(''), [name, setName] = useState(''), [profile, setProfile] = useState(''), [seat, setSeat] = useState('')
   const [live, setLive] = useState(false), [busy, setBusy] = useState(false), [connecting, setConnecting] = useState(false), [online, setOnline] = useState(false), [error, setError] = useState(''), [notice, setNotice] = useState('')
   const [reply, setReply] = useState<RoomReply | null>(null), [scanner, setScanner] = useState(false)
+  const [profilePicker, setProfilePicker] = useState(false)
   const [pendingAction, setPendingAction] = useState(Boolean(initialSession.current?.pending))
   const [deletePrompt, setDeletePrompt] = useState(false)
   const operation = useRef(false), pollBusy = useRef(false), mounted = useRef(true)
-  const file = useRef<HTMLInputElement>(null), codeInput = useRef<HTMLInputElement>(null)
+  const file = useRef<HTMLInputElement>(null), codeInput = useRef<HTMLInputElement>(null), nameInput = useRef<HTMLInputElement>(null)
   const lastGood = useRef(0)
   useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
   useNavigationGuard(live ? { title: 'Leave this room?', message: 'Your received history stays on this phone. Reconnect to continue; the host can record your hand while you are away.', confirmLabel: 'Leave room', cancelLabel: 'Stay', shouldBlock: () => true } : null)
@@ -216,6 +242,7 @@ export function JoinedRoomScreen({ historyId }: { historyId?: string }) {
   const activeSession = readJoinedSession()
   const canReconnect = Boolean(activeSession && (!savedRoom || savedRoom.id === `joined-${activeSession.invitation.roomId}`))
   const profiles = reply?.roomEdition === 'vengeance' ? library.vengeancePlayers : library.players
+  const selectedProfile = profiles.find(player => player.id === profile)
   const edition = room?.edition ?? reply?.roomEdition ?? library.settings.edition
   const canOpenRoom = Boolean(raw || code.length === 6)
   const removeCopy = () => {
@@ -321,20 +348,20 @@ export function JoinedRoomScreen({ historyId }: { historyId?: string }) {
 
         <div className="shared-identity-section">
           {profiles.length > 0 && <div className="shared-form-field">
-            <label className="shared-field-label" htmlFor="shared-profile-select">YOUR SAVED PROFILE</label>
-            <div className="shared-select-wrap">
-              <select id="shared-profile-select" value={profile} onChange={event => setProfile(event.target.value)}>
-                <option value="">Type custom name…</option>
-                {profiles.map(player => <option key={player.id} value={player.id}>{player.name}</option>)}
-              </select>
-              <ChevronDown size={17} className="shared-select-chevron" aria-hidden="true" />
-            </div>
+            <span className="shared-field-label">YOUR SAVED PROFILE</span>
+            <button type="button" className="shared-profile-trigger" aria-haspopup="dialog" onClick={() => setProfilePicker(true)}>
+              {selectedProfile && <PlayerAvatar player={selectedProfile} className="shared-profile-avatar" />}
+              <span>{selectedProfile?.name ?? 'Choose a saved profile'}</span>
+              <ChevronDown size={17} aria-hidden="true" />
+            </button>
+            {selectedProfile && <button type="button" className="shared-use-display-name" onClick={() => { setProfile(''); setName(''); window.requestAnimationFrame(() => nameInput.current?.focus()) }}><PencilLine size={15} /> Enter a different name</button>}
           </div>}
 
           {!profile && <div className="shared-form-field">
             <label className="shared-field-label" htmlFor="shared-name-input">YOUR DISPLAY NAME</label>
             <input
               id="shared-name-input"
+              ref={nameInput}
               value={name}
               maxLength={24}
               placeholder="What should we call you?"
@@ -407,6 +434,7 @@ export function JoinedRoomScreen({ historyId }: { historyId?: string }) {
       </section>}
       {notice && <p className="shared-notice" role="status">{notice}</p>}{error && <p className="room-error" role="alert">{error}</p>}
     </main></div>}
+    {profilePicker && <SavedProfileDialog profiles={profiles} selectedId={profile} onSelect={id => { setProfile(id); setProfilePicker(false) }} onClose={() => setProfilePicker(false)} />}
     {deletePrompt && savedRoom && <ConfirmationModal eyebrow="REMOVE JOINED HISTORY" title="Remove this history copy?" message="Only the copy on this phone is removed. Lifetime statistics stay. Export a backup first to keep the detailed cards and scores." cancelLabel="Keep history" confirmLabel="Remove copy" onCancel={() => setDeletePrompt(false)} onConfirm={removeCopy} />}
   </>
 }

@@ -65,6 +65,8 @@ html.room-reduced-motion .room-dialog.shared-room-dialog[open]::backdrop { anima
 .shared-network-tip b { font-size: 12px; font-weight: 900; }
 .shared-network-tip p { font-size: 11px; line-height: 1.6; margin-top: 4px; }
 .shared-join-card { border: 2px solid var(--ink); border-radius: 18px; padding: 21px 18px; box-shadow: 4px 5px 0 var(--ink); background: var(--cream); margin-top: 20px; }
+.shared-claim-card { position: relative; isolation: isolate; overflow: hidden; }
+.shared-claim-card::before, .shared-profile-dialog::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none; background-image: radial-gradient(circle, #132d6733 1px, transparent 1.2px); background-size: 8px 8px; -webkit-mask-image: radial-gradient(ellipse 125px 95px at top left, #000, transparent), radial-gradient(ellipse 125px 95px at bottom right, #000, transparent); mask-image: radial-gradient(ellipse 125px 95px at top left, #000, transparent), radial-gradient(ellipse 125px 95px at bottom right, #000, transparent); }
 .shared-join-card h2 { font-size: 22px; letter-spacing: -.7px; font-weight: 950; margin: 6px 0 0; }
 .shared-join-card > p { font-size: 12px; color: #53607a; line-height: 1.65; }
 .shared-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
@@ -125,13 +127,28 @@ html.room-reduced-motion .room-dialog.shared-room-dialog[open]::backdrop { anima
 .shared-identity-section { display: grid; gap: 14px; margin: 20px 0 22px; }
 .shared-form-field { display: grid; gap: 7px; }
 .shared-field-label { font-size: 9px; font-weight: 950; letter-spacing: .1em; color: var(--ink); text-transform: uppercase; }
-.shared-select-wrap { position: relative; width: 100%; }
-.shared-select-wrap select { appearance: none; -webkit-appearance: none; width: 100%; min-height: 48px; padding: 12px 38px 12px 14px; border: 2px solid var(--ink) !important; border-radius: 12px !important; background: #fffdf3; color: var(--ink); font-size: 15px; font-weight: 700; box-shadow: 2px 2.5px 0 var(--ink); cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease; }
-.shared-select-wrap select:focus { outline: none; border-color: var(--pink, #ed4f7e) !important; box-shadow: 2px 2.5px 0 var(--pink, #ed4f7e); }
-.shared-select-chevron { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--ink); }
+.shared-profile-trigger { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 54px; padding: 7px 13px; border: 2px solid var(--ink); border-radius: 12px; background: #fffdf3; color: var(--ink); font-size: 14px; font-weight: 800; text-align: left; box-shadow: 2px 2.5px 0 var(--ink); cursor: pointer; }
+.shared-profile-trigger > span:nth-last-child(2) { flex: 1; }
+.shared-profile-trigger:focus-visible { outline: 2px solid var(--ink) !important; outline-offset: 3px; }
+.shared-join-page .shared-use-display-name { display: inline-flex; align-items: center; justify-self: start; gap: 7px; min-height: 36px; padding: 7px 11px; border: 1.5px solid var(--ink); border-radius: 9px; background: #dceef0; color: var(--ink); box-shadow: 2px 2px 0 var(--ink); font-size: 11px; font-weight: 850; line-height: 1.2; cursor: pointer; }
+.shared-use-display-name:active { transform: translate(2px, 2px); box-shadow: none; }
+.shared-profile-dialog { --ink: #132d67; --cream: #fff7da; --yellow: #ffe05c; position: fixed; isolation: isolate; inset: auto 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px; width: calc(100% - 32px); max-width: 440px; max-height: min(80dvh, 640px); margin: 0 auto; padding: 20px 18px 22px; overflow: auto; border: 2px solid var(--ink); border-radius: 18px; background: var(--cream); color: var(--ink); box-shadow: 5px 6px 0 var(--ink); font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+.shared-profile-dialog::backdrop { background: #10182abb; }
+.shared-profile-dialog-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.shared-profile-dialog-header span { color: #c53264; font-size: 9px; font-weight: 950; letter-spacing: .12em; }
+.shared-profile-dialog-header h2 { margin: 5px 0 0; font-size: 21px; letter-spacing: -.6px; }
+.shared-profile-dialog-close { display: grid; place-items: center; width: 44px; height: 44px; flex: 0 0 44px; margin: -6px -6px 0 0; padding: 0; border: 0; background: transparent; color: var(--ink); cursor: pointer; transition: opacity .12s ease; }
+.shared-profile-dialog-close:hover { opacity: .7; }
+.shared-profile-dialog > p { margin: 10px 0 17px; color: #53607a; font-size: 12px; line-height: 1.5; }
+.shared-profile-options { display: grid; gap: 10px; }
+.shared-profile-option { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 10px 12px; border: 2px solid var(--ink); border-radius: 12px; background: #fffdf3; color: var(--ink); text-align: left; box-shadow: 2px 3px 0 var(--ink); cursor: pointer; }
+.shared-profile-option > span:nth-child(2) { flex: 1; font-size: 14px; font-weight: 850; }
+.shared-profile-option.is-selected { background: var(--yellow); }
+.shared-profile-option:focus-visible, .shared-profile-dialog-close:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+.shared-profile-avatar { width: 38px !important; height: 38px !important; flex: 0 0 38px; border: 1.5px solid var(--ink); border-radius: 50%; }
 
 .shared-form-field input { width: 100%; min-height: 48px; padding: 12px 14px; border: 2px solid var(--ink) !important; border-radius: 12px !important; background: #fffdf3; color: var(--ink); font-size: 15px; font-weight: 700; box-shadow: 2px 2.5px 0 var(--ink); transition: border-color .15s ease, box-shadow .15s ease; }
-.shared-form-field input:focus { outline: none; border-color: var(--pink, #ed4f7e) !important; box-shadow: 2px 2.5px 0 var(--pink, #ed4f7e); }
+.shared-form-field input:focus { outline: none; border-color: var(--ink) !important; background: #fff; box-shadow: 2px 2.5px 0 var(--ink); }
 .shared-form-field input::placeholder { color: #8896ab; font-weight: 500; }
 
 .shared-seat-section-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin: 18px 0 14px; }
@@ -141,7 +158,7 @@ html.room-reduced-motion .room-dialog.shared-room-dialog[open]::backdrop { anima
 
 .shared-seat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 14px 0 22px; }
 .shared-seat-card { position: relative; display: flex; align-items: center; gap: 10px; padding: 12px 10px; min-height: 72px; border: 2px solid var(--ink); border-radius: 14px; background: #fffdf3; color: var(--ink); text-align: left; box-shadow: 2.5px 3.5px 0 var(--ink); transition: transform .12s ease, box-shadow .12s ease, background-color .15s ease, border-color .15s ease; cursor: pointer; }
-.shared-seat-card:hover:not(:disabled) { background: #ffffff; }
+.shared-seat-card:hover:not(:disabled):not(.is-selected) { background: #ffffff; }
 .shared-seat-card:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1.5px 0 var(--ink); }
 .shared-seat-card.is-selected { background: var(--yellow, #ffe05c); border-color: var(--ink); box-shadow: 3.5px 4.5px 0 var(--ink); transform: translateY(-1px); }
 .edition-vengeance .shared-seat-card.is-selected { background: #ffd359; }

@@ -35,6 +35,37 @@ async function completedFixture(tied = false) {
 }
 
 describe('offline room saves', () => {
+  it('saves and edits the optional Stay rule while accepting older rooms without it', async () => {
+    const store = await import('./room-store')
+    const roster = [store.newProfile('Ana'), store.newProfile('Ben')]
+    const created = store.createRoom('Friday', 200, roster, 'classic', undefined, 'standard', 4)
+    store.startRoom(created)
+    let room = store.decodeLibrary(saved.get(store.STORAGE_KEY)!).rooms[0]
+    expect(room.minimumNumberCardsToStay).toBe(4)
+    expect(room.state?.minimumNumberCardsToStay).toBe(4)
+    store.editRoom(room, room.name, room.targetScore, roster, undefined, undefined, 3)
+    room = store.decodeLibrary(saved.get(store.STORAGE_KEY)!).rooms[0]
+    expect(room.state?.minimumNumberCardsToStay).toBe(3)
+    store.editRoom(room, room.name, room.targetScore, roster, undefined, undefined, undefined)
+    room = store.decodeLibrary(saved.get(store.STORAGE_KEY)!).rooms[0]
+    expect(room.minimumNumberCardsToStay).toBeUndefined()
+    expect(room.state?.minimumNumberCardsToStay).toBeUndefined()
+    const legacy = JSON.parse(saved.get(store.STORAGE_KEY)!)
+    delete legacy.rooms[0].minimumNumberCardsToStay
+    delete legacy.rooms[0].state.minimumNumberCardsToStay
+    expect(store.decodeLibrary(JSON.stringify(legacy)).rooms[0].minimumNumberCardsToStay).toBeUndefined()
+  })
+
+  it('starts a Vengeance room with its Stay rule and keeps it through a restart', async () => {
+    const store = await import('./room-store')
+    const roster = [store.newProfile('Ana'), store.newProfile('Ben')]
+    const created = store.createRoom('Vengeance', 200, roster, 'vengeance', undefined, 'standard', 5)
+    store.startRoom(created)
+    const room = store.decodeLibrary(saved.get(store.STORAGE_KEY)!).rooms[0]
+    expect(room.vengeanceState?.minimumNumberCardsToStay).toBe(5)
+    const restarted = vengeanceReducer(room.vengeanceState!, { type: 'restart', scope: 'game' })
+    expect(restarted.minimumNumberCardsToStay).toBe(5)
+  })
   it('migrates a version 2 Classic save without mixing Vengeance players or rooms', async () => {
     const { store, room, roster } = await fixture()
     const old = JSON.parse(saved.get(store.STORAGE_KEY)!)

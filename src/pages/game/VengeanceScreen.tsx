@@ -846,7 +846,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
               onCancel={() => setNewGamePromptOpen(false)}
               onConfirm={() => {
                 setNewGamePromptOpen(false)
-                const next = vengeanceInitialState(state.players, state.targetScore, undefined, state.variant)
+                const next = vengeanceInitialState(state.players, state.targetScore, undefined, state.variant, state.minimumNumberCardsToStay)
                 persist(next)
               }}
             />
@@ -902,6 +902,7 @@ export function VengeanceScreen({ roomId, demo = false }: { roomId?: string; dem
     isSelectedTurn &&
     !forcedTurn &&
     !hasZero &&
+    (state.minimumNumberCardsToStay === undefined || (selected?.entries.filter(entry => !entry.voided && entry.card.kind === 'number').length ?? 0) >= state.minimumNumberCardsToStay) &&
     selected?.status === 'active' &&
     !pending
 

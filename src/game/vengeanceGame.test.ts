@@ -18,6 +18,14 @@ const resolve = (state: VState, cardId: string, actorId: string, cards: string[]
 }
 
 describe('Vengeance rules', () => {
+  it('requires the room minimum for voluntary Stay and keeps the Zero restriction', () => {
+    const initial = { ...round([player('a', ['v-number-1', 'v-modifier-minus-2']), player('b', []), player('c', [])]), minimumNumberCardsToStay: 3 as const }
+    expect(vengeanceReducer(initial, { type: 'stay' })).toBe(initial)
+    const ready = { ...initial, players: [player('a', ['v-number-1', 'v-number-2', 'v-number-3']), ...initial.players.slice(1)] }
+    expect(vengeanceReducer(ready, { type: 'stay' }).players[0].status).toBe('stayed')
+    const withZero = { ...ready, players: [player('a', ['v-number-zero', 'v-number-1', 'v-number-2']), ...ready.players.slice(1)] }
+    expect(vengeanceReducer(withZero, { type: 'stay' })).toBe(withZero)
+  })
   it('scores ÷2 before penalties, clamps at zero, then adds the Flip 7 bonus', () => {
     expect(vengeanceScore(player('a', ['v-number-13', 'v-number-9', 'v-modifier-half', 'v-modifier-minus-4']))).toBe(7)
     expect(vengeanceScore(player('a', ['v-number-1', 'v-modifier-minus-10']))).toBe(0)
@@ -180,7 +188,7 @@ describe('Vengeance rules', () => {
   })
 
   it('continues the initial deal after Just One More makes its first recipient freeze', () => {
-    let state = vengeanceInitialState(roster)
+    let state = vengeanceInitialState(roster, 200, undefined, 'standard', 5)
     state = vengeanceReducer(state, { type: 'record', cardId: 'v-action-just-one-more' })
     state = vengeanceReducer(state, { type: 'choose-actor', playerId: 'b' })
     state = vengeanceReducer(state, { type: 'confirm' })

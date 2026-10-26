@@ -71,7 +71,7 @@ const faqGroups = [
         "question": "How is a round scored?",
         "answer": "Add the Number cards, apply ×2 if you have it, add any +2 through +10 Modifier points, then add the +15 Flip 7 bonus if you revealed seven unique Number cards."
       },
-      { "question": "When can I stay?", "answer": "On your normal turn, you may stay with a card in front of you, even a Modifier with no Number cards. There is no two-Number minimum. Finish forced draws first." },
+      { "question": "When can I stay?", "answer": "On your normal turn, you may stay with a card in front of you, even a Modifier with no Number cards, unless your host set a 2–5 Number-card minimum for this room. Finish forced draws first. Freeze can still bank a player below the minimum." },
       {
         "question": "Do Modifier cards count toward Flip 7?",
         "answer": "No. Modifier cards change the score but do not count as unique Number cards. You cannot bust on a Modifier card."
@@ -139,7 +139,7 @@ const vengeanceFaqGroups = [
   ] },
   { id: 'cards', title: 'The cards fight back.', label: 'Cards & actions', items: [
     { question: 'Can I affect someone who stayed?', answer: 'Yes. Players who stayed can receive Actions and Modifiers and can lose or exchange face-up cards. Their score remains provisional until the round ends. Forced draws can bust them; if they survive, they remain stayed.' },
-    { question: 'When can I stay?', answer: 'There is no two-Number minimum. Choose Stay on your normal turn unless you hold The Zero. Finish forced draws first; staying leaves your hand vulnerable to attacks.' },
+    { question: 'When can I stay?', answer: 'Choose Stay on your normal turn unless you hold The Zero or the host set a 2–5 Number-card minimum you have not met. Finish forced draws first. Just One More can still force a player to stay below the minimum.' },
     { question: 'Must I use an Action card?', answer: 'Yes, when a valid target exists. If a Swap, Steal, or Discard has no valid card to target, discard that Action.' },
     { question: 'Can Swap bust players?', answer: 'Yes. Recheck both hands after the exchange; it can bust both players.' },
     { question: 'How does Flip Four resolve?', answer: 'Reveal up to four physical cards one at a time. Stop at a bust or Flip 7. A bust during the four reveals discards the queued effects. If all four finish without a bust, resolve queued Actions and Modifiers in reveal order. A later Just One More bust does not cancel the remaining queued Actions.' },

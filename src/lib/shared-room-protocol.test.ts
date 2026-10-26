@@ -22,6 +22,13 @@ function record(room: Room, cardId = 'number-7', operationId = crypto.randomUUID
 }
 
 describe('shared room seat authorization', () => {
+  it('rejects a joined player banking below the host’s Number-card minimum', () => {
+    const original = fixture()
+    const seat = original.roster[0].id
+    const withRule = { ...original, minimumNumberCardsToStay: 3 as const, state: { ...original.state!, minimumNumberCardsToStay: 3 as const } }
+    const afterOne = { ...withRule, state: bankerReducer(withRule.state!, { type: 'player', playerId: seat, action: { type: 'add', card: pickerCards.find(card => card.id === 'number-1')! } }) }
+    expect(() => applyParticipantCommand(afterOne, seat, { type: 'bank' })).toThrow('not available')
+  })
   it('reveals no hands or credentials until the host approves a seat', () => {
     const room = fixture()
     const visitor = processRoomRequest(room, request('poll')).reply

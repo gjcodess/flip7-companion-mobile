@@ -3,6 +3,7 @@ import { Capacitor, registerPlugin } from '@capacitor/core'
 import { bankerInitialState, bankerPlayerColors, bankerReducer, type BankerState } from '../game/bankerGame'
 import { pickerCards } from '../game/cards'
 import { demoInitialState } from '../game/demoGame'
+import type { MinimumNumberCardsToStay } from '../game/stayRule'
 import { vengeanceCards } from '../game/vengeanceCards'
 import { vengeanceInitialState, type VState } from '../game/vengeanceGame'
 import { defaultPlayerAvatarFor, isPlayerAvatarId, type PlayerAvatarId } from './player-avatars'
@@ -21,6 +22,7 @@ export type RoomVariant = 'standard' | 'brutal'
 export type Room = {
   id: string; name: string; createdAt: number; updatedAt: number
   targetScore: number; roster: PlayerProfile[]; state: BankerState | null; pinned: boolean
+  minimumNumberCardsToStay?: MinimumNumberCardsToStay
   edition?: Edition; vengeanceState?: VState | null; vengeanceDealerId?: string; variant?: RoomVariant
   sharedHost?: SharedHost; joinedCopy?: JoinedCopy
 }
@@ -67,11 +69,13 @@ export function decodeLibrary(raw: string): RoomLibrary {
     ids.add(room.id)
     if (room.edition !== undefined && !['classic', 'vengeance'].includes(room.edition)) throw new Error('Invalid saved edition.')
     if (room.variant !== undefined && !['standard', 'brutal'].includes(room.variant)) throw new Error('Invalid saved variant.')
+    if (room.minimumNumberCardsToStay !== undefined && ![2, 3, 4, 5].includes(room.minimumNumberCardsToStay)) throw new Error('Invalid Stay rule.')
     if (room.edition === 'vengeance') {
       if (room.vengeanceDealerId && !room.roster.some(player => player.id === room.vengeanceDealerId)) throw new Error('Invalid Vengeance dealer.')
       if (room.state || (room.vengeanceState && (!['deal', 'turn', 'settlement', 'results'].includes(room.vengeanceState.phase) || !Array.isArray(room.vengeanceState.players) || room.vengeanceState.players.length !== room.roster.length || !Array.isArray(room.vengeanceState.history) || !Array.isArray(room.vengeanceState.forced) || !Array.isArray(room.vengeanceState.resolving) || !Array.isArray(room.vengeanceState.events) || !Number.isInteger(room.vengeanceState.nextId)))) throw new Error('Invalid saved Vengeance match.')
       if (room.vengeanceState) {
         const state = room.vengeanceState
+        if (state.minimumNumberCardsToStay !== room.minimumNumberCardsToStay) throw new Error('Invalid saved Stay rule.')
         const playerIds = new Set(state.players.map(player => player.id))
         const validPending = (pending: VState['pending']) => !pending || (pending.card?.id?.startsWith('v-') && playerIds.has(pending.sourceId) && (!pending.actorId || playerIds.has(pending.actorId)) && (!pending.targetId || playerIds.has(pending.targetId)) && Array.isArray(pending.selectedCards) && pending.selectedCards.every(id => typeof id === 'string'))
         if (state.targetScore !== room.targetScore || !Number.isInteger(state.roundNumber) || state.roundNumber < 1 || !Number.isInteger(state.dealIndex) || state.dealIndex < 0 || state.dealIndex > state.players.length || !playerIds.has(state.dealerId) || !playerIds.has(state.selectedPlayerId) || (state.turnPlayerId !== null && !playerIds.has(state.turnPlayerId)) || playerIds.size !== state.players.length || !state.players.every(player => validProfile(player) && room.roster.some(profile => profile.id === player.id) && ['active', 'stayed', 'busted', 'frozen', 'flip-seven'].includes(player.status) && Number.isFinite(player.totalScore) && Array.isArray(player.entries) && player.entries.every(entry => typeof entry.instanceId === 'string' && entry.card?.id?.startsWith('v-')))) throw new Error('Invalid saved Vengeance hand.')
@@ -82,6 +86,7 @@ export function decodeLibrary(raw: string): RoomLibrary {
     }
     if (room.state) {
       const state = room.state
+      if (state.minimumNumberCardsToStay !== room.minimumNumberCardsToStay) throw new Error('Invalid saved Stay rule.')
       if (!['round', 'results'].includes(state.phase) || !Number.isInteger(state.roundNumber) || state.roundNumber < 1 || state.targetScore !== room.targetScore || !Array.isArray(state.players) || state.players.length !== room.roster.length || !Array.isArray(state.history) || !Array.isArray(state.forcedTurns) || !Array.isArray(state.winnerIds)) throw new Error('Invalid saved match.')
       const validClassicPending = (pending: NonNullable<BankerState['pendingAction']>) => pending && pickerCards.some(card => card.id === pending.card?.id && card.kind === 'action') && state.players.some(player => player.id === pending.sourcePlayerId) && (pending.consumesForcedDraw === undefined || typeof pending.consumesForcedDraw === 'boolean')
       if (state.pendingAction && !validClassicPending(state.pendingAction)) throw new Error('Invalid pending Classic action.')
@@ -192,14 +197,14 @@ export function savePlayerProfile(profile: PlayerProfile, edition: Edition = 'cl
     }
   })
 }
-export function createRoom(name: string, targetScore: number, roster: PlayerProfile[], edition: Edition = 'classic', vengeanceDealerId?: string, variant: RoomVariant = 'standard') {
-  const room: Room = { id: generateId(), name: name.trim(), targetScore, roster, createdAt: Date.now(), updatedAt: Date.now(), pinned: false, state: null, edition, vengeanceState: null, vengeanceDealerId, variant }
+export function createRoom(name: string, targetScore: number, roster: PlayerProfile[], edition: Edition = 'classic', vengeanceDealerId?: string, variant: RoomVariant = 'standard', minimumNumberCardsToStay?: MinimumNumberCardsToStay) {
+  const room: Room = { id: generateId(), name: name.trim(), targetScore, roster, createdAt: Date.now(), updatedAt: Date.now(), pinned: false, state: null, edition, vengeanceState: null, vengeanceDealerId, variant, minimumNumberCardsToStay }
   updateLibrary(current => { const key = edition === 'vengeance' ? 'vengeancePlayers' : 'players'; return { ...current, rooms: [room, ...current.rooms], [key]: [...current[key], ...roster.filter(p => !current[key].some(existing => existing.id === p.id))] } })
   return room
 }
 function roomGameChanged(before: Room, after: Room) {
   const changed = (previous: object | null | undefined, next: object | null | undefined) => previous !== next && (!previous || !next || Object.keys(next).some(key => key !== 'selectedPlayerId' && (previous as Record<string, unknown>)[key] !== (next as Record<string, unknown>)[key]))
-  return changed(before.state, after.state) || changed(before.vengeanceState, after.vengeanceState) || before.roster !== after.roster || before.targetScore !== after.targetScore
+  return changed(before.state, after.state) || changed(before.vengeanceState, after.vengeanceState) || before.roster !== after.roster || before.targetScore !== after.targetScore || before.minimumNumberCardsToStay !== after.minimumNumberCardsToStay
 }
 export function saveRoom(room: Room) {
   if (room.joinedCopy || getLibrary().rooms.find(r => r.id === room.id)?.joinedCopy) throw new Error('Joined history is read-only. Reconnect to its host to play.')
@@ -223,14 +228,14 @@ export function saveVengeanceState(roomId: string, state: VState) {
 }
 export function startRoom(room: Room) {
   if (room.joinedCopy) throw new Error('Only the original host can start this room.')
-  if (room.edition === 'vengeance') { saveRoom({ ...room, vengeanceState: vengeanceInitialState(room.roster, room.targetScore, room.vengeanceDealerId, room.variant ?? 'standard') }); return }
-  const started = bankerReducer(bankerInitialState(), { type: 'start', targetScore: room.targetScore, names: room.roster.map(p => p.name) })
+  if (room.edition === 'vengeance') { saveRoom({ ...room, vengeanceState: vengeanceInitialState(room.roster, room.targetScore, room.vengeanceDealerId, room.variant ?? 'standard', room.minimumNumberCardsToStay) }); return }
+  const started = bankerReducer(bankerInitialState(), { type: 'start', targetScore: room.targetScore, names: room.roster.map(p => p.name), minimumNumberCardsToStay: room.minimumNumberCardsToStay })
   const firstId = room.roster[0].id
   const state: BankerState = { ...started, players: started.players.map((p, i) => ({ ...p, ...room.roster[i] })), dealerId: firstId, selectedPlayerId: firstId, turnPlayerId: firstId }
   saveRoom({ ...room, state })
 }
 export function canEditRoster(room: Room) { if (room.joinedCopy) return false; return room.edition === 'vengeance' ? !room.vengeanceState || (room.vengeanceState.phase === 'deal' && room.vengeanceState.events.length === 0) : !room.state || (room.state.phase === 'round' && !room.state.pendingAction && room.state.forcedTurns.length === 0 && room.state.players.every(p => p.round.status === 'active' && p.round.entries.length === 0)) }
-export function editRoom(room: Room, name: string, targetScore: number, roster: PlayerProfile[], vengeanceDealerId?: string, variant?: RoomVariant) {
+export function editRoom(room: Room, name: string, targetScore: number, roster: PlayerProfile[], vengeanceDealerId?: string, variant?: RoomVariant, minimumNumberCardsToStay?: MinimumNumberCardsToStay) {
   if (room.joinedCopy) throw new Error('Only the original host can edit this room.')
   if (!canEditRoster(room)) throw new Error('Change players before the first card of a round.')
   if (roster.length < 2 || roster.length > 18) throw new Error('A room needs 2–18 players.')
@@ -239,9 +244,9 @@ export function editRoom(room: Room, name: string, targetScore: number, roster: 
     const previous = room.vengeanceState
     if (previous && targetScore <= Math.max(...previous.players.map(player => player.totalScore))) throw new Error('The new target must be higher than the current leading score.')
     const selectedDealer = roster.some(player => player.id === vengeanceDealerId) ? vengeanceDealerId! : roster.some(player => player.id === previous?.dealerId) ? previous!.dealerId : roster[roster.length - 1].id
-    const fresh = previous && vengeanceInitialState(roster, targetScore, selectedDealer, nextVariant)
+    const fresh = previous && vengeanceInitialState(roster, targetScore, selectedDealer, nextVariant, minimumNumberCardsToStay)
     const vengeanceState = fresh && { ...fresh, roundNumber: previous!.roundNumber, history: previous!.history, players: fresh.players.map(player => ({ ...player, totalScore: previous!.players.find(old => old.id === player.id)?.totalScore ?? 0 })) }
-    updateLibrary(current => ({ ...current, rooms: current.rooms.map(item => item.id === room.id ? { ...room, name: name.trim(), targetScore, roster, variant: nextVariant, vengeanceDealerId: selectedDealer, vengeanceState, updatedAt: Date.now() } : item), vengeancePlayers: [...current.vengeancePlayers, ...roster.filter(player => !current.vengeancePlayers.some(existing => existing.id === player.id))] }))
+    updateLibrary(current => ({ ...current, rooms: current.rooms.map(item => item.id === room.id ? { ...room, name: name.trim(), targetScore, roster, variant: nextVariant, minimumNumberCardsToStay, vengeanceDealerId: selectedDealer, vengeanceState, updatedAt: Date.now() } : item), vengeancePlayers: [...current.vengeancePlayers, ...roster.filter(player => !current.vengeancePlayers.some(existing => existing.id === player.id))] }))
     return
   }
   if (room.state && targetScore !== room.targetScore && targetScore <= Math.max(...room.state.players.map(p => p.totalScore))) throw new Error('The new target must be higher than the current leading score.')
@@ -252,6 +257,7 @@ export function editRoom(room: Room, name: string, targetScore: number, roster: 
     return {
       ...currentState,
       targetScore,
+      minimumNumberCardsToStay,
       players: roster.map(p => {
         const existing = currentState.players.find(player => player.id === p.id)
         return existing ? { ...existing, ...p } : { ...p, totalScore: 0, round: demoInitialState() }
@@ -264,7 +270,7 @@ export function editRoom(room: Room, name: string, targetScore: number, roster: 
       past: [], future: [],
     }
   })() : null
-  updateLibrary(current => ({ ...current, rooms: current.rooms.map(r => r.id === room.id ? { ...room, name: name.trim(), targetScore, roster, state, updatedAt: Date.now() } : r), players: [...current.players, ...roster.filter(p => !current.players.some(existing => existing.id === p.id))] }))
+  updateLibrary(current => ({ ...current, rooms: current.rooms.map(r => r.id === room.id ? { ...room, name: name.trim(), targetScore, minimumNumberCardsToStay, roster, state, updatedAt: Date.now() } : r), players: [...current.players, ...roster.filter(p => !current.players.some(existing => existing.id === p.id))] }))
 }
 export function roomStatus(room: Room) { const state = room.edition === 'vengeance' ? room.vengeanceState : room.state; return room.joinedCopy ? state?.phase === 'results' ? 'Joined · Completed' : 'Joined · Incomplete' : !state ? 'Ready to play' : state.phase === 'results' ? 'Completed' : 'In progress' }
 export function playerStats(id: string, rooms = getLibrary().rooms, archivedStats = getLibrary().archivedStats, edition: Edition = 'classic'): PlayerStats {
