@@ -1428,7 +1428,7 @@
 
 .room-stay-rule-options {
   display: grid;
-  grid-template-columns: minmax(90px, 1.55fr) repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   margin-top: 10px;
   overflow: hidden;
   border: 2px solid var(--ink);
@@ -1449,11 +1449,6 @@
   font-size: 13px;
   font-weight: 850;
   letter-spacing: 0;
-}
-
-.room-stay-rule-options button:first-child {
-  border-left: 0;
-  font-size: 11px;
 }
 
 .room-stay-rule-options button.selected {

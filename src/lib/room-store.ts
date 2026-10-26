@@ -69,7 +69,7 @@ export function decodeLibrary(raw: string): RoomLibrary {
     ids.add(room.id)
     if (room.edition !== undefined && !['classic', 'vengeance'].includes(room.edition)) throw new Error('Invalid saved edition.')
     if (room.variant !== undefined && !['standard', 'brutal'].includes(room.variant)) throw new Error('Invalid saved variant.')
-    if (room.minimumNumberCardsToStay !== undefined && ![2, 3, 4, 5].includes(room.minimumNumberCardsToStay)) throw new Error('Invalid Stay rule.')
+    if (room.minimumNumberCardsToStay !== undefined && ![1, 2, 3, 4, 5].includes(room.minimumNumberCardsToStay)) throw new Error('Invalid Stay rule.')
     if (room.edition === 'vengeance') {
       if (room.vengeanceDealerId && !room.roster.some(player => player.id === room.vengeanceDealerId)) throw new Error('Invalid Vengeance dealer.')
       if (room.state || (room.vengeanceState && (!['deal', 'turn', 'settlement', 'results'].includes(room.vengeanceState.phase) || !Array.isArray(room.vengeanceState.players) || room.vengeanceState.players.length !== room.roster.length || !Array.isArray(room.vengeanceState.history) || !Array.isArray(room.vengeanceState.forced) || !Array.isArray(room.vengeanceState.resolving) || !Array.isArray(room.vengeanceState.events) || !Number.isInteger(room.vengeanceState.nextId)))) throw new Error('Invalid saved Vengeance match.')
