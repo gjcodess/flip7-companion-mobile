@@ -126,45 +126,75 @@
   white-space: nowrap;
 }
 :is(.banker-shell, .demo-shell) .match-strip .target { border-inline: 1px dashed #132d6760; }
-.banker-shell .banker-turn-callout {
+.banker-shell .banker-turn-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin: 14px 16px 0;
+}
+.banker-shell .banker-turn-row .banker-turn-callout {
+  flex: 1;
+  min-width: 0;
   justify-content: center;
   gap: 9px;
   min-height: 38px;
-  margin: 14px 16px 0;
   padding: 8px 12px;
   background: #dceef0;
-  border: 1px solid #9dbbc7;
-  border-radius: 10px;
-}
-.banker-shell .banker-turn-callout > span { font-size: 8px; color: #526783; }
-.banker-shell .banker-turn-callout > b { font-size: 13px; overflow-wrap: anywhere; min-width: 0; }
-:is(.banker-shell, .demo-shell) .banker-turn-callout.has-follow-toggle {
-  position: relative;
-  padding-left: 8px !important;
-  padding-right: 84px !important;
-}
-:is(.banker-shell, .demo-shell) .follow-turns-toggle {
-  position: absolute;
-  top: 50%;
-  right: 6px;
-  transform: translateY(-50%);
-  min-width: 66px;
-  min-height: 27px;
-  padding: 3px 7px;
   border: 1.5px solid #132d67;
-  border-radius: 7px;
+  border-radius: 10px;
+  box-shadow: 2px 2px 0 #132d67;
+}
+.banker-shell .banker-turn-callout > span { font-size: 8px; color: #526783; white-space: nowrap; }
+.banker-shell .banker-turn-callout > b { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+:is(.banker-shell, .demo-shell) .banker-turn-row .follow-turns-toggle {
+  position: static;
+  transform: none;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 76px;
+  min-height: 38px;
+  padding: 3px 10px;
+  border: 1.5px solid #132d67;
+  border-radius: 9px;
   background: #fffdf3;
   color: #132d67;
+  box-shadow: 2px 2px 0 #132d67;
   font-family: inherit;
-  font-size: 9px;
-  font-weight: 850;
+  font-size: 10px;
+  font-weight: 900;
   cursor: pointer;
+  transition: background-color .14s ease, color .14s ease, transform .1s ease, box-shadow .1s ease;
 }
-:is(.banker-shell, .demo-shell) .follow-turns-toggle[aria-pressed='true'] {
+:is(.banker-shell, .demo-shell) .banker-turn-row .follow-turns-toggle::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border-radius: 50%;
+  background: #a8b4c9;
+  transition: background-color .14s ease;
+}
+:is(.banker-shell, .demo-shell) .banker-turn-row .follow-turns-toggle:hover {
+  background: #fff7da;
+}
+:is(.banker-shell, .demo-shell) .banker-turn-row .follow-turns-toggle[aria-pressed='true']:hover {
+  background: #213f79;
+}
+:is(.banker-shell, .demo-shell) .banker-turn-row .follow-turns-toggle:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 #132d67;
+}
+:is(.banker-shell, .demo-shell) .banker-turn-row .follow-turns-toggle[aria-pressed='true'] {
   background: #132d67;
   color: #fffdf3;
 }
-:is(.banker-shell, .demo-shell) .follow-turns-toggle:focus-visible {
+:is(.banker-shell, .demo-shell) .banker-turn-row .follow-turns-toggle[aria-pressed='true']::before {
+  background: #97c844;
+}
+:is(.banker-shell, .demo-shell) .banker-turn-row .follow-turns-toggle:focus-visible {
   outline: 2px solid #132d67;
   outline-offset: 2px;
 }

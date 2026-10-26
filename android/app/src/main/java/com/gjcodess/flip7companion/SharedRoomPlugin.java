@@ -36,6 +36,7 @@ public class SharedRoomPlugin extends Plugin {
     private volatile String roomCode;
     private volatile String invitationSecret;
     private volatile String address;
+    private static final int SHARED_PROTOCOL = 2;
     private static final int DISCOVERY_PORT = 41777;
     private static final String CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private static final int MAX_BODY = 12 * 1024 * 1024;
@@ -143,7 +144,7 @@ public class SharedRoomPlugin extends Plugin {
                 KeyPair pair = keys;
                 if (code != null && active != null && !active.isClosed() && pair != null && query.equalsIgnoreCase("FLIP7_FIND:" + code)) {
                     JSONObject payload = new JSONObject()
-                        .put("protocol", 1)
+                        .put("protocol", SHARED_PROTOCOL)
                         .put("roomId", hostedRoom)
                         .put("code", code)
                         .put("url", "http://" + address + ":" + active.getLocalPort() + "/room/" + hostedRoom)
@@ -164,7 +165,7 @@ public class SharedRoomPlugin extends Plugin {
             if (!raw.matches("[A-Z0-9]{6}")) { call.reject("Enter a 6-character room code."); return; }
             if (server != null && !server.isClosed() && raw.equalsIgnoreCase(roomCode)) {
                 JSObject own = currentInvitation();
-                own.put("protocol", 1);
+                own.put("protocol", SHARED_PROTOCOL);
                 own.put("roomId", hostedRoom);
                 call.resolve(own);
                 return;

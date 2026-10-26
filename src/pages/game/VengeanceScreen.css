@@ -160,6 +160,19 @@
   box-shadow: 2px 2px 0 #132d67 !important;
 }
 
+.edition-vengeance .banker-turn-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin: 14px 16px 0;
+}
+
+.edition-vengeance .banker-turn-row .banker-turn-callout {
+  flex: 1;
+  min-width: 0;
+  margin: 0 !important;
+}
+
 .edition-vengeance .banker-turn-callout > span {
   font-size: 8px !important;
   color: #132d67 !important;
@@ -195,6 +208,12 @@
   background-color: #fffdf3 !important;
   color: #132d67 !important;
   transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.edition-vengeance .banker-player-tab .mini-avatar {
+  border: 1.5px solid #132d67 !important;
+  border-radius: 9px !important;
+  box-shadow: 1px 2px 0 #132d6726 !important;
 }
 
 .edition-vengeance .banker-player-tab.selected {

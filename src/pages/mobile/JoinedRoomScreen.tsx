@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Capacitor } from '@capacitor/core'
+import { Clipboard } from '@capacitor/clipboard'
 import jsQR from 'jsqr'
 import { ArrowLeft, Camera, Check, ChevronDown, ChevronRight, ClipboardPaste, Clock3, ImagePlus, PencilLine, QrCode, RefreshCw, Users, Wifi, X } from 'lucide-react'
 import { PlayerAvatar } from '../../components/PlayerAvatar'
@@ -167,12 +169,19 @@ export function JoinedRoomScreen({ historyId }: { historyId?: string }) {
 
   const pasteFromClipboard = async () => {
     try {
-      const text = (await navigator.clipboard.readText()).trim()
-      if (!text) throw new Error('Clipboard is empty.')
+      const text = Capacitor.isNativePlatform()
+        ? (await Clipboard.read()).value
+        : await navigator.clipboard?.readText()
+      if (!text?.trim()) {
+        setError('Clipboard is empty. Copy a room code, then tap Paste code.')
+        return
+      }
       handleCodeInput(text)
+      setError('')
       codeInput.current?.focus()
     } catch {
       codeInput.current?.focus()
+      setError('Could not access the clipboard. Tap a code box and choose Paste from the keyboard menu.')
     }
   }
 
@@ -291,7 +300,7 @@ export function JoinedRoomScreen({ historyId }: { historyId?: string }) {
           <div className="shared-code-section">
             <div className="shared-code-header">
               <label htmlFor="shared-room-code-input">ROOM CODE</label>
-              {code || raw ? <button type="button" className="shared-code-Action" onClick={() => { setCode(''); setRaw(''); codeInput.current?.focus() }}><X size={13} /> Clear</button> : <button type="button" className="shared-code-Action" onClick={() => void pasteFromClipboard()}><ClipboardPaste size={13} /> Paste</button>}
+              {code || raw ? <button type="button" className="shared-code-Action shared-code-clear" aria-label="Clear room code" onClick={() => { setCode(''); setRaw(''); setError(''); codeInput.current?.focus() }}><X size={14} /> Clear</button> : <button type="button" className="shared-code-Action shared-code-paste" onClick={() => void pasteFromClipboard()}><ClipboardPaste size={14} /> Paste code</button>}
             </div>
 
             <div className="shared-code-slots-wrap" onClick={() => codeInput.current?.focus()}>
