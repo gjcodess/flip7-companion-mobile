@@ -61,9 +61,8 @@ function RoomCard({ room, feature = false }: { room: Room; feature?: boolean }) 
 function HomeScreen() {
   const library = useLibrary(); const navigate = useAppNavigation()
   const edition = currentEdition(library)
-  const rooms = library.rooms.filter(room => (room.edition ?? 'classic') === edition)
+  const rooms = library.rooms.filter(room => (room.edition ?? 'classic') === edition && roomState(room)?.phase !== 'results')
   const [filter, setFilter] = useState('all'); const [query, setQuery] = useState('')
-  const active = rooms.filter(r => roomState(r) && roomState(r)?.phase !== 'results')
   const sorted = [...rooms].sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.updatedAt - a.updatedAt)
   const visible = sorted.filter(r => (filter === 'all' || (filter === 'active' ? roomState(r) && roomState(r)?.phase !== 'results' : !roomState(r))) && r.name.toLowerCase().includes(query.toLowerCase()))
   return <><div className="room-home-hero">
@@ -71,8 +70,8 @@ function HomeScreen() {
     <section className="room-welcome"><h1>{edition === 'vengeance' ? <>No one’s safe.<br /><em>Watch your back.</em></> : <>Your table.<br /><em>Your game night.</em></>}</h1><p>Resume a match or start a new room.</p></section>
   </div>
     <HomePromoCarousel edition={edition} />
-    {localRoomsAvailable() && <button type="button" className="shared-home-join" onClick={() => navigate('/join')}><span className="shared-home-join-icon"><Users size={23} /></span><span><b>Join a nearby room</b></span><ChevronRight size={19} /></button>}
-    <section className="room-library"><div className="room-section-heading"><h2>Your rooms <span>{rooms.length}</span></h2>{active.length > 0 && <span className="room-section-note">{active.length} in progress</span>}</div>
+    <section className="room-library"><div className="room-section-heading"><div className="room-section-heading-copy"><h2>Your rooms <span>{rooms.length}</span></h2></div></div>
+      {localRoomsAvailable() && <button type="button" className="shared-home-join shared-home-join-section" onClick={() => navigate('/join')}><span className="shared-home-join-icon"><Users size={19} /></span><span><b>Join a nearby room</b><small>Enter a code or scan a QR</small></span><ChevronRight size={18} /></button>}
       {rooms.length > 0 && <><div className="room-filter-tabs">{[['all', 'All rooms'], ['active', 'In progress'], ['ready', 'Ready to play']].map(([value, label]) => <button key={value} aria-pressed={filter === value} className={filter === value ? 'selected' : ''} onClick={() => setFilter(value)}>{label}</button>)}</div><label className="room-search"><Search size={18} /><input placeholder="Find a room…" aria-label="Search rooms" value={query} onChange={e => setQuery(e.target.value)} /></label></>}
       <div className="room-list">{visible.map((r, i) => <RoomCard key={r.id} room={r} feature={i === 0 && Boolean(roomState(r) && roomState(r)?.phase !== 'results')} />)}</div>
       {!rooms.length ? <EmptyState icon={<FolderOpen size={30} />} title="Your next game starts here">Create your first room, bring your favorite people, and keep every flip.</EmptyState> : !visible.length && <EmptyState icon={<Search size={28} />} title="No rooms found">Try a different name or filter.</EmptyState>}

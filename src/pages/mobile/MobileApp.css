@@ -271,6 +271,8 @@
   margin: 24px 0 15px;
 }
 
+.room-section-heading-copy { display: grid; gap: 3px; min-width: 0; }
+
 .room-section-heading h2 {
   font-size: 18px;
   font-weight: 900;

@@ -26,6 +26,14 @@ html.room-reduced-motion .room-dialog.shared-room-dialog[open]::backdrop { anima
 .shared-home-join { display: flex; align-items: center; gap: 13px; width: 100%; min-height: 78px; border: 1.5px solid var(--ink); border-radius: 14px; padding: 14px; margin: 20px 0; background: var(--cream); color: var(--ink); text-align: left; box-shadow: 3px 4px 0 var(--ink); }
 .shared-home-join-icon { display: grid; place-items: center; width: 44px; height: 44px; flex: 0 0 44px; border: 1.5px solid var(--ink); border-radius: 12px; background: var(--yellow); }
 .shared-home-join > span:nth-child(2) { flex: 1; }.shared-home-join b { display: block; font-size: 13px; font-weight: 900; }.shared-home-join small { display: block; margin-top: 5px; font-size: 10px; color: #53607a; }
+.shared-home-join.shared-home-join-section { min-height: 56px; gap: 10px; margin: 0 0 14px; padding: 8px 11px; border-radius: 12px; box-shadow: 2px 3px 0 var(--ink); transition: transform .1s ease, box-shadow .1s ease, background-color .14s ease; }
+.shared-home-join.shared-home-join-section .shared-home-join-icon { width: 36px; height: 36px; flex-basis: 36px; border-radius: 10px; }
+.shared-home-join.shared-home-join-section .shared-home-join-icon svg { width: 19px; height: 19px; }
+.shared-home-join.shared-home-join-section > span:nth-child(2) { flex: 1; }
+.shared-home-join.shared-home-join-section b { font-size: 12px; }
+.shared-home-join.shared-home-join-section:hover { background: #fffdf3; }
+.shared-home-join.shared-home-join-section:active { transform: translate(1px, 1px); box-shadow: 1px 2px 0 var(--ink); }
+.shared-home-join.shared-home-join-section:focus-visible { outline: 3px solid var(--pink); outline-offset: 3px; }
 .sharing-status-text { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .sharing-status-dot, .sharing-request-badge { position: absolute; top: -4px; right: -4px; pointer-events: none; border: 2px solid #fffdf3; box-shadow: 0 0 0 1px #132d67; }
 .sharing-status-dot { width: 12px; height: 12px; border-radius: 50%; background: #97c844; }
