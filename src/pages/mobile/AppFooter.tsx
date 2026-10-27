@@ -1,4 +1,7 @@
 import { ShieldCheck } from 'lucide-react'
+import appMetadata from '../../../package.json'
+
+const displayVersion = appMetadata.version.split('.').slice(0, 2).join('.')
 
 export function AppFooter() {
   return <footer className="room-app-footer">
@@ -20,7 +23,7 @@ export function AppFooter() {
       </p>
     </div>
     <div className="room-footer-copy">
-      <span className="room-footer-version">v1.3</span>
+      <span className="room-footer-version">v{displayVersion}</span>
       <span className="room-footer-sep">·</span>
       <small>© 2026 Flip7 Companion</small>
     </div>

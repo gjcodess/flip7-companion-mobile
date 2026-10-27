@@ -1,7 +1,7 @@
 # Flip7 Companion — Terms & Conditions and Data Privacy Policy
 
 **Last Updated:** October 2026<br>
-**App Version:** 1.3.0<br>
+**App Version:** 1.4.0<br>
 **Status:** Active & In Effect
 
 ---
