@@ -83,10 +83,10 @@ While players shuffle, deal, and reveal cards from the physical deck at the tabl
 - **Full JSON Backups:** Export your entire game library (both Classic and Vengeance spaces) as a single portable JSON file, and restore it on any device.
 - **Completed Room Cleanup:** Safely purge detailed card histories from finished rooms to reclaim storage space while keeping player lifetime stats intact.
 
-### 12. 100% Offline & Privacy-First Architecture
+### 12. Offline, Privacy-First Architecture
 - **Zero Accounts:** No email addresses, phone numbers, passwords, or authentication required.
-- **Zero Tracking:** No analytics libraries, crash reporters, telemetry beacons, or ad networks.
-- **Zero Remote Calls:** No remote backend servers, external APIs, or internet connection needed.
+- **No App-Authored Tracking:** No app analytics, crash reporter, or advertising network is included.
+- **No Game Backend:** The app has no accounts or cloud game-data server. Nearby play uses Google Play services and may send connection-performance and device diagnostics subject to Android's Usage & diagnostics setting.
 
 ---
 
@@ -94,9 +94,7 @@ While players shuffle, deal, and reveal cards from the physical deck at the tabl
 
 ### Local shared rooms (Android)
 
-Start a saved match, tap the upper-left cast button, and choose **Invite → Open room for friends** in **Share & connect**. Other
-players connect to the same Wi-Fi or hotspot, choose **Join a nearby room** on
-Home, scan the invitation, and request their seat. After host approval they can
+Start a saved match, tap the upper-left cast button, and choose either **Same Wi-Fi or hotspot** or **Nearby · no hotspot** in **Share & connect**. Nearby requires Wi-Fi and Bluetooth turned on; it does not require internet, a hotspot, or mobile data. Other players choose the same connection method in **Join a nearby room**, scan the invitation QR or enter the host's 6-character code, and request their seat. After host approval they can
 view every table, record their own cards and make their assigned action choices.
 The host retains all-table access and alone handles corrections and rounds.
 Keep the host room open; participants pause if the host is unavailable. Each

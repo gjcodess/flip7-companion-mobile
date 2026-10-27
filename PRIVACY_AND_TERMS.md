@@ -1,8 +1,8 @@
 # Flip7 Companion — Terms & Conditions and Data Privacy Policy
 
-**Last Updated:** October 2026  
-**App Version:** 1.2.0  
-**Status:** Active & In Effect  
+**Last Updated:** October 2026<br>
+**App Version:** 1.4.0<br>
+**Status:** Active & In Effect
 
 ---
 
@@ -24,7 +24,7 @@
 3. [Part II: Data Privacy Policy](#part-ii-data-privacy-policy)
    - [1. Privacy Philosophy & Overview](#1-privacy-philosophy--overview)
    - [2. Information Handled by the App](#2-information-handled-by-the-app)
-   - [3. Zero Online Collection & No Telemetry](#3-zero-online-collection--no-telemetry)
+   - [3. Game Data, Diagnostics & Telemetry](#3-game-data-diagnostics--telemetry)
    - [4. Local Network TV Scoreboard Privacy](#4-local-network-tv-scoreboard-privacy)
    - [5. Storage & Retention on Device](#5-storage--retention-on-device)
    - [6. Data Portability, Backups & Deletion](#6-data-portability-backups--deletion)
@@ -122,10 +122,10 @@ Flip7 Companion is built with a **strict offline-first, privacy-by-design philos
 
 **Summary of Privacy Commitments:**
 - **Zero user accounts:** No logins, passwords, emails, or phone numbers are required.
-- **Zero online analytics:** No tracking libraries, telemetry beacons, crash reporters, or behavioral analytics are embedded in the App.
+- **No App-authored analytics:** The App has no analytics, crash-reporting, advertising, or behavioral-tracking service. Nearby Play uses Google Play services Nearby Connections; Google documents collection of connection performance metrics and device/app details when that SDK is used. Users can control Google's usage and diagnostics collection in Android settings.
 - **Zero advertising:** The App is completely free of ads, advertising SDKs, and marketing trackers.
 - **Zero cloud storage:** Room libraries and settings are stored on devices. Optional shared-room play sends the selected match to approved local participants, who retain independent history copies.
-- **Zero internet requirement:** The App runs in full offline mode without needing an active internet connection.
+- **No internet requirement for game data:** Games, local Wi-Fi/hotspot rooms, and nearby rooms work without internet. Nearby Play requires Google Play services to be installed and available.
 
 ### 2. Information Handled by the App
 
@@ -139,10 +139,11 @@ The App only processes information that you explicitly enter through its user in
 > [!TIP]
 > **Privacy Best Practice:** Because player names are visible to anyone viewing your device or the TV Scoreboard, we recommend using simple first names or fun nicknames rather than personally identifiable information.
 
-### 3. Zero Online Collection & No Telemetry
+### 3. Game Data, Diagnostics & Telemetry
 
-- The App **does not transmit** any game records, roster data, device identifiers, IP addresses, or usage patterns to any remote server or third-party service provider.
-- No network requests are made to external hosts during gameplay. The bundled Android application package (APK) includes all JavaScript code, CSS styles, icons, and WebP card artwork locally.
+- The App has no game-data backend or cloud account. It does not send room records, rosters, scores, or player actions to a remote Flip7 Companion server.
+- When Nearby Play is used, the Google Play services Nearby SDK may send Google connection performance metrics (such as discovery/connection latency, reliability, and throughput) together with device model, country, Android build version, and the App package name. Google says this collection is controlled by the device's **Settings → Google → Usage & diagnostics** preference.
+- Nearby game messages are sent directly between participating phones. App-level room messages are encrypted. Same-Wi-Fi/hotspot sharing also sends game data only over that local network.
 
 ### 4. Local Network TV Scoreboard Privacy
 
@@ -155,7 +156,7 @@ When you choose to activate the **Show live scores on TV** feature:
 
 ### 5. Storage & Retention on Device
 
-**Optional shared rooms:** The host approves a device for one player seat. Approved devices can view all tables and receive the complete match history; only their own seat and assigned game decisions are editable. The original host remains responsible for corrections and round management. Play pauses when that host is unavailable. Removing a room or revoking access does not erase history already received by another device. Unrelated rooms, the host's profile library, and preferences are not shared.
+**Optional shared rooms:** The host approves a device for one player seat. Approved devices can view all tables and receive the complete match history; only their own seat and assigned game decisions are editable. The original host remains responsible for corrections and round management. Play pauses when that host is unavailable. Rooms can connect over the same Wi-Fi/hotspot or directly over Nearby Play, which requires Wi-Fi and Bluetooth radios but no hotspot or mobile data. Removing a room or revoking access does not erase history already received by another device. Unrelated rooms, the host's profile library, and preferences are not shared.
 
 **Camera and connection credentials:** Optional camera access scans room QR invitations locally. Camera frames and selected QR photos are not uploaded. Shared-room game exchanges encrypt their payloads and use host keys supplied by the invitation. Local device credentials remember approved seats. JSON backups include any stored host approvals and participant history, so treat backup files as private.
 
@@ -197,10 +198,10 @@ If you have questions, feedback, or concerns regarding these Terms or our Data P
 
 | Feature | Policy / Status |
 | :--- | :--- |
-| **Internet Required** | **No** — 100% offline functionality |
+| **Internet Required for Game Data** | **No** — local and Nearby play work offline; Google Play services is required for Nearby |
 | **User Accounts** | **None** — No login or registration required |
-| **External Analytics & Tracking** | **None** — Zero tracking scripts or analytics SDKs |
-| **Cloud Data Sharing** | **None** — Optional room and TV sharing is direct over the local network |
+| **App-authored Analytics** | **None** — Nearby Play's Google SDK may send connection/device diagnostics controlled by Android Usage & diagnostics settings |
+| **Cloud Game Data** | **None** — Optional room and TV sharing is direct over a local network or Nearby peer-to-peer link |
 | **Shared-Room History** | **Device Local** — Approved participants retain their own copies of the full match |
 | **TV Scoreboard Streaming** | **Local Only** — Direct HTTP/WebSocket over local Wi-Fi or hotspot |
 | **Data Storage Location** | **Device Local** — Sandboxed IndexedDB / LocalStorage |

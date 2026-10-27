@@ -47,11 +47,27 @@
     <uses-feature
         android:name="android.hardware.screen.portrait"
         android:required="false" />
+    <!-- Nearby sharing and QR scanning are optional; keep the main app available
+         on devices without these hardware features. -->
+    <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
+    <uses-feature android:name="android.hardware.location" android:required="false" />
+    <uses-feature android:name="android.hardware.wifi" android:required="false" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
 
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:minSdkVersion="29" android:maxSdkVersion="31" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" android:minSdkVersion="31" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" android:minSdkVersion="31" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:minSdkVersion="31" />
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" android:minSdkVersion="32" android:usesPermissionFlags="neverForLocation" />
     <!-- Room exchanges encrypt payloads and pin the host key supplied by the QR invitation. -->
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-feature android:name="android.hardware.camera" android:required="false" />
 </manifest>

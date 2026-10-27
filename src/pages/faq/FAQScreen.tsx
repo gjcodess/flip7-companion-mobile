@@ -105,7 +105,11 @@ const faqGroups = [
       },
       {
         "question": "Does the app need an internet connection?",
-        "answer": "No. Demo Mode and Banker Mode run locally, and the app does not send game data online."
+        "answer": "Game data does not need internet. Nearby shared rooms work offline but require Google Play services; that SDK may send connection and device diagnostics according to Android's Usage & diagnostics setting."
+      },
+      {
+        "question": "Can friends play together without a hotspot?",
+        "answer": "Yes. Choose Nearby when hosting or joining a shared room. Keep Wi-Fi and Bluetooth turned on, stay close to the host, and enter the host's 6-character code. No one needs a hotspot or mobile data. The existing same-Wi-Fi or hotspot option is still available."
       },
       {
         "question": "What happens when someone reaches 200 points?",
