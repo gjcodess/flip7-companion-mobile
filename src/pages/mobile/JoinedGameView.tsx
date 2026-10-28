@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { ArrowRightLeft, Cast, ChevronRight, CircleHelp, History, LogOut, Menu, RefreshCw, ShieldCheck, Trash2, Trophy, UserRound, Users, Wifi, WifiOff, X } from 'lucide-react'
+import { ArrowLeft, ArrowRightLeft, Cast, ChevronRight, CircleHelp, ClipboardList, History, LogOut, Menu, RefreshCw, Share2, ShieldCheck, Trash2, Trophy, UserRound, Users, Wifi, WifiOff, X } from 'lucide-react'
 import { bankerEligibleActionTargets, bankerPlayerDerived } from '../../game/bankerGame'
 import { pickerCards, type Card } from '../../game/cards'
 import { bankerTableEntries, vengeanceTableEntries } from '../../game/tableEntries'
@@ -15,6 +15,7 @@ import { ForcedDrawStatus } from '../game/ForcedDrawStatus'
 import { GameTable } from '../game/GameTable'
 import { RoundHistoryContent } from '../game/RoundHistoryDialog'
 import { BrutalFlipSevenModal } from '../game/BrutalFlipSevenModal'
+import { ResultsShareDialog } from '../game/ResultsShareDialog'
 import type { Room } from '../../lib/room-store'
 import type { ParticipantCommand } from '../../lib/shared-room-protocol'
 import { joinedRoomView } from './joined-room-view'
@@ -57,6 +58,8 @@ export function JoinedGameView({ room, owner, live, online, busy, pendingAction,
   const [followTurns, setFollowTurns] = useState(() => { try { return localStorage.getItem(FOLLOW_TURNS_KEY) === 'true' } catch { return false } })
   const [organized, setOrganized] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [roundSummaryDismissed, setRoundSummaryDismissed] = useState(false)
+  const [resultsShareOpen, setResultsShareOpen] = useState(false)
   const [focusCard, setFocusCard] = useState<Card | null>(null)
   const [panel, setPanel] = useState<'menu' | 'history' | 'players' | 'connection' | 'rules' | null>(null)
   const [releasePrompt, setReleasePrompt] = useState(false)
@@ -129,6 +132,7 @@ export function JoinedGameView({ room, owner, live, online, busy, pendingAction,
   }).filter((face): face is VFace => Boolean(face))
 
   useEffect(() => { if (!mayRecord || !mine) setPickerOpen(false) }, [mayRecord, mine])
+  useEffect(() => { if (!settled) setRoundSummaryDismissed(false) }, [settled, room.id])
   useEffect(() => {
     if (!followTurns || !live || !online || !turn || complete || settled) return
     setViewSeat(turn)
@@ -161,6 +165,21 @@ export function JoinedGameView({ room, owner, live, online, busy, pendingAction,
   const hint = !live ? '' : !online ? 'Waiting for the host. Check your Wi-Fi or hotspot.' : pendingAction ? 'Check your last entry before recording another card.' : settled ? 'Waiting for the host to start the next round.' : decisionOwner ? `${decisionName ?? 'A player'} is choosing ${classic?.pendingAction?.card.label ?? pending?.card.label ?? 'a Flip 7 reward'}.` : ''
   const modalClass = room.edition === 'vengeance' ? 'edition-vengeance' : ''
   const ordered = [...players].sort((a, b) => b.totalScore - a.totalScore)
+
+  if (complete) return <div className={`app-shell banker-shell saved-room-game joined-game edition-${room.edition ?? 'classic'}`}>
+    <aside className="desktop-marquee left"><div>FLIP<br />7</div></aside>
+    <main className="game-shell">
+      <header className="topbar banker-topbar banker-results-topbar"><button type="button" className="banker-results-back" onClick={onExit}><ArrowLeft size={18} /> Back to room</button><button type="button" className="brand-button banker-results-share" aria-label="Share game results" title="Share game results" onClick={() => setResultsShareOpen(true)}><Share2 size={18} /></button></header>
+      <div className="banker-results">
+        <section className="results-hero"><span className="eyebrow">{v ? 'VENGEANCE MATCH COMPLETE' : 'BANKER TABLE COMPLETE'}</span><h1>Match complete!</h1><p>{ordered.filter(player => player.totalScore === ordered[0]?.totalScore).map(player => player.name).join(' and ')} won with {ordered[0]?.totalScore ?? 0} points. Target: {room.targetScore}.</p></section>
+        <section className="results-card"><div className="results-heading"><div><span className="eyebrow">FINAL SCORES</span><h2>Game results</h2></div><span className="results-heading-icon" aria-hidden="true"><ClipboardList size={21} /></span></div><div className="results-list">{ordered.map(player => <article key={player.id} className={`results-player ${player.totalScore === ordered[0]?.totalScore ? 'winner' : ''}`}><span className="results-rank">{ordered.findIndex(p => p.totalScore === player.totalScore) + 1}</span><PlayerAvatar player={player} className="mini-avatar" /><div className="results-player-copy"><div className="results-player-name"><b>{player.name}{player.id === owner ? ' (You)' : ''}</b></div><div className="results-rounds">{state.history.map(round => <span className="round-score" key={`${player.id}-${round.round}`}>R{round.round}: {round.scores[player.id] ?? 0}</span>)}</div></div><div className="results-total"><small>Total pts</small><strong>{player.totalScore}</strong></div></article>)}</div></section>
+        <section className="results-actions"><p>Your final scores and round cards are saved in this room on your device.</p><div className="banker-results-actions"><button type="button" className="primary-wide" onClick={onExit}><ArrowLeft size={16} /> View room</button></div></section>
+      </div>
+    </main>
+    <aside className="desktop-marquee right"><div>PRESS<br />YOUR<br />LUCK</div></aside>
+    {resultsShareOpen && <ResultsShareDialog roomName={room.name} players={players} history={state.history} targetScore={room.targetScore} edition={v ? 'vengeance' : 'classic'} variant={room.variant} onClose={() => setResultsShareOpen(false)} />}
+    {panel === 'history' && <Panel title="Round history" eyebrow="SAVED ON THIS PHONE" onClose={() => setPanel(null)} className={modalClass}><RoundHistoryContent history={state.history} room={room} /></Panel>}
+  </div>
 
   return <div className={`app-shell banker-shell saved-room-game joined-game edition-${room.edition ?? 'classic'}`}>
     <aside className="desktop-marquee left"><div>FLIP<br />7</div></aside>
@@ -231,6 +250,17 @@ export function JoinedGameView({ room, owner, live, online, busy, pendingAction,
       <RoundHistoryContent history={state.history} room={room} />
     </Panel>}
     {showDecision && v?.pendingFlipSeven && <BrutalFlipSevenModal finisher={v.players.find(player => player.id === v.pendingFlipSeven?.finisherId) ?? v.players[0]} players={v.players} onResolveSelf={() => void onSend({ type: 'flip-seven', choice: 'self' })} onResolvePenalize={playerId => void onSend({ type: 'flip-seven', choice: 'penalize', playerId })} />}
+    {live && settled && !complete && !roundSummaryDismissed && <motion.div key="joined-round-summary" className="picker-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, pointerEvents: 'none' }}><motion.section className="card-picker banker-summary" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} onClick={event => event.stopPropagation()}>
+      <div className="picker-heading"><div><span>ROUND {String(state?.roundNumber ?? 1).padStart(2, '0')} COMPLETE</span><h2>Everyone is settled.</h2></div><button className="close-button" aria-label="Close round summary" onClick={() => setRoundSummaryDismissed(true)}><X size={19} /></button></div>
+      <div className="banker-round-summary-list">{state?.players.map(player => {
+        const playerStatus = v ? (player as VPlayer).status : (player as Parameters<typeof bankerPlayerDerived>[0]).round.status
+        const statusClass = playerStatus === 'flip-seven' ? 'flip-seven' : playerStatus
+        const statusLabel = playerStatus === 'frozen' ? 'FROZEN' : playerStatus === 'busted' ? 'BUSTED' : playerStatus === 'flip-seven' ? 'FLIP 7' : playerStatus === 'stayed' ? 'STAYED' : 'BANKED'
+        const score = v ? vengeanceScore(player as VPlayer, v.variant, v.flipSevenChoice) : bankerPlayerDerived(player as never).score
+        return <div className={`banker-summary-player ${statusClass}`} key={player.id}><PlayerAvatar player={player} className="mini-avatar" /><div className="banker-summary-player-copy"><b>{player.name}</b><span className={`banker-status-pill ${statusClass}`}>{statusLabel}</span></div><div className="banker-summary-score"><small>ROUND</small><strong className={score < 0 ? 'score-negative' : ''}>{score}</strong></div></div>
+      })}</div>
+      <p>The host will confirm these scores and start the next round.</p>
+    </motion.section></motion.div>}
     {showDecision && classicDecision && <Panel title={classicDecisionTitle} eyebrow={classicDecisionEyebrow} description={classicDecisionDescription} headerStyle="action" onClose={() => setDismissedDecision(decisionKey)} className={`shared-decision-dialog action-target-picker ${modalClass}`}>
       <div className="physical-picker-scroll action-target-scroll">
         <fieldset disabled={!enabled} className="shared-decision-options">
