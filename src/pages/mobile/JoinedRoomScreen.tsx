@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { Clipboard } from '@capacitor/clipboard'
 import jsQR from 'jsqr'
-import { ArrowLeft, Camera, Check, ChevronDown, ChevronRight, ClipboardPaste, Clock3, ImagePlus, PencilLine, QrCode, RefreshCw, Users, Wifi, X } from 'lucide-react'
+import { ArrowLeft, Camera, Check, ChevronDown, ChevronRight, ClipboardPaste, Clock3, PencilLine, QrCode, RefreshCw, Users, Wifi, X } from 'lucide-react'
 import { PlayerAvatar } from '../../components/PlayerAvatar'
 import { ConfirmationModal } from '../../components/ConfirmationModal'
 import { isPlayerAvatarId } from '../../lib/player-avatars'
@@ -20,7 +20,7 @@ function CameraScanner({ onRead, onClose }: { onRead: (value: string) => void; o
   useEffect(() => {
     let stopped = false, stream: MediaStream | undefined, frame = 0, lastScan = 0
     const canvas = document.createElement('canvas')
-    if (!navigator.mediaDevices?.getUserMedia) { setError('Camera unavailable. Upload a QR photo or enter the 6-character code below.'); return }
+    if (!navigator.mediaDevices?.getUserMedia) { setError('Camera unavailable. Enter the 6-character room code below.'); return }
     const tick = (time: number) => {
       if (stopped) return
       const element = video.current
@@ -40,17 +40,17 @@ function CameraScanner({ onRead, onClose }: { onRead: (value: string) => void; o
       stream = camera
       if (stopped) { camera.getTracks().forEach(track => track.stop()); return }
       if (video.current) { video.current.srcObject = camera; await video.current.play(); frame = requestAnimationFrame(tick) }
-    }).catch(() => setError('Camera unavailable. Allow camera access, upload a QR photo, or enter the room code.'))
+    }).catch(() => setError('Camera unavailable. Allow camera access or enter the room code below.'))
     return () => { stopped = true; cancelAnimationFrame(frame); stream?.getTracks().forEach(track => track.stop()) }
   }, [onRead])
   return <div className="shared-scanner-box">
     <div className="shared-scanner-header">
-      <span><Camera size={15} /> Point camera at host’s QR</span>
+      <span><Camera size={15} /> Center the host’s QR code in the frame</span>
       <button type="button" className="shared-scanner-close" onClick={onClose}><X size={15} /> Close</button>
     </div>
     <div className="shared-scanner-viewport">
       <video className="shared-scan-video" ref={video} playsInline muted aria-label="Room QR scanner" />
-      <div className="shared-scanner-reticle" aria-hidden="true"><span /><span /><span /><span /></div>
+      <div className="shared-scanner-reticle" aria-hidden="true"><span /><span /><span /><span /><i /></div>
     </div>
     {error && <p className="shared-scanner-error" role="alert">{error}</p>}
   </div>
@@ -92,7 +92,7 @@ export function JoinedRoomScreen({ historyId }: { historyId?: string }) {
   const [pendingAction, setPendingAction] = useState(Boolean(initialSession.current?.pending))
   const [deletePrompt, setDeletePrompt] = useState(false)
   const operation = useRef(false), pollBusy = useRef(false), mounted = useRef(true)
-  const file = useRef<HTMLInputElement>(null), codeInput = useRef<HTMLInputElement>(null), nameInput = useRef<HTMLInputElement>(null)
+  const codeInput = useRef<HTMLInputElement>(null), nameInput = useRef<HTMLInputElement>(null)
   const lastGood = useRef(0)
   useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
   useNavigationGuard(live ? { title: 'Leave this room?', message: 'Your received history stays on this phone. Reconnect to continue; the host can record your hand while you are away.', confirmLabel: 'Leave room', cancelLabel: 'Stay', shouldBlock: () => true } : null)
@@ -131,21 +131,6 @@ export function JoinedRoomScreen({ historyId }: { historyId?: string }) {
       openInvitation(invitation)
     } catch (error) { setError((error as Error).message) }
   }, [openInvitation])
-
-  const readPhoto = async (image?: File) => {
-    if (!image) return
-    let bitmap: ImageBitmap | undefined
-    try {
-      bitmap = await createImageBitmap(image)
-      const scale = Math.min(1, 1800 / Math.max(bitmap.width, bitmap.height)), canvas = document.createElement('canvas')
-      canvas.width = bitmap.width * scale; canvas.height = bitmap.height * scale
-      const context = canvas.getContext('2d', { willReadFrequently: true })!; context.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
-      const data = context.getImageData(0, 0, canvas.width, canvas.height), result = jsQR(data.data, data.width, data.height)
-      if (!result) throw new Error('No QR code found in that image. Try a clearer photo or enter the 6-character code.')
-      readQR(result.data)
-    } catch (error) { setError((error as Error).message) }
-    finally { bitmap?.close(); if (file.current) file.current.value = '' }
-  }
 
   const handleCodeInput = (value: string) => {
     const trimmed = value.trim()
@@ -281,21 +266,12 @@ export function JoinedRoomScreen({ historyId }: { historyId?: string }) {
             <span className="shared-card-badge"><QrCode size={20} /></span>
           </div>
 
-          <input hidden ref={file} type="file" accept="image/*" onChange={event => void readPhoto(event.target.files?.[0])} />
-
           {scanner ? <CameraScanner onRead={readQR} onClose={() => setScanner(false)} /> : <div className="shared-scan-grid">
             <button type="button" className="shared-action-tile scan-tile" onClick={() => setScanner(true)}>
               <span className="shared-tile-icon"><Camera size={22} /></span>
               <span className="shared-tile-copy">
-                <b>Scan QR code</b>
-                <small>Same Wi-Fi or hotspot</small>
-              </span>
-            </button>
-            <button type="button" className="shared-action-tile upload-tile" onClick={() => file.current?.click()}>
-              <span className="shared-tile-icon"><ImagePlus size={22} /></span>
-              <span className="shared-tile-copy">
-                <b>Upload QR photo</b>
-                <small>Same Wi-Fi or hotspot</small>
+                <b>Scan host QR code</b>
+                <small>Point your camera at the code to join instantly.</small>
               </span>
             </button>
           </div>}
