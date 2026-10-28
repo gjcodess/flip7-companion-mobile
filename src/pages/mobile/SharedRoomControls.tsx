@@ -1,11 +1,11 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { motion } from 'motion/react'
-import { Bluetooth, Cast, Check, ChevronRight, Copy, Link2, Monitor, Power, QrCode, Users, Wifi, X } from 'lucide-react'
+import { Cast, Check, ChevronRight, Copy, Link2, Monitor, Power, QrCode, Users, Wifi, X } from 'lucide-react'
 import { PlayerAvatar } from '../../components/PlayerAvatar'
 import { getLibrary, saveRoom, useLibrary } from '../../lib/room-store'
 import { decideSeat } from '../../lib/shared-room-protocol'
 import { forgetRoomDevice, useRoomPresence } from '../../lib/shared-room-presence'
-import { formatRoomCode, invitationCode, invitationText, localRoomsAvailable, startHosting, stopHosting, useHostedRoom, type RoomConnectionMode } from '../../lib/shared-room'
+import { formatRoomCode, invitationCode, invitationText, localRoomsAvailable, startHosting, stopHosting, useHostedRoom } from '../../lib/shared-room'
 import { useTvSession } from '../../lib/tv-share'
 import { TvSharePanel } from './TvShareDialog'
 import { useRoomSheetMotion } from '../../lib/use-room-sheet-motion'
@@ -28,7 +28,6 @@ export function SharedRoomDialog({ roomId, onClose, initialView }: { roomId: str
   const library = useLibrary(), hosted = useHostedRoom()
   const onlineDevices = useRoomPresence(roomId)
   const [busy, setBusy] = useState(false), [error, setError] = useState(''), [qr, setQr] = useState(''), [copied, setCopied] = useState(false)
-  const [connectionMode, setConnectionMode] = useState<RoomConnectionMode>('wifi')
   const [tab, setTab] = useState<'invite' | 'players' | 'tv'>(() => initialView ?? (hosted?.roomId === roomId && Object.values(library.rooms.find(item => item.id === roomId)?.sharedHost?.grants ?? {}).some(grant => grant.status === 'pending') ? 'players' : 'invite'))
   const dialog = useRef<HTMLDialogElement>(null), operating = useRef(false)
   const room = library.rooms.find(room => room.id === roomId && !room.joinedCopy)
@@ -73,26 +72,21 @@ export function SharedRoomDialog({ roomId, onClose, initialView }: { roomId: str
     <div className="sharing-modal-body">
       {!localRoomsAvailable() ? <p className="sharing-description">Room sharing is available in the Android app.</p> : tab === 'tv' ? <TvSharePanel roomId={roomId} /> : !active ? <>
         <div className="sharing-intro"><span className="sharing-hero-icon"><Users size={30} /></span><h3>Play together</h3></div>
-        <div className="shared-transport-options" role="group" aria-label="Choose how friends connect">
-          <button type="button" aria-pressed={connectionMode === 'wifi'} onClick={() => setConnectionMode('wifi')}><Wifi size={16} /><span>Same Wi-Fi<br />or hotspot</span></button>
-          <button type="button" aria-pressed={connectionMode === 'nearby'} onClick={() => setConnectionMode('nearby')}><Bluetooth size={16} /><span>Nearby<br />no hotspot</span></button>
-        </div>
-        <ol className="sharing-steps"><li><span>1</span><p>{connectionMode === 'nearby' ? <>Keep players close and turn on <b>Wi-Fi and Bluetooth</b>.</> : <>Connect to the same <b>Wi-Fi or hotspot</b>.</>}</p></li><li><span>2</span><p>Share your <b>6-character code</b> and approve each seat.</p></li><li><span>3</span><p>Keep the room open. <b>Your phone is the host.</b></p></li></ol>
-        <button className="sharing-action primary" disabled={busy || !room.state && !room.vengeanceState} onClick={() => void change(() => startHosting(currentRoom(), connectionMode))}>{connectionMode === 'nearby' ? <Bluetooth size={18} /> : <QrCode size={18} />}{busy ? 'Starting…' : 'Open room for friends'}</button>
+        <ol className="sharing-steps"><li><span>1</span><p>Connect every phone to the same <b>Wi-Fi or hotspot</b>.</p></li><li><span>2</span><p>Share your <b>6-character code</b> and approve each seat.</p></li><li><span>3</span><p>Keep the room open. <b>Your phone is the host.</b></p></li></ol>
+        <button className="sharing-action primary" disabled={busy || !room.state && !room.vengeanceState} onClick={() => void change(() => startHosting(currentRoom()))}><QrCode size={18} />{busy ? 'Starting…' : 'Open room for friends'}</button>
         {!room.state && !room.vengeanceState && <p className="sharing-description">Start the game before inviting players.</p>}
       </> : tab === 'invite' ? <section aria-label="Invite friends">
-        <div className="sharing-section-heading"><span className="sharing-section-icon">{hosted?.transport === 'nearby' ? <Bluetooth size={20} /> : <QrCode size={20} />}</span><div><h3>Invite to room</h3><p>{hosted?.transport === 'nearby' ? 'Scan this QR or enter the code with Nearby selected.' : 'Scan the QR code or enter the 6-character code.'}</p></div></div>
+        <div className="sharing-section-heading"><span className="sharing-section-icon"><QrCode size={20} /></span><div><h3>Invite to room</h3><p>Scan the QR code or enter the 6-character code.</p></div></div>
         <div className="sharing-qr-ticket">
-          <div className="sharing-ticket-label">{hosted?.transport === 'nearby' ? <><Bluetooth size={15} /> NEARBY · NO HOTSPOT</> : <><Wifi size={15} /> SAME WI-FI OR HOTSPOT</>}</div>
-          {qr ? <img className="sharing-qr-image" src={qr} alt={`${hosted?.transport === 'nearby' ? 'Nearby' : 'Wi-Fi'} room invitation QR code`} /> : <div className="sharing-qr-loading" role="status"><QrCode size={36} /><span>Preparing your invitation…</span></div>}
+          <div className="sharing-ticket-label"><Wifi size={15} /> SAME WI-FI OR HOTSPOT</div>
+          {qr ? <img className="sharing-qr-image" src={qr} alt="Wi-Fi or hotspot room invitation QR code" /> : <div className="sharing-qr-loading" role="status"><QrCode size={36} /><span>Preparing your invitation…</span></div>}
           <div className="sharing-room-code-box">
             <span>ROOM CODE</span>
             <strong>{formatRoomCode(code)}</strong>
           </div>
-          <p>{hosted?.transport === 'nearby' ? <>Scan this QR or enter the code in <b>Nearby</b> on each phone.</> : <>Scan this QR or enter the code in <b>Same Wi-Fi or hotspot</b>.</>}</p>
+          <p>Scan this QR or enter the 6-character code on a phone connected to the same <b>Wi-Fi or hotspot</b>.</p>
         </div>
         <button className="sharing-action secondary" disabled={busy} onClick={() => void change(async () => { await navigator.clipboard.writeText(code); setCopied(true) })}>{copied ? <Check size={18} /> : <Copy size={18} />}{copied ? `Code ${formatRoomCode(code)} copied` : `Copy room code (${formatRoomCode(code)})`}</button>
-        <button className="sharing-action secondary shared-switch-transport" disabled={busy} onClick={() => void change(async () => { await stopHosting(); setConnectionMode(hosted?.transport === 'nearby' ? 'wifi' : 'nearby'); setCopied(false) })}><Wifi size={17} />Switch to {hosted?.transport === 'nearby' ? 'Wi-Fi or hotspot' : 'Nearby'}</button>
         <span className="sharing-status-text" role="status">{copied ? 'Room code copied' : ''}</span>
         {waiting > 0 && <button className="sharing-request-notice" onClick={() => setTab('players')}><Users size={17} /><span>{waiting} seat request{waiting === 1 ? '' : 's'} waiting</span><ChevronRight size={17} /></button>}
       </section> : <section aria-label="Seats and requests">

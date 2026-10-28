@@ -1,19 +1,18 @@
 # Local shared rooms
 
-The Android app can host one shared match over a reachable local Wi-Fi network,
-phone hotspot, or Nearby Connections. Nearby uses Google Play services and direct
-device-to-device radios; no hotspot, mobile data, or internet is needed. Existing
-single-device play and the read-only TV server remain available.
+The Android app can host one shared match over a reachable local Wi-Fi network
+or phone hotspot. Every participating phone must use the same network; internet
+and mobile data are not required. Existing single-device play and the read-only
+TV server remain available.
 
 ## Using the feature
 
-1. Start a saved match, tap the upper-left cast button, then choose **Invite → Open room for friends** in **Share & connect**. The same modal includes the TV scoreboard.
-2. Choose **Same Wi-Fi or hotspot** or **Nearby · no hotspot**.
-3. Keep the host room open. Wi-Fi players connect to the same Wi-Fi/hotspot;
-   Nearby players keep Wi-Fi and Bluetooth on and stay within radio range.
-4. Players choose **Join a nearby room** from Home and scan the host's QR code
-   or enter the 6-character room code. The QR invitation selects the correct
-   transport automatically; a QR photo or pasted invitation is also supported.
+1. Start a saved match, tap the upper-left cast button, then choose **Open room for friends** in **Share & connect**. The same modal includes the TV scoreboard.
+2. Connect every phone to the same Wi-Fi network or phone hotspot. No internet connection is needed.
+3. Keep the host room open while players join.
+4. Players choose **Join a shared room** from Home and scan the host's QR code
+   or enter the 6-character room code. A QR photo or pasted invitation is also
+   supported.
 5. Each player selects/creates a local profile, requests an existing seat, and
    waits for host approval. The host sees a request count on the cast button and approves seats in its **Players** tab.
 6. Approved players browse all tables, enter cards for their own turn/forced
@@ -46,15 +45,13 @@ Full snapshots are sent only when revisions change (or after an action).
 
 ## Transport and approval
 
-`SharedRoomPlugin.java` keeps the existing bounded HTTP LAN transport and adds
-Google Nearby Connections with the P2P star strategy. Wi-Fi invitations contain
-the local address; Nearby invitations advertise only the room code, then send the
-host invitation after a connection is accepted. App-level game requests still
-use a fresh AES-256-GCM key wrapped with RSA-OAEP SHA-256, and replies use that
-exchange key with a fresh nonce. The invitation pins the host key. Nearby SDK
-connections are encrypted by the service. Oversized frames, mismatched codes,
-invalid invitations and incompatible protocols are rejected. The spectator TV
-server does not acquire Nearby permissions.
+`SharedRoomPlugin.java` uses a bounded HTTP server on the host's local network.
+Players can scan the QR invitation or find the room by its 6-character code on
+the same Wi-Fi or hotspot. App-level game requests use a fresh AES-256-GCM key
+wrapped with RSA-OAEP SHA-256, and replies use that exchange key with a fresh
+nonce. The invitation pins the host key. Oversized requests, invalid invitations
+and incompatible protocols are rejected. The spectator TV server remains a
+separate local display.
 
 Approvals and reconnect credentials survive host app restarts. The native plugin
 remembers the last host key/port; if the address or port changes, scan the new
@@ -91,10 +88,10 @@ seat replacement, final-result delivery, TV sharing and the supported player cou
 Some guest networks isolate clients; hotspot device limits also vary. An emulator
 does not establish compatibility with those hardware/network combinations.
 
-Nearby requires Google Play services and runtime permissions for Wi-Fi/Bluetooth
-discovery (or location permission on older Android releases). Wi-Fi and Bluetooth
-must be enabled manually. Google's Nearby SDK may collect connection metrics and
-device/app details, subject to the Android Usage & diagnostics setting.
+Shared rooms no longer use Google Nearby Connections and do not request
+Bluetooth, location, or nearby-device permissions. They work when both phones
+can reach each other on the same Wi-Fi network or hotspot. Guest-network client
+isolation and hotspot device limits can still prevent connections.
 
 The current target is Android API 36. When raising to API 37, implement the
 applicable local-network permission flow. Do not promise background hosting or

@@ -14,13 +14,12 @@ function LegalSection({ id, title, children }: { id: string; title: string; chil
 function PrivacyPolicy() {
   return <>
     <LegalSection id="overview" title="Overview">
-      <p>This Data Privacy Policy explains how Flip7 Companion handles information when you use the offline companion app. Groups can record physical cards on one device or optionally join a host over local Wi-Fi, a hotspot, or a nearby phone-to-phone connection.</p>
+      <p>This Data Privacy Policy explains how Flip7 Companion handles information when you use the offline companion app. Groups can record physical cards on one device or optionally join a host over the same local Wi-Fi network or phone hotspot.</p>
       <p>By using the app, you acknowledge the practices described here. This policy applies to the app and its informational pages.</p>
     </LegalSection>
     <LegalSection id="information" title="Information we collect">
       <p>The app stores the game information you choose to enter locally, including room names, player profiles, recorded cards, actions, round scores, and match results.</p>
       <p>There are no online accounts or cloud game records. Optional shared rooms use local invitations and device credentials to remember approved seats. Please avoid putting sensitive personal information into player names.</p>
-      <p>Nearby Play uses Google Play services Nearby Connections. Google documents that this SDK may send connection-performance metrics and device/app details (including device model, country, Android build version, and app package name) when Nearby is used. Android's <b>Settings → Google → Usage &amp; diagnostics</b> controls this Google collection.</p>
     </LegalSection>
     <LegalSection id="local-modes" title="Demo and Banker Mode">
       <p>Demo Mode and Banker Mode are local-only experiences. Room data is saved on this device and is not sent to any online service. Demo practice remains temporary.</p>
@@ -34,8 +33,8 @@ function PrivacyPolicy() {
       <p>The app uses the information you enter only to display the local table, calculate scores, and run the game on your device.</p>
     </LegalSection>
     <LegalSection id="sharing" title="When information is shared">
-      <p>The app has no cloud service or remote game-data server. If you enable shared-room play, approved participants receive every table’s player names, avatars, cards, scores, and full match history directly from the host over the local network or nearby connection. Their apps keep independent, read-only history copies. Deleting your room or releasing a seat does not remove copies already received on other devices. No other rooms, local profile library, or settings are sent.</p>
-      <p>Nearby Play requires Wi-Fi and Bluetooth turned on but does not need a hotspot, mobile data, or internet. The app asks for Android nearby-device permissions when you choose this option. Camera access is optional and used to scan Wi-Fi/hotspot room QR invitations. Camera frames and selected QR photos are processed on the device and are not uploaded. Shared-room exchanges encrypt game data and device credentials. TV sharing remains a separate read-only local display.</p>
+      <p>The app has no cloud service or remote game-data server. If you enable shared-room play, approved participants receive every table’s player names, avatars, cards, scores, and full match history directly from the host over the local network. Their apps keep independent, read-only history copies. Deleting your room or releasing a seat does not remove copies already received on other devices. No other rooms, local profile library, or settings are sent.</p>
+      <p>Shared rooms require every phone to be connected to the same Wi-Fi network or phone hotspot, but do not require internet or mobile data. Camera access is optional and used to scan room QR invitations. Camera frames and selected QR photos are processed on the device and are not uploaded. Shared-room exchanges encrypt game data and device credentials. TV sharing remains a separate read-only local display.</p>
     </LegalSection>
     <LegalSection id="retention" title="Storage and retention">
       <p>Rooms and player profiles remain in this device’s local app storage until you remove them. Settings includes backup and completed-room cleanup controls. Removing completed rooms keeps compact lifetime player totals for matches, wins, and best scores, without keeping their detailed card history. Backups include these totals. Clearing app data or uninstalling may remove all saves. The game-data save limit is 10 MB; actual device limits may be lower, and artwork is bundled separately.</p>
@@ -65,7 +64,7 @@ function TermsConditions() {
     </LegalSection>
     <LegalSection id="local-modes" title="Demo and Banker Mode">
       <p>Demo Mode is a private practice experience. Banker Mode is a one-device setup where a banker switches between player tables and records the group's physical cards and actions locally.</p>
-      <p>Banker rooms are saved locally and can be resumed. Optional shared-room play lets approved devices record their own seats and view every table over the same Wi-Fi/hotspot or a Nearby connection. Nearby requires Wi-Fi and Bluetooth radios and Google Play services, but no hotspot, mobile data, or internet. Only the host can correct cards and manage rounds. Play pauses when the host is unavailable. Participants keep independent history copies. Demo practice is temporary. Keep backups of records you want to preserve; device storage can be cleared or lost. Both modes require the physical deck.</p>
+      <p>Banker rooms are saved locally and can be resumed. Optional shared-room play lets approved devices record their own seats and view every table over the same Wi-Fi network or phone hotspot. Internet and mobile data are not required. Only the host can correct cards and manage rounds. Play pauses when the host is unavailable. Participants keep independent history copies. Demo practice is temporary. Keep backups of records you want to preserve; device storage can be cleared or lost. Both modes require the physical deck.</p>
     </LegalSection>
     <LegalSection id="tv-cast" title="TV Scoreboard & spectator display">
       <p>The TV Scoreboard (Cast) feature provides a local display interface designed to broadcast round scores and player statuses to external screens on your local network or phone hotspot.</p>
