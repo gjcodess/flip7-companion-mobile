@@ -14,7 +14,7 @@ export type ParticipantCommand =
   | { type: 'bank' }
   | { type: 'classic-target'; playerId: string }
   | { type: 'choose-actor'; playerId: string }
-  | { type: 'choose-target'; playerId: string }
+  | { type: 'choose-target'; playerId: string; preview?: boolean }
   | { type: 'choose-card'; instanceId: string }
   | { type: 'confirm' }
   | { type: 'flip-seven'; choice: 'self' | 'penalize'; playerId?: string }
@@ -54,7 +54,7 @@ export function applyParticipantCommand(room: Room, seat: string, command: Parti
       if (vengeanceDecisionOwner(room) !== seat) throw new Error('This decision belongs to another player.')
       switch (command.type) {
         case 'choose-actor': action = { type: 'choose-actor', playerId: command.playerId }; break
-        case 'choose-target': action = { type: 'choose-target', playerId: command.playerId }; break
+        case 'choose-target': action = { type: 'choose-target', playerId: command.playerId, preview: command.preview }; break
         case 'choose-card': action = { type: 'choose-card', instanceId: command.instanceId }; break
         case 'confirm': action = { type: 'confirm' }; break
         case 'flip-seven':
