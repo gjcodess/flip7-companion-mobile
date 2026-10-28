@@ -86,7 +86,7 @@ While players shuffle, deal, and reveal cards from the physical deck at the tabl
 ### 12. Offline, Privacy-First Architecture
 - **Zero Accounts:** No email addresses, phone numbers, passwords, or authentication required.
 - **No App-Authored Tracking:** No app analytics, crash reporter, or advertising network is included.
-- **No Game Backend:** The app has no accounts or cloud game-data server. Nearby play uses Google Play services and may send connection-performance and device diagnostics subject to Android's Usage & diagnostics setting.
+- **No Game Backend:** The app has no accounts or cloud game-data server. Shared rooms exchange game data directly over the same local Wi-Fi network or phone hotspot.
 
 ---
 
@@ -94,7 +94,7 @@ While players shuffle, deal, and reveal cards from the physical deck at the tabl
 
 ### Local shared rooms (Android)
 
-Start a saved match, tap the upper-left cast button, and choose either **Same Wi-Fi or hotspot** or **Nearby · no hotspot** in **Share & connect**. Nearby requires Wi-Fi and Bluetooth turned on; it does not require internet, a hotspot, or mobile data. Other players choose the same connection method in **Join a nearby room**, scan the invitation QR or enter the host's 6-character code, and request their seat. After host approval they can
+Start a saved match, tap the upper-left cast button, and open the room for friends in **Share & connect**. Every phone must be connected to the same Wi-Fi network or phone hotspot; internet and mobile data are not required. Other players choose **Join a shared room**, scan the invitation QR or enter the host's 6-character code, and request their seat. After host approval they can
 view every table, record their own cards and make their assigned action choices.
 The host retains all-table access and alone handles corrections and rounds.
 Keep the host room open; participants pause if the host is unavailable. Each

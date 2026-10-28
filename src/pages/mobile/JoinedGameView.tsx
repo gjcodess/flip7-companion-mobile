@@ -1,18 +1,21 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { Cast, Check, ChevronRight, CircleHelp, History, LogOut, Menu, RefreshCw, ShieldCheck, Trash2, Trophy, UserRound, Users, Wifi, WifiOff, X } from 'lucide-react'
+import { ArrowLeft, ArrowRightLeft, Cast, ChevronRight, CircleHelp, ClipboardList, History, LogOut, Menu, RefreshCw, Share2, ShieldCheck, Trash2, Trophy, UserRound, Users, Wifi, WifiOff, X } from 'lucide-react'
 import { bankerEligibleActionTargets, bankerPlayerDerived } from '../../game/bankerGame'
 import { pickerCards, type Card } from '../../game/cards'
 import { bankerTableEntries, vengeanceTableEntries } from '../../game/tableEntries'
 import { vengeanceCards } from '../../game/vengeanceCards'
-import { vengeanceEligibleActors, vengeanceEligibleCards, vengeancePending, vengeanceScore } from '../../game/vengeanceGame'
+import { vengeanceEligibleActors, vengeanceEligibleCards, vengeancePending, vengeanceScore, type VEntry, type VPlayer } from '../../game/vengeanceGame'
 import { CardArtwork } from '../../components/CardArtwork'
+import { PickerCardArtwork } from '../../components/PickerCardArtwork'
 import { PlayerAvatar } from '../../components/PlayerAvatar'
 import { ConfirmationModal } from '../../components/ConfirmationModal'
 import { CardPickerPanel } from '../game/CardDialogs'
 import { ForcedDrawStatus } from '../game/ForcedDrawStatus'
 import { GameTable } from '../game/GameTable'
 import { RoundHistoryContent } from '../game/RoundHistoryDialog'
+import { BrutalFlipSevenModal } from '../game/BrutalFlipSevenModal'
+import { ResultsShareDialog } from '../game/ResultsShareDialog'
 import type { Room } from '../../lib/room-store'
 import type { ParticipantCommand } from '../../lib/shared-room-protocol'
 import { joinedRoomView } from './joined-room-view'
@@ -37,14 +40,16 @@ type Props = {
 }
 
 const FOLLOW_TURNS_KEY = 'flip7.joiner.follow-turns.v1'
+type VFace = { player: VPlayer; entry: VEntry }
 
-function Panel({ title, eyebrow, onClose, children, className = '' }: { title: string; eyebrow: string; onClose: () => void; children: ReactNode; className?: string }) {
+function Panel({ title, eyebrow, onClose, children, className = '', headerStyle = 'info', description, headerExtra }: { title: string; eyebrow: string; onClose: () => void; children: ReactNode; className?: string; headerStyle?: 'info' | 'action' | 'menu'; description?: string; headerExtra?: ReactNode }) {
   const dialog = useRef<HTMLDialogElement>(null)
   const sheetMotion = useRoomSheetMotion()
   useEffect(() => { dialog.current?.showModal() }, [])
-  return <motion.dialog {...sheetMotion} ref={dialog} className={`room-dialog tv-share-dialog shared-room-dialog shared-game-dialog ${className}`} onCancel={onClose} onClick={event => { if (event.target === event.currentTarget) onClose() }}>
-    <div className="room-dialog-heading"><div><span className="room-kicker">{eyebrow}</span><h2>{title}</h2></div><button className="room-icon-button" aria-label={`Close ${title.toLowerCase()}`} onClick={onClose}><X size={20} /></button></div>
-    {children}
+  const headerClass = headerStyle === 'action' ? 'physical-picker-header' : headerStyle === 'info' ? 'info-panel-header' : 'room-dialog-heading'
+  return <motion.dialog {...sheetMotion} ref={dialog} className={`room-dialog tv-share-dialog shared-room-dialog shared-game-dialog ${headerStyle === 'action' ? 'card-picker physical-card-picker' : headerStyle === 'info' ? 'info-panel' : ''} ${className}`} onCancel={onClose} onClick={event => { if (event.target === event.currentTarget) onClose() }}>
+    {headerStyle === 'menu' ? <div className={headerClass}><div><span className="room-kicker">{eyebrow}</span><h2>{title}</h2></div><button className="room-icon-button" aria-label={`Close ${title.toLowerCase()}`} onClick={onClose}><X size={20} /></button></div> : <div className={headerClass}><div className="picker-heading"><div><span>{eyebrow}</span><h2>{title}</h2></div><button className="close-button" aria-label={`Close ${title.toLowerCase()}`} onClick={onClose}><X size={19} /></button></div>{description && <p>{description}</p>}{headerExtra}</div>}
+    {headerStyle === 'info' ? <div className="info-panel-scroll">{children}</div> : children}
   </motion.dialog>
 }
 
@@ -53,6 +58,8 @@ export function JoinedGameView({ room, owner, live, online, busy, pendingAction,
   const [followTurns, setFollowTurns] = useState(() => { try { return localStorage.getItem(FOLLOW_TURNS_KEY) === 'true' } catch { return false } })
   const [organized, setOrganized] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [roundSummaryDismissed, setRoundSummaryDismissed] = useState(false)
+  const [resultsShareOpen, setResultsShareOpen] = useState(false)
   const [focusCard, setFocusCard] = useState<Card | null>(null)
   const [panel, setPanel] = useState<'menu' | 'history' | 'players' | 'connection' | 'rules' | null>(null)
   const [releasePrompt, setReleasePrompt] = useState(false)
@@ -81,8 +88,51 @@ export function JoinedGameView({ room, owner, live, online, busy, pendingAction,
   const turnName = players.find(player => player.id === turn)?.name
   const decisionName = players.find(player => player.id === decisionOwner)?.name
   const terminal = status !== 'active'
+  const classicDecision = classic?.pendingAction
+  const classicAction = classicDecision?.card
+  const classicDecisionTitle = classicAction?.id === 'action-flip-three' ? 'Who flips three cards?' : classicAction ? `Who gets ${classicAction.label}?` : ''
+  const classicDecisionEyebrow = classicAction ? `ACTION · ${classicAction.label.toUpperCase()}` : ''
+  const classicDecisionDescription = classicAction?.id === 'action-second-chance'
+    ? 'Choose an active player without Second Chance. Each player may hold only one.'
+    : classicAction?.id === 'action-freeze'
+      ? 'Choose which active player table freezes and banks their points immediately.'
+      : classicAction?.id === 'action-flip-three'
+        ? 'Choose which active player table accepts the next three cards one at a time.'
+        : classicAction ? 'Only active player tables can receive action cards.' : ''
+  const vDecision = v && pending ? pending : null
+  const vIsSteal = vDecision?.card.id === 'v-action-steal'
+  const vIsSwap = vDecision?.card.id === 'v-action-swap'
+  const vIsDiscard = vDecision?.card.id === 'v-action-discard'
+  const vNeedsCards = Boolean(vIsSteal || vIsSwap || vIsDiscard)
+  const vIsModifier = vDecision?.card.kind === 'modifier'
+  const vIsForced = vDecision?.card.id === 'v-action-just-one-more' || vDecision?.card.id === 'v-action-flip-four'
+  const vActor = v?.players.find(player => player.id === vDecision?.actorId)
+  let vDecisionEyebrow = vDecision ? 'ACTION CARD' : ''
+  if (vDecision?.card.kind === 'modifier') vDecisionEyebrow = 'PENALTY MODIFIER'
+  else if (vIsSteal) vDecisionEyebrow = 'ACTION · STEAL'
+  else if (vIsSwap) vDecisionEyebrow = 'ACTION · SWAP'
+  else if (vIsDiscard) vDecisionEyebrow = 'ACTION · DISCARD'
+  else if (vIsForced && vDecision) vDecisionEyebrow = `ACTION · ${vDecision.card.label.toUpperCase()}`
+  const vDecisionTitle = !vDecision ? '' : vIsSteal ? 'Choose a card to steal' : vIsSwap ? 'Choose two cards to swap' : vIsDiscard ? 'Choose a card to discard' : vIsForced && vDecision.actorId ? `${vActor?.name} flips ${vDecision.card.id === 'v-action-flip-four' ? 'four cards' : 'one card'}` : `Who gets ${vDecision.card.label}?`
+  let vDecisionDescription = vDecision ? `Choose which non-busted player table receives this ${vDecision.card.label} action.` : ''
+  if (vDecision?.card.kind === 'modifier') vDecisionDescription = v?.variant === 'brutal' ? 'Choose any player, including stayed or busted players.' : 'Choose any non-busted player, including players who stayed.'
+  else if (vIsForced && vDecision) vDecisionDescription = vDecision.actorId
+    ? vDecision.card.id === 'v-action-just-one-more' ? `${vActor?.name} flips once, resolves any effect, then stays unless they bust or reach Flip 7.` : `${vActor?.name} flips up to four cards. A player who already stayed remains stayed afterward.`
+    : `Choose which non-busted player table resolves this ${vDecision.card.label} action.`
+  else if (vIsSteal && vDecision) vDecisionDescription = `Select 1 card from a non-busted opponent's table to steal into ${vActor?.name ?? 'the recipient'}'s hand.`
+  else if (vIsSwap && vDecision) vDecisionDescription = 'Choose one face-up card from each of two players who have not busted. You may include your own hand and stayed hands.'
+  else if (vIsDiscard && vDecision) vDecisionDescription = 'Choose any face-up Number or Modifier card to discard, including your own card or one from a player who stayed.'
+  const vEligibleCards = v && vDecision ? vengeanceEligibleCards(v, vDecision) : []
+  const vSelectedFaces: VFace[] = (vDecision?.selectedCards ?? []).map(instanceId => {
+    for (const player of v?.players ?? []) {
+      const entry = player.entries.find(item => item.instanceId === instanceId)
+      if (entry) return { player, entry }
+    }
+    return null
+  }).filter((face): face is VFace => Boolean(face))
 
   useEffect(() => { if (!mayRecord || !mine) setPickerOpen(false) }, [mayRecord, mine])
+  useEffect(() => { if (!settled) setRoundSummaryDismissed(false) }, [settled, room.id])
   useEffect(() => {
     if (!followTurns || !live || !online || !turn || complete || settled) return
     setViewSeat(turn)
@@ -115,6 +165,21 @@ export function JoinedGameView({ room, owner, live, online, busy, pendingAction,
   const hint = !live ? '' : !online ? 'Waiting for the host. Check your Wi-Fi or hotspot.' : pendingAction ? 'Check your last entry before recording another card.' : settled ? 'Waiting for the host to start the next round.' : decisionOwner ? `${decisionName ?? 'A player'} is choosing ${classic?.pendingAction?.card.label ?? pending?.card.label ?? 'a Flip 7 reward'}.` : ''
   const modalClass = room.edition === 'vengeance' ? 'edition-vengeance' : ''
   const ordered = [...players].sort((a, b) => b.totalScore - a.totalScore)
+
+  if (complete) return <div className={`app-shell banker-shell saved-room-game joined-game edition-${room.edition ?? 'classic'}`}>
+    <aside className="desktop-marquee left"><div>FLIP<br />7</div></aside>
+    <main className="game-shell">
+      <header className="topbar banker-topbar banker-results-topbar"><button type="button" className="banker-results-back" onClick={onExit}><ArrowLeft size={18} /> Back to room</button><button type="button" className="brand-button banker-results-share" aria-label="Share game results" title="Share game results" onClick={() => setResultsShareOpen(true)}><Share2 size={18} /></button></header>
+      <div className="banker-results">
+        <section className="results-hero"><span className="eyebrow">{v ? 'VENGEANCE MATCH COMPLETE' : 'BANKER TABLE COMPLETE'}</span><h1>Match complete!</h1><p>{ordered.filter(player => player.totalScore === ordered[0]?.totalScore).map(player => player.name).join(' and ')} won with {ordered[0]?.totalScore ?? 0} points. Target: {room.targetScore}.</p></section>
+        <section className="results-card"><div className="results-heading"><div><span className="eyebrow">FINAL SCORES</span><h2>Game results</h2></div><span className="results-heading-icon" aria-hidden="true"><ClipboardList size={21} /></span></div><div className="results-list">{ordered.map(player => <article key={player.id} className={`results-player ${player.totalScore === ordered[0]?.totalScore ? 'winner' : ''}`}><span className="results-rank">{ordered.findIndex(p => p.totalScore === player.totalScore) + 1}</span><PlayerAvatar player={player} className="mini-avatar" /><div className="results-player-copy"><div className="results-player-name"><b>{player.name}{player.id === owner ? ' (You)' : ''}</b></div><div className="results-rounds">{state.history.map(round => <span className="round-score" key={`${player.id}-${round.round}`}>R{round.round}: {round.scores[player.id] ?? 0}</span>)}</div></div><div className="results-total"><small>Total pts</small><strong>{player.totalScore}</strong></div></article>)}</div></section>
+        <section className="results-actions"><p>Your final scores and round cards are saved in this room on your device.</p><div className="banker-results-actions"><button type="button" className="primary-wide" onClick={onExit}><ArrowLeft size={16} /> View room</button></div></section>
+      </div>
+    </main>
+    <aside className="desktop-marquee right"><div>PRESS<br />YOUR<br />LUCK</div></aside>
+    {resultsShareOpen && <ResultsShareDialog roomName={room.name} players={players} history={state.history} targetScore={room.targetScore} edition={v ? 'vengeance' : 'classic'} variant={room.variant} onClose={() => setResultsShareOpen(false)} />}
+    {panel === 'history' && <Panel title="Round history" eyebrow="SAVED ON THIS PHONE" onClose={() => setPanel(null)} className={modalClass}><RoundHistoryContent history={state.history} room={room} /></Panel>}
+  </div>
 
   return <div className={`app-shell banker-shell saved-room-game joined-game edition-${room.edition ?? 'classic'}`}>
     <aside className="desktop-marquee left"><div>FLIP<br />7</div></aside>
@@ -159,7 +224,7 @@ export function JoinedGameView({ room, owner, live, online, busy, pendingAction,
       {live && pendingAction && <button className="room-button sharing-reconnect" disabled={!online || busy} onClick={() => void onSend()}><RefreshCw size={17} /> Check unconfirmed entry</button>}
       {live && <button className="shared-stop-hosting" disabled={!enabled} onClick={() => { setPanel(null); setReleasePrompt(true) }}>Release my seat</button>}
     </Panel>}
-    {panel === 'menu' && <Panel title="Game menu" eyebrow={live ? 'PLAYING TOGETHER' : 'JOINED HISTORY'} onClose={() => setPanel(null)} className={`banker-menu-dialog ${modalClass}`}>
+    {panel === 'menu' && <Panel title="Game menu" eyebrow={live ? 'PLAYING TOGETHER' : 'JOINED HISTORY'} headerStyle="menu" onClose={() => setPanel(null)} className={`banker-menu-dialog ${modalClass}`}>
       <div className="banker-menu-list">
         {([{ icon: Cast, title: 'Room connection', copy: 'Connection and seat details', action: () => setPanel('connection') }, { icon: Users, title: 'Players', copy: 'Tables and scores', action: () => setPanel('players') }, { icon: CircleHelp, title: 'Rules & Guide', copy: 'Cards, turns, and scoring', action: () => setPanel('rules') }, { icon: History, title: 'Round history', copy: 'Cards and scores by round', action: () => setPanel('history') }, ...(!live && onDelete ? [{ icon: Trash2, title: 'Remove history copy', copy: 'Delete this copy from your phone', action: () => { setPanel(null); onDelete() } }] : []), { icon: LogOut, title: live ? 'Exit room' : 'Your rooms', copy: live ? 'Your saved history stays here' : 'Return to your rooms', action: () => { setPanel(null); onExit() } }]).map(item => <button key={item.title} className={`banker-menu-item ${item.title === 'Exit room' || item.title === 'Remove history copy' ? 'banker-menu-item-danger' : ''}`} onClick={item.action}><div className="banker-menu-item-icon"><item.icon size={20} /></div><div className="banker-menu-item-text"><strong>{item.title}</strong><span>{item.copy}</span></div><ChevronRight size={18} className="banker-menu-item-chevron" /></button>)}
       </div>
@@ -184,17 +249,64 @@ export function JoinedGameView({ room, owner, live, online, busy, pendingAction,
     {panel === 'history' && <Panel title="Round history" eyebrow="SAVED ON THIS PHONE" onClose={() => setPanel(null)} className={modalClass}>
       <RoundHistoryContent history={state.history} room={room} />
     </Panel>}
-    {showDecision && <Panel title={v?.pendingFlipSeven ? 'You hit Flip 7!' : `Who gets ${classic?.pendingAction?.card.label ?? pending?.card.label ?? 'this card'}?`} eyebrow="YOUR DECISION" onClose={() => setDismissedDecision(decisionKey)} className={`shared-decision-dialog ${modalClass}`}>
-      {v?.pendingFlipSeven && <p>Take +15 or give another player −15 points.</p>}
-      <fieldset disabled={!enabled} className="shared-decision-options">
-        {classic?.pendingAction && <div className="target-list banker-target-list">{bankerEligibleActionTargets(classic, classic.pendingAction.card).map(player => <button key={player.id} className="banker-actor-select-btn" onClick={() => void onSend({ type: 'classic-target', playerId: player.id })}><PlayerAvatar player={player} className="mini-avatar" /><b>{player.name}</b><ChevronRight size={17} /></button>)}</div>}
-        {v && pending && <>
-          {(pending.card.kind === 'modifier' || !['v-action-steal', 'v-action-swap', 'v-action-discard'].includes(pending.card.id)) && <div className="target-list banker-target-list">{vengeanceEligibleActors(v).map(player => <button key={player.id} className="banker-actor-select-btn" onClick={() => void onSend({ type: pending.card.kind === 'modifier' ? 'choose-target' : 'choose-actor', playerId: player.id })}><PlayerAvatar player={player} className="mini-avatar" /><b>{player.name}</b><ChevronRight size={17} /></button>)}</div>}
-          <div className="shared-decision-cards">{vengeanceEligibleCards(v).map(({ player, entry }) => <button key={entry.instanceId} aria-label={`${player.name}: ${entry.card.label}`} aria-pressed={pending.selectedCards.includes(entry.instanceId)} onClick={() => void onSend({ type: 'choose-card', instanceId: entry.instanceId })}><CardArtwork card={entry.card} /><small>{player.name}</small>{pending.selectedCards.includes(entry.instanceId) && <Check size={17} />}</button>)}</div>
-          {['v-action-steal', 'v-action-swap', 'v-action-discard'].includes(pending.card.id) && <button className="room-button" disabled={!enabled || pending.selectedCards.length !== (pending.card.id === 'v-action-swap' ? 2 : 1)} onClick={() => void onSend({ type: 'confirm' })}>Confirm selection</button>}
-        </>}
-        {v?.pendingFlipSeven && <><button className="room-button" onClick={() => void onSend({ type: 'flip-seven', choice: 'self' })}>Take +15 points</button><span className="shared-option-label">OR CHOOSE A PLAYER TO LOSE 15 POINTS</span><div className="target-list banker-target-list">{players.filter(player => player.id !== owner).map(player => <button key={player.id} className="banker-actor-select-btn" onClick={() => void onSend({ type: 'flip-seven', choice: 'penalize', playerId: player.id })}><PlayerAvatar player={player} className="mini-avatar" /><b>{player.name}</b><ChevronRight size={17} /></button>)}</div></>}
-      </fieldset>
+    {showDecision && v?.pendingFlipSeven && <BrutalFlipSevenModal finisher={v.players.find(player => player.id === v.pendingFlipSeven?.finisherId) ?? v.players[0]} players={v.players} onResolveSelf={() => void onSend({ type: 'flip-seven', choice: 'self' })} onResolvePenalize={playerId => void onSend({ type: 'flip-seven', choice: 'penalize', playerId })} />}
+    {live && settled && !complete && !roundSummaryDismissed && <motion.div key="joined-round-summary" className="picker-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, pointerEvents: 'none' }}><motion.section className="card-picker banker-summary" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} onClick={event => event.stopPropagation()}>
+      <div className="picker-heading"><div><span>ROUND {String(state?.roundNumber ?? 1).padStart(2, '0')} COMPLETE</span><h2>Everyone is settled.</h2></div><button className="close-button" aria-label="Close round summary" onClick={() => setRoundSummaryDismissed(true)}><X size={19} /></button></div>
+      <div className="banker-round-summary-list">{state?.players.map(player => {
+        const playerStatus = v ? (player as VPlayer).status : (player as Parameters<typeof bankerPlayerDerived>[0]).round.status
+        const statusClass = playerStatus === 'flip-seven' ? 'flip-seven' : playerStatus
+        const statusLabel = playerStatus === 'frozen' ? 'FROZEN' : playerStatus === 'busted' ? 'BUSTED' : playerStatus === 'flip-seven' ? 'FLIP 7' : playerStatus === 'stayed' ? 'STAYED' : 'BANKED'
+        const score = v ? vengeanceScore(player as VPlayer, v.variant, v.flipSevenChoice) : bankerPlayerDerived(player as never).score
+        return <div className={`banker-summary-player ${statusClass}`} key={player.id}><PlayerAvatar player={player} className="mini-avatar" /><div className="banker-summary-player-copy"><b>{player.name}</b><span className={`banker-status-pill ${statusClass}`}>{statusLabel}</span></div><div className="banker-summary-score"><small>ROUND</small><strong className={score < 0 ? 'score-negative' : ''}>{score}</strong></div></div>
+      })}</div>
+      <p>The host will confirm these scores and start the next round.</p>
+    </motion.section></motion.div>}
+    {showDecision && classicDecision && <Panel title={classicDecisionTitle} eyebrow={classicDecisionEyebrow} description={classicDecisionDescription} headerStyle="action" onClose={() => setDismissedDecision(decisionKey)} className={`shared-decision-dialog action-target-picker ${modalClass}`}>
+      <div className="physical-picker-scroll action-target-scroll">
+        <fieldset disabled={!enabled} className="shared-decision-options">
+          <div className="target-list banker-target-list">
+            {bankerEligibleActionTargets(classic!, classicDecision.card).map(player => <button key={player.id} type="button" className="banker-actor-select-btn" onClick={() => void onSend({ type: 'classic-target', playerId: player.id })}><PlayerAvatar player={player} className="mini-avatar" /><span className="banker-actor-btn-name"><b>{player.name}</b>{player.id === classicDecision.sourcePlayerId && <span className="banker-current-tag">Current Turn</span>}</span></button>)}
+            {bankerEligibleActionTargets(classic!, classicDecision.card).length === 0 && <p className="banker-muted">There are no active player tables available.</p>}
+          </div>
+        </fieldset>
+      </div>
+    </Panel>}
+    {showDecision && vDecision && <Panel title={vDecisionTitle} eyebrow={vDecisionEyebrow} description={vDecisionDescription} headerStyle="action" headerExtra={vIsSwap ? <div className="v-swap-stepper">
+        <div className={`v-swap-slot ${vSelectedFaces[0] ? 'filled' : 'empty'}`}><span className="v-swap-slot-label">Card 1</span><b>{vSelectedFaces[0] ? `${vSelectedFaces[0].entry.card.label} (${vSelectedFaces[0].player.name})` : 'Tap 1st card'}</b></div>
+        <ArrowRightLeft size={16} className="v-swap-icon" />
+        <div className={`v-swap-slot ${vSelectedFaces[1] ? 'filled' : 'empty'}`}><span className="v-swap-slot-label">Card 2</span><b>{vSelectedFaces[1] ? `${vSelectedFaces[1].entry.card.label} (${vSelectedFaces[1].player.name})` : 'Tap 2nd card'}</b></div>
+      </div> : undefined} onClose={() => setDismissedDecision(decisionKey)} className={`shared-decision-dialog vengeance-action-modal ${modalClass}`}>
+      <div className={`physical-picker-scroll v-action-scroll ${vNeedsCards || vIsModifier ? 'has-floating-btn' : ''}`}>
+        <fieldset disabled={!enabled} className="shared-decision-options">
+          {((!vNeedsCards && !vDecision.actorId && !vIsModifier) || vIsModifier) && <div className="target-list banker-target-list v-action-actor-list">
+            {v && vengeanceEligibleActors(v).map(player => <button key={player.id} type="button" className={`v-actor-select-btn ${vIsModifier && vDecision.targetId === player.id ? 'v-target-selected' : ''}`} disabled={!enabled} aria-pressed={vIsModifier ? vDecision.targetId === player.id : undefined} onClick={() => void onSend(vIsModifier ? { type: 'choose-target', playerId: player.id, preview: true } : { type: 'choose-actor', playerId: player.id })}>
+              <PlayerAvatar player={player} className="mini-avatar" /><span className="v-actor-btn-name"><b>{player.name}</b>{player.id === v.turnPlayerId && <span className="v-current-tag">Current Turn</span>}{player.status === 'stayed' && <span className="v-stayed-tag">Stayed</span>}{player.status === 'frozen' && <span className="v-frozen-tag">Frozen</span>}{player.status === 'busted' && <span className="v-busted-tag">Busted (Vulnerable)</span>}</span>
+            </button>)}
+            {v && vengeanceEligibleActors(v).length === 0 && <p className="banker-muted">There are no eligible player tables available.</p>}
+          </div>}
+          {vNeedsCards && vDecision.actorId && v && <div className="v-fan-players-list">
+            {v.players.filter(player => ['active', 'stayed', 'frozen'].includes(player.status)).map(player => {
+              const actorHand = player.id === vDecision.actorId
+              const cannotStealHere = Boolean(vIsSteal && actorHand)
+              const numberCardCount = player.entries.filter(entry => !entry.voided && entry.card.kind === 'number').length
+              const cardRows = Array.from({ length: Math.ceil(player.entries.length / 5) }, (_, rowIndex) => player.entries.slice(rowIndex * 5, rowIndex * 5 + 5))
+              return <div key={player.id} className={`v-fan-player-section ${cannotStealHere ? 'actor-hand' : ''}`}>
+                <div className="v-player-header"><div className="v-player-meta"><PlayerAvatar player={player} className="mini-avatar" /><h4>{player.name}</h4></div><div className="v-player-tags">{cannotStealHere && <span className="v-role-badge actor">Recipient Table</span>}{player.status === 'stayed' && <span className="v-role-badge stayed">Stayed</span>}{player.status === 'frozen' && <span className="v-role-badge frozen">Frozen</span>}<span className="v-role-badge count">{numberCardCount} card{numberCardCount === 1 ? '' : 's'}</span></div></div>
+                {player.entries.length === 0 ? <div className="v-empty-hand">No cards on table</div> : cannotStealHere ? <div className="v-actor-hand-note">Stolen cards will go into this hand (cannot steal from yourself)</div> : <div className="v-card-fan-container">{cardRows.map((row, rowIndex) => <div key={`fan-row-${rowIndex}`} className={`v-card-fan-row cards-${row.length}`}>{row.map(entry => {
+                  const selectedIndex = vDecision.selectedCards.indexOf(entry.instanceId)
+                  const isChosen = selectedIndex >= 0
+                  const isEligible = vEligibleCards.some(card => card.entry.instanceId === entry.instanceId)
+                  return <button key={entry.instanceId} type="button" className={`v-fan-card ${isChosen ? 'chosen' : ''} ${!isEligible ? 'ineligible' : ''}`} disabled={!isEligible || !enabled} onClick={() => void onSend({ type: 'choose-card', instanceId: entry.instanceId })} aria-label={`${entry.card.label} from ${player.name}`}><PickerCardArtwork card={entry.card} />{isChosen && <span className="v-chosen-badge">{vIsSwap ? `CARD ${selectedIndex + 1}` : vIsSteal ? 'STEAL' : 'DISCARD'}</span>}</button>
+                })}</div>)}</div>}
+              </div>
+            })}
+          </div>}
+        </fieldset>
+      </div>
+      {vIsModifier && <div className="v-floating-confirm"><button type="button" className="v-confirm-btn modifier" disabled={!enabled || !vDecision.targetId} onClick={() => void onSend({ type: 'confirm' })}>{vDecision.targetId ? `Give ${vDecision.card.label} to ${v?.players.find(player => player.id === vDecision.targetId)?.name ?? 'player'}` : 'Choose a player'}</button></div>}
+      {vIsSteal && vDecision.actorId && vSelectedFaces[0] && <div className="v-floating-confirm"><button type="button" className="v-confirm-btn steal" disabled={!enabled} onClick={() => void onSend({ type: 'confirm' })}>Confirm Steal</button></div>}
+      {vIsSwap && vDecision.actorId && vSelectedFaces.length === 2 && <div className="v-floating-confirm"><button type="button" className="v-confirm-btn swap" disabled={!enabled} onClick={() => void onSend({ type: 'confirm' })}>Confirm Swap</button></div>}
+      {vIsDiscard && vDecision.actorId && vSelectedFaces[0] && <div className="v-floating-confirm"><button type="button" className="v-confirm-btn discard" disabled={!enabled} onClick={() => void onSend({ type: 'confirm' })}>Confirm Discard</button></div>}
     </Panel>}
     {releasePrompt && <ConfirmationModal title="Release your seat?" eyebrow="PLAYING TOGETHER" message="Another phone can claim this seat. Your received history stays saved, and the host can keep recording this hand." confirmLabel="Release seat" cancelLabel="Keep my seat" confirming={busy} onCancel={() => setReleasePrompt(false)} onConfirm={() => { setReleasePrompt(false); void onRelease() }} />}
   </div>

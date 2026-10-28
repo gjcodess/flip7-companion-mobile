@@ -6,17 +6,14 @@ import { emptySharedHost, processRoomRequest, publicRoom, reconcileApprovedSeatN
 import { clearRoomPresence, expireRoomPresence, forgetRoomDevice, noteRoomRequest } from './shared-room-presence'
 import { generateId } from './uuid'
 
-export type RoomConnectionMode = 'wifi' | 'nearby'
-export type RoomInvitation = { protocol: number; roomId: string; transport?: RoomConnectionMode; url?: string; publicKey: string; invitationSecret: string; code?: string }
+export type RoomInvitation = { protocol: number; roomId: string; transport?: 'wifi' | 'nearby'; url?: string; publicKey: string; invitationSecret: string; code?: string }
 type NativeRoom = {
   start(options: { roomId: string }): Promise<Omit<RoomInvitation, 'protocol' | 'roomId'>>
-  startNearby(options: { roomId: string }): Promise<Omit<RoomInvitation, 'protocol' | 'roomId'>>
   stop(): Promise<void>
   drain(): Promise<{ messages: { id: string; request: RoomRequest }[] }>
   reply(options: { id: string; response: RoomReply }): Promise<void>
   request(options: RoomInvitation & { request: RoomRequest }): Promise<RoomReply>
   resolveCode(options: { code: string }): Promise<RoomInvitation>
-  resolveNearbyCode(options: { code: string }): Promise<RoomInvitation>
 }
 const transport = registerPlugin<NativeRoom>('SharedRoom')
 const listeners = new Set<() => void>()
@@ -50,7 +47,7 @@ export function invitationCode(invitation: RoomInvitation): string {
   return explicit.length === 6 ? explicit : deriveRoomCode(`${invitation.roomId}:${invitation.invitationSecret}`)
 }
 
-export async function startHosting(room: Room, mode: RoomConnectionMode = 'wifi') {
+export async function startHosting(room: Room) {
   if (!localRoomsAvailable()) throw new Error('Local rooms are available in the Android app.')
   if (room.joinedCopy) throw new Error('Only the original host can host this room.')
   if (!room.state && !room.vengeanceState) throw new Error('Start this match before enabling joining.')
@@ -58,11 +55,9 @@ export async function startHosting(room: Room, mode: RoomConnectionMode = 'wifi'
   const reconciled = reconcileApprovedSeatNames(current)
   if (reconciled !== current) saveRoom(reconciled)
   else if (!current.sharedHost) saveRoom({ ...current, sharedHost: emptySharedHost() })
-  const native = mode === 'nearby'
-    ? await transport.startNearby({ roomId: room.id })
-    : await transport.start({ roomId: room.id })
+  const native = await transport.start({ roomId: room.id })
   clearRoomPresence(room.id)
-  const full: RoomInvitation = { ...native, protocol: SHARED_PROTOCOL, roomId: room.id, transport: mode }
+  const full: RoomInvitation = { ...native, protocol: SHARED_PROTOCOL, roomId: room.id, transport: 'wifi' }
   full.code = invitationCode(full)
   publishHosting(full)
 }
@@ -76,12 +71,8 @@ export function parseInvitation(raw: string): RoomInvitation {
   if (!data || data.protocol !== SHARED_PROTOCOL) throw new Error('App versions are incompatible. Update both apps.')
   if (typeof data.roomId !== 'string' || !/^[a-zA-Z0-9-]{1,80}$/.test(data.roomId) || typeof data.publicKey !== 'string' || !/^[a-zA-Z0-9+/=]{300,600}$/.test(data.publicKey) || typeof data.invitationSecret !== 'string' || !/^[a-zA-Z0-9+/=]{40,100}$/.test(data.invitationSecret)) throw new Error('Invalid room invitation.')
   if (data.code !== undefined && (typeof data.code !== 'string' || !/^[A-Z0-9]{6}$/i.test(data.code))) throw new Error('Invalid room code.')
-  const transportMode = data.transport ?? 'wifi'
-  if (transportMode !== 'wifi' && transportMode !== 'nearby') throw new Error('Invalid room connection method.')
-  if (transportMode === 'nearby') {
-    if (typeof data.code !== 'string' || !/^[A-Z0-9]{6}$/i.test(data.code) || data.url) throw new Error('Invalid nearby-room invitation.')
-    return { ...data, transport: 'nearby', code: normalizeRoomCode(data.code) }
-  }
+  if (data.transport === 'nearby') throw new Error('Nearby rooms are no longer supported. Connect to the same Wi-Fi or hotspot and scan the host’s new QR code.')
+  if (data.transport !== undefined && data.transport !== 'wifi') throw new Error('Invalid room connection method.')
   if (typeof data.url !== 'string') throw new Error('Invalid local-room address.')
   let url: URL
   try { url = new URL(data.url) } catch { throw new Error('Invalid local-room address.') }
@@ -89,15 +80,13 @@ export function parseInvitation(raw: string): RoomInvitation {
   if (url.protocol !== 'http:' || url.username || url.password || url.search || url.hash || !url.port || url.pathname !== `/room/${data.roomId}` || parts.length !== 4 || parts.some(n => !Number.isInteger(n) || n < 0 || n > 255) || !(parts[0] === 10 || parts[0] === 192 && parts[1] === 168 || parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31)) throw new Error('Rooms must use a local Wi-Fi or hotspot address.')
   return { ...data, transport: 'wifi' }
 }
-export async function resolveInvitation(raw: string, mode: RoomConnectionMode = 'wifi'): Promise<RoomInvitation> {
+export async function resolveInvitation(raw: string): Promise<RoomInvitation> {
   const text = raw.trim()
   if (text.startsWith('flip7-local:')) return parseInvitation(text)
   const code = normalizeRoomCode(text)
   if (code.length !== 6) throw new Error('Enter the 6-character room code from your host.')
   if (!localRoomsAvailable()) throw new Error('Join using the Android app on the same Wi-Fi or hotspot.')
-  const resolved = mode === 'nearby'
-    ? await transport.resolveNearbyCode({ code })
-    : await transport.resolveCode({ code })
+  const resolved = await transport.resolveCode({ code })
   return parseInvitation(invitationText({ ...resolved, protocol: resolved.protocol ?? SHARED_PROTOCOL }))
 }
 

@@ -6,12 +6,15 @@ import { useRoomSheetMotion } from '../../lib/use-room-sheet-motion'
 
 export function ResultsShareDialog({ roomName, players, history, targetScore, edition, variant, onClose }: GameResults & { onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null)
+  const actionInProgress = useRef(false)
   const sheetMotion = useRoomSheetMotion()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   useEffect(() => { dialog.current?.showModal() }, [])
   const act = async (action: 'share' | 'save') => {
+    if (actionInProgress.current) return
+    actionInProgress.current = true
     setBusy(true)
     setError('')
     setNotice('')
@@ -21,7 +24,7 @@ export function ResultsShareDialog({ roomName, players, history, targetScore, ed
       setNotice(message)
     } catch (failure) {
       if ((failure as Error).name !== 'AbortError') setError((failure as Error).message)
-    } finally { setBusy(false) }
+    } finally { actionInProgress.current = false; setBusy(false) }
   }
   return <motion.dialog {...sheetMotion} ref={dialog} className={`room-dialog banker-menu-dialog results-share-dialog${edition === 'vengeance' ? ' edition-vengeance' : ''}`} onCancel={event => { if (busy) event.preventDefault(); else onClose() }} onClick={event => { if (!busy && event.target === event.currentTarget) onClose() }}>
     <div className="room-dialog-heading"><div><span className="room-kicker">FINAL SCORES</span><h2>Share game results</h2></div><button type="button" className="room-icon-button" aria-label="Close sharing options" disabled={busy} onClick={onClose}><X size={20} /></button></div>

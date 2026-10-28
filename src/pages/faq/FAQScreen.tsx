@@ -105,11 +105,11 @@ const faqGroups = [
       },
       {
         "question": "Does the app need an internet connection?",
-        "answer": "Game data does not need internet. Nearby shared rooms work offline but require Google Play services; that SDK may send connection and device diagnostics according to Android's Usage & diagnostics setting."
+        "answer": "No. Shared-room data travels directly between phones on the same Wi-Fi network or phone hotspot."
       },
       {
         "question": "Can friends play together without a hotspot?",
-        "answer": "Yes. Choose Nearby when hosting or joining a shared room. Keep Wi-Fi and Bluetooth turned on, stay close to the host, and enter the host's 6-character code. No one needs a hotspot or mobile data. The existing same-Wi-Fi or hotspot option is still available."
+        "answer": "Yes, if both phones can join the same Wi-Fi network. If they are in different places, one person can turn on a phone hotspot for the others to join. Internet and mobile data are not required."
       },
       {
         "question": "What happens when someone reaches 200 points?",
