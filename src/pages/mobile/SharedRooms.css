@@ -228,7 +228,6 @@ html.room-reduced-motion .room-dialog.shared-room-dialog[open]::backdrop { anima
 .shared-waiting-dots i:nth-child(2) { animation-delay: .15s; }.shared-waiting-dots i:nth-child(3) { animation-delay: .3s; }
 @keyframes shared-wait { 0%,80%,100% { opacity: .3; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-4px); } }
 
-.shared-brutal-tag { align-self: center; color: #b0262c; padding: 12px 0 0; font-size: 8px; font-weight: 950; letter-spacing: .14em; }
 .shared-you-tag { padding: 3px 5px; background: #132d67; color: #fff7da; border-radius: 4px; font-size: 7px; font-weight: 950; font-style: normal; }
 .banker-player-tab .shared-tab-you { display: inline-block; font-size: 6px; margin-left: 4px; padding: 2px 3px; border-radius: 3px; background: #132d67; color: #fff7da; vertical-align: middle; }
 .joined-game .table-area:has(.card-rows:empty) { min-height: 180px; }

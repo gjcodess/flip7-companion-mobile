@@ -7,7 +7,7 @@ android {
         applicationId "com.gjcodess.flip7companion"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 17
+        versionCode 18
         versionName "1.6"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
@@ -16,8 +16,23 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            def uploadKeyDir = file("${System.getProperty('user.home')}/.android/keystores/flip7-companion")
+            def uploadKey = new File(uploadKeyDir, 'flip7-upload.jks')
+            def passwordFile = new File(uploadKeyDir, 'password.txt')
+            if (!uploadKey.isFile() || !passwordFile.isFile()) {
+                throw new GradleException('Flip7 release upload key or password file is missing.')
+            }
+            storeFile uploadKey
+            storePassword passwordFile.text.trim()
+            keyAlias 'flip7-upload'
+            keyPassword passwordFile.text.trim()
+        }
+    }
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
