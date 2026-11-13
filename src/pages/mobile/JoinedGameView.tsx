@@ -9,6 +9,7 @@ import { vengeanceEligibleActors, vengeanceEligibleCards, vengeancePending, veng
 import { CardArtwork } from '../../components/CardArtwork'
 import { PickerCardArtwork } from '../../components/PickerCardArtwork'
 import { PlayerAvatar } from '../../components/PlayerAvatar'
+import { BrutalSkullIcon } from '../../components/BrutalSkullIcon'
 import { ConfirmationModal } from '../../components/ConfirmationModal'
 import { CardPickerPanel } from '../game/CardDialogs'
 import { ForcedDrawStatus } from '../game/ForcedDrawStatus'
@@ -189,8 +190,7 @@ export function JoinedGameView({ room, owner, live, online, busy, pendingAction,
         <span className="game-topbar-brand"><img src={v ? '/assets/flip7-vengeance-logo.webp' : '/assets/flip7-title-logo.webp'} alt={v ? 'Flip 7 Vengeance' : 'Flip 7'} /></span>
         <button className="brand-button menu-button" aria-label="Open game menu" onClick={() => setPanel('menu')}><Menu size={20} /></button>
       </header>
-      <section className="match-strip"><div><span>ROUND</span><b>{String(state.roundNumber).padStart(2, '0')}</b></div><div className="target"><span>FIRST TO</span><b>{room.targetScore}</b></div><div className="viewing"><span>VIEWING</span><b>{selected.name}</b></div></section>
-      {room.variant === 'brutal' && <div className="shared-brutal-tag">BRUTAL MODE</div>}
+      <section className="match-strip"><div><span>ROUND</span><b>{String(state.roundNumber).padStart(2, '0')}</b></div><div className="target"><span>FIRST TO</span><b>{room.targetScore}</b></div><div className="viewing"><span>VIEWING</span><b>{selected.name}</b></div>{room.variant === 'brutal' && <div className="v-match-strip-brutal" aria-label="Brutal Mode"><BrutalSkullIcon size={11} /><em>BRUTAL MODE</em></div>}</section>
       <div className="banker-turn-row"><div className="banker-turn-callout" role="status"><span>{complete ? 'MATCH COMPLETE' : settled ? 'ROUND COMPLETE' : decisionOwner ? 'CHOOSING' : 'CURRENT TURN'}</span><b>{complete ? 'Final scores saved' : settled ? 'Waiting for host' : decisionName ?? turnName ?? '—'}</b>{!settled && !complete && turn === owner && !decisionOwner && <em className="shared-you-tag">YOU</em>}</div>{live && !complete && !settled && turn && <button type="button" className="follow-turns-toggle" aria-label={`Follow turns ${followTurns ? 'on' : 'off'}`} aria-pressed={followTurns} title="Follow current turn" onClick={toggleFollowTurns}>Follow</button>}</div>
       {forced && forced.remaining > 0 && <ForcedDrawStatus label={v ? ('kind' in forced && forced.kind === 'one' ? 'Flip One' : 'Flip Four') : 'Flip Three'} remaining={forced.remaining} total={v ? ('kind' in forced && forced.kind === 'one' ? 1 : 4) : 3} />}
       {error && <div className="shared-game-error" role="alert">{error}</div>}
